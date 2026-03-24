@@ -3,8 +3,8 @@
 ## Source of Truth
 
 - Build this repository as a browser-based 2D grid game using TypeScript and PixiJS.
-- Follow Jira as the implementation backlog and task sequencing source.
-- If there is any conflict between local assumptions and Jira task scope, Jira wins.
+- Follow GitHub Issues as the implementation backlog and task sequencing source.
+- If there is any conflict between local assumptions and GitHub issue scope, the issue wins.
 
 ## Project Scope
 
@@ -63,17 +63,18 @@ All world state should be JSON-serializable and named clearly for future LLM rea
 
 ## Jira Task Execution Rules
 
-- Before implementing, check Jira for related work items in project `GG` (subtasks, linked issues, or follow-up tasks).
-- If additional Jira tasks exist, implement in task order and keep changes aligned with each task's scope.
-- When uncertain about behavior, consult Jira first rather than inventing mechanics.
-- If Jira task details are missing or ambiguous, ask for clarification before proceeding.
+- Before implementing, check GitHub Issues for related work items (linked issues, follow-up tasks).
+- If additional GitHub issues exist, implement in issue order and keep changes aligned with each issue's scope.
+- When uncertain about behavior, consult the GitHub issue first rather than inventing mechanics.
+- If GitHub issue details are missing or ambiguous, ask for clarification before proceeding.
+- Link your PR to the issue using "Closes #<number>" in the PR description.
 
 ## Definition of Done (Per Task)
 
 For each implemented Jira task, ensure all of the following are true:
 
 - Project builds and runs in the browser.
-- Feature behavior matches Jira acceptance criteria.
+- Feature behavior matches GitHub issue acceptance criteria.
 - World state remains serializable to JSON.
 - Layer boundaries remain intact (no gameplay logic in render code).
 - Code is descriptive, modular, and prepared for future LLM-assisted systems.
