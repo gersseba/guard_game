@@ -40,5 +40,12 @@ Use this skill to review a single PR as a partial delivery for a ticket.
 - Review basis:
 - Dominant concern:
 - Findings:
+- AI change classification: (run `reviewer-ai-classification` skill for dedicated validation)
 - Decision label:
 - Required follow-up:
+
+## Integration with AI Classification Skill
+For comprehensive partial PR reviews:
+1. Run this skill first for scope and focus validation.
+2. Run the `reviewer-ai-classification` skill separately to validate AI behavior markers.
+3. Combine results for complete partial review output.
