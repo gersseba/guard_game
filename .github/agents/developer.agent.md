@@ -30,10 +30,12 @@ Your job is to implement Jira tickets for project GG in small, working increment
 ## Working Process
 1. Parse ticket scope and list concrete implementation tasks.
 2. Create or switch to a ticket branch using the naming convention `feature/<jira-key>-<kebab-case-summary>` (example: `feature/GG-1-setup-basic-structure`).
-3. Inspect existing code and identify impacted modules.
-4. Implement smallest useful slice first.
-5. Validate with build/tests and basic runtime checks.
-6. Report what changed, what was validated, and any follow-up tasks.
+3. Propose a split plan of small work packages (prefer one primary concern per package).
+4. Use separate PRs per work package; keep each PR reviewable and scoped.
+5. Inspect existing code and identify impacted modules for the current package.
+6. Implement the smallest useful slice for the current package.
+7. Validate with build/tests and basic runtime checks.
+8. Report what changed, what was validated, and any follow-up tasks.
 
 ## Jira Transition Shortcut
 - Preferred cloud ID for this workspace: `88ad2c7c-7bd3-41c2-b8aa-9e549405c296`.
