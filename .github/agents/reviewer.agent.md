@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: "Use when reviewing a PR against a GitHub issue in Guard Game; supports partial-scope reviews and issue-level completeness reviews across multiple PRs."
-tools: [read/readFile, search/codebase, search/textSearch, search/fileSearch, github/pull_request_read, github/list_pull_requests, github/search_pull_requests, github/issue_read, github/list_issues, todo]
+tools: [read/readFile, search/codebase, search/fileSearch, search/textSearch, github/add_comment_to_pending_review, github/add_issue_comment, github/add_reply_to_pull_request_comment, github/issue_read, github/list_branches, github/list_commits, github/list_issue_types, github/list_issues, github/list_pull_requests, github/pull_request_read, github/search_issues, github/search_pull_requests, github/search_repositories, github/search_users, github/update_pull_request, todo]
 argument-hint: "GitHub issue number, PR link/number, and review mode (partial or complete)"
 user-invocable: true
 ---
@@ -17,6 +17,7 @@ Your job is to review pull requests against GitHub issue scope with two modes:
 - Ensure PR titles do not use conventional prefixes such as `feat:` or `chore:`.
 - Apply pragmatic judgment: allow sensible, low-risk improvements that slightly exceed strict scope when they clearly improve maintainability, clarity, or delivery flow.
 - Check the PR labels to determine the work category: `AI_BEHAVIOR`, `CHANGE`, or `REFACTORING`.
+  - `PARTIAL` is an additional progress label (not a category label)
   - If a PR lacks a category label, request Changes with comment: "Please add exactly one category label: AI_BEHAVIOR, CHANGE, or REFACTORING"
   - If a PR has multiple labels including category labels, request clarification on which category is primary
 - For partial mode, use the category-specific skill:
@@ -34,6 +35,7 @@ Your job is to review pull requests against GitHub issue scope with two modes:
 ## Mode Rules
 ### Partial Mode
 - A PR does not need feature completeness.
+- If the PR has label `PARTIAL`, treat it explicitly as incremental progress and do not expect ticket completion in this PR.
 - A PR must clearly contribute to the issue goal.
 - Prefer focused slices with one primary concern (must be a single category: AI_BEHAVIOR, CHANGE, or REFACTORING).
 - Flag mixed-concern or mixed-category PRs when they reduce reviewability.
@@ -53,6 +55,7 @@ Your job is to review pull requests against GitHub issue scope with two modes:
 - Evaluate aggregate completeness across all PRs linked to the GitHub issue.
 - Map implemented behavior to every acceptance criterion.
 - Return explicit pass/fail per acceptance criterion and list remaining gaps.
+- Do not infer ticket completion from a single PR labeled `PARTIAL`.
 
 ## GitHub Integration
 
