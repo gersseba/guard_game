@@ -34,18 +34,20 @@ Use this skill to review a single PR as a partial delivery for a ticket.
 - `OUT_OF_SCOPE`
 - `BLOCKED_BY_MISSING_CONTEXT`
 
-## Output Template
+## Integration with Category-Specific Skills
+For partial PR reviews, use the appropriate category skill based on the PR label:
+1. Verify PR has exactly one label: `AI_BEHAVIOR`, `CHANGE`, or `REFACTORING`
+2. Use the category-specific skill:
+   - `reviewer-ai-behavior` for `AI_BEHAVIOR` PRs
+   - `reviewer-change` for `CHANGE` PRs
+   - `reviewer-refactoring` for `REFACTORING` PRs
+3. Follow that skill's review checklist and decision process
+
+## Output Template (Use Category Skill's Template)
+This skill ensures label/content alignment; category skills provide the actual partial PR decision via their templates:
 - Ticket:
 - PR:
-- Review basis:
-- Dominant concern:
-- Findings:
-- AI change classification: (run `reviewer-ai-classification` skill for dedicated validation)
-- Decision label:
+- PR label: (verify matches category)
+- Category skill used:
+- Domain decision: (from category skill)
 - Required follow-up:
-
-## Integration with AI Classification Skill
-For comprehensive partial PR reviews:
-1. Run this skill first for scope and focus validation.
-2. Run the `reviewer-ai-classification` skill separately to validate AI behavior markers.
-3. Combine results for complete partial review output.
