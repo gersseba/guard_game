@@ -55,8 +55,16 @@ Categorize each work package into exactly one type:
 2. Create or switch to a ticket branch using the naming convention `feature/<jira-key>-<kebab-case-summary>` (example: `feature/GG-1-setup-basic-structure`).
 3. Categorize work into AI_BEHAVIOR, CHANGE, and REFACTORING packages; use separate PRs per category per ticket.
 4. When opening each PR:
-   - Add the appropriate label: `AI_BEHAVIOR`, `CHANGE`, or `REFACTORING`
    - Write PR summary with clear scope and validation evidence
+   - After creating the PR, add the appropriate label using GitHub API:
+     ```bash
+     # Using GitHub CLI (if available):
+     gh pr edit <PR_NUMBER> --add-label AI_BEHAVIOR
+     # or CHANGE or REFACTORING depending on category
+     
+     # Alternative: Use GitHub web UI to add label
+     # Go to PR → Labels section → select category label
+     ```
 5. Inspect existing code and identify impacted modules for the current package.
 6. Implement the smallest useful slice for the current package.
 7. Validate with build/tests and basic runtime checks.
