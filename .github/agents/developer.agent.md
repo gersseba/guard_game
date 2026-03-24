@@ -56,15 +56,8 @@ Categorize each work package into exactly one type:
 3. Categorize work into AI_BEHAVIOR, CHANGE, and REFACTORING packages; use separate PRs per category per issue.
 4. When opening each PR:
    - Write PR summary with clear scope and validation evidence
-   - After creating the PR, add the appropriate label:
-     ```bash
-     # Using GitHub CLI:
-     gh pr edit <PR_NUMBER> --add-label AI_BEHAVIOR
-     # or CHANGE or REFACTORING depending on category
-     
-     # Alternative: Use GitHub web UI
-     # Go to PR → Labels section → select category label
-     ```
+   - Add the appropriate label: `AI_BEHAVIOR`, `CHANGE`, or `REFACTORING` (via GitHub API during PR creation or after)
+   - Reference the issue with "Closes #<number>" in the PR body
 5. Inspect existing code and identify impacted modules for the current package.
 6. Implement the smallest useful slice for the current package.
 7. Validate with build/tests and basic runtime checks.
@@ -84,23 +77,9 @@ When creating a PR, reference the issue to auto-link:
 ## Closes #1
 ```
 
-### Moving Issues in GitHub
-To move an issue through the project workflow (if using GitHub Projects):
-```bash
-# List projects
-gh project list --owner gersseba
-
-# Add issue to project
-gh issue edit <number> --projects "Project Name"
-```
-
-### Requirement: GitHub CLI
-GitHub CLI (`gh`) is required for project management. Install via:
-- macOS: `brew install gh`
-- Linux: `sudo apt-get install gh`
-- Windows: `choco install gh`
-
-Then authenticate: `gh auth login`
+### Project Management
+Issues and PRs are managed via the GitHub API tools integrated into Copilot agents.
+No additional tools required for project management.
 
 ## Output Format
 Return:

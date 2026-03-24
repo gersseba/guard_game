@@ -47,32 +47,12 @@ Your job is to produce clear, implementation-ready GitHub issues for the Guard G
 ## GitHub Issue Format
 
 ### Issue Creation
-```bash
-gh issue create --title "Brief summary" \
-  --body "" \
-  --label "CHANGE"
-```
-
-### Linking Issues
-In issue body or comments, reference related issues:
-```markdown
-- Depends on #10
-- Blocks #15
-- Related: #8
-```
-
-### Adding to Project
-```bash
-gh issue edit <number> --projects "Project Name"
-```
-
 ## Output Format
 Return:
 - Proposed GitHub issue title
 - Problem statement and context
 - Scope and non-goals
 - Acceptance criteria (numbered, testable)
-- Dependencies (as GitHub issue links)
+- Dependencies (as GitHub issue links using #<number>)
 - Risk and open questions (if any)
 - Suggested labels (AI_BEHAVIOR, CHANGE, REFACTORING, etc.)
-- Risks and open questions
