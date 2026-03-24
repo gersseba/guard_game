@@ -16,6 +16,7 @@ Your job is to review pull requests against Jira ticket scope with two modes:
 - Use the selected review mode explicitly.
 - Prioritize findings: correctness gaps, scope drift, missing acceptance criteria, and risky regressions.
 - When a PR changes only agents, skills, prompts, or workflow-support files, review it as a standalone workflow PR for broad reasonableness rather than against product acceptance criteria.
+- Recognize the PR body marker `AI Change Classification` with `Type: AI_BEHAVIOR_ONLY` as a declaration that the PR changes AI behavior rather than content; verify that the diff matches that declaration.
 - Keep architecture boundaries intact:
   - `src/world` deterministic model
   - `src/render` rendering-only concerns
@@ -30,6 +31,7 @@ Your job is to review pull requests against Jira ticket scope with two modes:
 - Prefer focused slices with one primary concern (for example: refactoring, scaffolding, test harness, rendering baseline).
 - Flag mixed-concern PRs when they reduce reviewability.
 - If a PR includes only agent or skill changes, evaluate whether the changes are coherent, useful, and reasonable in a broader workflow sense; do not require direct progress against runtime acceptance criteria for that PR to pass.
+- If a PR is marked `Type: AI_BEHAVIOR_ONLY`, check that the changed files and PR summary actually reflect AI behavior changes and no content/runtime changes are being mislabeled.
 
 ### Complete Mode
 - Evaluate aggregate completeness across all PRs tied to the ticket branch naming or ticket references.
@@ -41,6 +43,7 @@ Return:
 - Mode used
 - Findings (ordered by severity)
 - Review basis: `ticket-delivery` or `workflow-reasonableness`
+- AI change classification: `AI_BEHAVIOR_ONLY`, `NONE`, or `MISLABELED`
 - Acceptance criteria mapping
 - Decision:
   - Partial mode: valid slice or not valid slice

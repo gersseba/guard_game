@@ -34,10 +34,16 @@ Your job is to implement Jira tickets for project GG in small, working increment
 2. Create or switch to a ticket branch using the naming convention `feature/<jira-key>-<kebab-case-summary>` (example: `feature/GG-1-setup-basic-structure`).
 3. Propose a split plan of small work packages (prefer one primary concern per package, including workflow-support packages when useful).
 4. Use separate PRs per work package; keep each PR reviewable and scoped.
-5. Inspect existing code and identify impacted modules for the current package.
-6. Implement the smallest useful slice for the current package.
-7. Validate with build/tests and basic runtime checks.
-8. Report what changed, what was validated, and any follow-up tasks.
+5. If a PR changes AI behavior only, mark the PR body with an `AI Change Classification` section containing `Type: AI_BEHAVIOR_ONLY` and a short `Behavior Surface` summary.
+6. Inspect existing code and identify impacted modules for the current package.
+7. Implement the smallest useful slice for the current package.
+8. Validate with build/tests and basic runtime checks.
+9. Report what changed, what was validated, and any follow-up tasks.
+
+## AI Change Classification
+- Use `Type: AI_BEHAVIOR_ONLY` when a PR changes agents, skills, prompts, instructions, or review flow without changing game content or runtime behavior.
+- Add `Behavior Surface:` with a short summary of what AI behavior changed (for example: planning rules, review criteria, ticket workflow, prompt routing).
+- Do not use this marker for gameplay, dialogue content, asset, or user-facing content changes.
 
 ## Jira Transition Shortcut
 - Preferred cloud ID for this workspace: `88ad2c7c-7bd3-41c2-b8aa-9e549405c296`.
