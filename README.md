@@ -6,33 +6,6 @@ A browser-based 2D grid game about solving puzzles by talking to NPCs using LLMs
 
 ### Requirements
 - Node.js 18+ / npm
-- **GitHub CLI** (required for project management and PR operations)
-
-### Install GitHub CLI
-
-GitHub CLI (`gh`) is required for managing GitHub Projects, adding PRs to projects, and automating workflow tasks.
-
-**macOS (Homebrew):**
-```bash
-brew install gh
-```
-
-**Linux (Debian/Ubuntu):**
-```bash
-sudo apt-get install gh
-```
-
-**Windows (Chocolatey):**
-```bash
-choco install gh
-```
-
-**Or download from:** https://cli.github.com/
-
-**Authenticate after installation:**
-```bash
-gh auth login
-```
 
 ### Quick Start
 
@@ -96,14 +69,15 @@ Example: `feature/1-setup-basic-structure`
 
 ### Adding PR Labels
 
-```bash
-# Using GitHub CLI
-gh pr edit <number> --add-label AI_BEHAVIOR
-# or CHANGE or REFACTORING
+Labels are added automatically via GitHub API during PR creation or review. The category labels are:
+- `AI_BEHAVIOR` — Copilot agent/skill changes
+- `CHANGE` — Feature/gameplay/rendering changes  
+- `REFACTORING` — Code reorganization without behavior change
 
-# Using GitHub Web UI
-# Go to PR → Labels section → select category label
-```
+### Adding to GitHub Projects
+
+PRs and issues are managed via GitHub API tools integrated into the agent workflow.  
+No CLI required—project management is handled through the agent systems.
 
 ## Agents & Skills
 
@@ -159,13 +133,6 @@ Before opening a PR, ensure:
 - **Project board:** GitHub Projects (accessible from repository)
 
 ## Troubleshooting
-
-### GitHub CLI Authentication
-If `gh` commands fail with authentication errors:
-```bash
-gh auth logout
-gh auth login
-```
 
 ### Build Issues
 ```bash

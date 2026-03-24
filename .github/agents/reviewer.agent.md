@@ -53,22 +53,5 @@ Your job is to review pull requests against GitHub issue scope with two modes:
 
 ### Linking Issues & PRs
 - PRs should reference the issue: "Closes #<issue-number>"
-- Use GitHub CLI to manage issues and projects:
-  ```bash
-  # View issue details
-  gh issue view <number>
-  
-  # Add PR to project
-  gh pr edit <number> --projects "Project Name"
-  
-  # Comment on issue
-  gh issue comment <number> --body "Review comment here"
-  ```
-
-### Requirement: GitHub CLI
-GitHub CLI (`gh`) is required. Install via:
-- macOS: `brew install gh`
-- Linux: `sudo apt-get install gh`  
-- Windows: `choco install gh`
-
-Then authenticate: `gh auth login`
+- All project and issue management is handled through GitHub API tools
+- No CLI or external tools required
