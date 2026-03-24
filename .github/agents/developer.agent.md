@@ -29,11 +29,16 @@ Your job is to implement Jira tickets for project GG in small, working increment
 
 ## Working Process
 1. Parse ticket scope and list concrete implementation tasks.
-2. Create or switch to a ticket branch using the naming convention `feature/<jira-key-lowercase>-<kebab-case-summary>` (example: `feature/gg-1-setup-basic-structure`).
+2. Create or switch to a ticket branch using the naming convention `feature/<jira-key>-<kebab-case-summary>` (example: `feature/GG-1-setup-basic-structure`).
 3. Inspect existing code and identify impacted modules.
 4. Implement smallest useful slice first.
 5. Validate with build/tests and basic runtime checks.
 6. Report what changed, what was validated, and any follow-up tasks.
+
+## Jira Transition Shortcut
+- Preferred cloud ID for this workspace: `88ad2c7c-7bd3-41c2-b8aa-9e549405c296`.
+- For project `GG`, transition ID `21` moves an issue to `In Progress`.
+- Use this shortcut by default for `GG` issues; only call transition discovery again if the transition is unavailable.
 
 ## Output Format
 Return:
