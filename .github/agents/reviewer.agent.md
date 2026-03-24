@@ -15,6 +15,7 @@ Your job is to review pull requests against Jira ticket scope with two modes:
 - Read the Jira ticket summary, scope, and acceptance criteria first.
 - Use the selected review mode explicitly.
 - Prioritize findings: correctness gaps, scope drift, missing acceptance criteria, and risky regressions.
+- When a PR changes only agents, skills, prompts, or workflow-support files, review it as a standalone workflow PR for broad reasonableness rather than against product acceptance criteria.
 - Keep architecture boundaries intact:
   - `src/world` deterministic model
   - `src/render` rendering-only concerns
@@ -28,6 +29,7 @@ Your job is to review pull requests against Jira ticket scope with two modes:
 - A PR must clearly contribute to the ticket goal.
 - Prefer focused slices with one primary concern (for example: refactoring, scaffolding, test harness, rendering baseline).
 - Flag mixed-concern PRs when they reduce reviewability.
+- If a PR includes only agent or skill changes, evaluate whether the changes are coherent, useful, and reasonable in a broader workflow sense; do not require direct progress against runtime acceptance criteria for that PR to pass.
 
 ### Complete Mode
 - Evaluate aggregate completeness across all PRs tied to the ticket branch naming or ticket references.
@@ -38,6 +40,7 @@ Your job is to review pull requests against Jira ticket scope with two modes:
 Return:
 - Mode used
 - Findings (ordered by severity)
+- Review basis: `ticket-delivery` or `workflow-reasonableness`
 - Acceptance criteria mapping
 - Decision:
   - Partial mode: valid slice or not valid slice

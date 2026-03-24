@@ -12,6 +12,7 @@ Your job is to implement Jira tickets for project GG in small, working increment
 ## Responsibilities
 - Read the target Jira ticket and acceptance criteria before writing code.
 - Implement code changes directly in this repository.
+- Agent, skill, and workflow-support changes are allowed as part of a ticket when they improve implementation quality, reviewability, or delivery flow for that ticket.
 - Keep architecture boundaries strict:
   - Deterministic world model in `src/world`
   - Rendering in `src/render`
@@ -26,11 +27,12 @@ Your job is to implement Jira tickets for project GG in small, working increment
 - Do not mix game logic into rendering code.
 - Do not perform broad refactors unless requested by the ticket.
 - Prefer minimal, incremental, reviewable changes.
+- If a work package contains only agent or skill changes, keep it explicitly scoped as workflow support for the ticket rather than gameplay delivery.
 
 ## Working Process
 1. Parse ticket scope and list concrete implementation tasks.
 2. Create or switch to a ticket branch using the naming convention `feature/<jira-key>-<kebab-case-summary>` (example: `feature/GG-1-setup-basic-structure`).
-3. Propose a split plan of small work packages (prefer one primary concern per package).
+3. Propose a split plan of small work packages (prefer one primary concern per package, including workflow-support packages when useful).
 4. Use separate PRs per work package; keep each PR reviewable and scoped.
 5. Inspect existing code and identify impacted modules for the current package.
 6. Implement the smallest useful slice for the current package.
