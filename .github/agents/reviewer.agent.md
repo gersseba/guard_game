@@ -40,6 +40,7 @@ Your job is to review pull requests against GitHub issue scope with two modes:
   - `AI_BEHAVIOR`: only agent/skill/instruction files
   - `CHANGE`: game logic, rendering, content, or feature files
   - `REFACTORING`: code reorganization without behavior change
+- README updates are acceptable if they are coherent, useful, and aligned with the PR scope; do not fail or relabel a PR solely because it includes sensible README changes.
 - Use the category-specific skill workflow:
   1. Verify PR has a single correct label
   2. Run the corresponding skill (reviewer-ai-behavior, reviewer-change, or reviewer-refactoring)
