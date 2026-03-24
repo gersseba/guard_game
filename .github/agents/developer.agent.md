@@ -52,7 +52,7 @@ Categorize each work package into exactly one type:
 
 ## Working Process
 1. Parse issue scope and list concrete implementation tasks.
-2. Create or switch to a feature branch using the naming convention `feature/<issue-number>-<kebab-case-summary>` (example: `feature/1-setup-basic-structure`).
+2. Create or switch to a feature branch using the naming convention `<issue-number>-<kebab-case-summary>` (example: `1-setup-basic-structure`).
 3. Categorize work into AI_BEHAVIOR, CHANGE, and REFACTORING packages; use separate PRs per category per issue.
 4. When opening each PR:
    - Write PR summary with clear scope and validation evidence
@@ -67,9 +67,13 @@ Categorize each work package into exactly one type:
 
 ### Branch Naming Convention
 ```
-feature/<issue-number>-<kebab-case-summary>
+<issue-number>-<kebab-case-summary>
 ```
-Example: `feature/1-setup-basic-structure`
+Example: `1-setup-basic-structure`
+
+### Commit Message Convention
+- Start every commit subject with `#<issue-number>`.
+- Example: `#1 chore: update developer agent hint to reference GitHub issue`
 
 ### Linking PR to Issue
 When creating a PR, reference the issue to auto-link:
