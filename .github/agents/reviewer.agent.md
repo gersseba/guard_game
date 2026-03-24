@@ -15,6 +15,8 @@ Your job is to review pull requests against Jira ticket scope with two modes:
 - Read the Jira ticket summary, scope, and acceptance criteria first.
 - Use the selected review mode explicitly.
 - Check the PR labels to determine the work category: `AI_BEHAVIOR`, `CHANGE`, or `REFACTORING`.
+  - If a PR lacks a category label, request Changes with comment: "Please add exactly one category label: AI_BEHAVIOR, CHANGE, or REFACTORING"
+  - If a PR has multiple labels including category labels, request clarification on which category is primary
 - For partial mode, use the category-specific skill:
   - `reviewer-ai-behavior` for `AI_BEHAVIOR` label
   - `reviewer-change` for `CHANGE` label
