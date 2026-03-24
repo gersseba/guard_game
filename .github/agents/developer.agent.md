@@ -55,7 +55,8 @@ Categorize each work package into exactly one type:
 2. Create or switch to a feature branch using the naming convention `<issue-number>-<kebab-case-summary>` (example: `1-setup-basic-structure`).
 3. Categorize work into AI_BEHAVIOR, CHANGE, and REFACTORING packages; use separate PRs per category per issue.
 4. When opening each PR:
-   - Write PR summary with clear scope and validation evidence
+  - Write a concise PR title without conventional commit prefixes (for example: `align agent branch naming and transition guidance`)
+  - Write PR summary with clear scope and validation evidence
    - Add the appropriate label: `AI_BEHAVIOR`, `CHANGE`, or `REFACTORING` (via GitHub API during PR creation or after)
    - Reference the issue with "Closes #<number>" in the PR body
 5. Inspect existing code and identify impacted modules for the current package.
@@ -73,7 +74,12 @@ Example: `1-setup-basic-structure`
 
 ### Commit Message Convention
 - Start every commit subject with `#<issue-number>`.
-- Example: `#1 chore: update developer agent hint to reference GitHub issue`
+- Do not use conventional prefixes such as `feat:` or `chore:` in commit subjects.
+- Example: `#1 update developer agent hint to reference GitHub issue`
+
+### PR Title Convention
+- Do not use conventional prefixes such as `feat:` or `chore:` in PR titles.
+- Example: `align agent branch naming and transition guidance`
 
 ### Linking PR to Issue
 When creating a PR, reference the issue to auto-link:

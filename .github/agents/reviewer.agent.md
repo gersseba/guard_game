@@ -14,6 +14,7 @@ Your job is to review pull requests against GitHub issue scope with two modes:
 ## Responsibilities
 - Read the GitHub issue summary, scope, and acceptance criteria first.
 - Use the selected review mode explicitly.
+- Ensure PR titles do not use conventional prefixes such as `feat:` or `chore:`.
 - Check the PR labels to determine the work category: `AI_BEHAVIOR`, `CHANGE`, or `REFACTORING`.
   - If a PR lacks a category label, request Changes with comment: "Please add exactly one category label: AI_BEHAVIOR, CHANGE, or REFACTORING"
   - If a PR has multiple labels including category labels, request clarification on which category is primary
