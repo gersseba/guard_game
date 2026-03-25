@@ -1,6 +1,9 @@
 import './style.css';
 import { createCommandBuffer } from './input/commands';
 import { bindKeyboardCommands } from './input/keyboard';
+import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
+import { handleDoorInteraction } from './interaction/doorInteraction';
+import { handleGuardInteraction } from './interaction/guardInteraction';
 import { createNpcInteractionService } from './interaction/npcInteraction';
 import { createStubLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
@@ -59,22 +62,29 @@ const runInteractionIfRequested = async (
     return;
   }
 
-  const nearbyNpc = worldState.npcs.find((npc) => {
-    const deltaX = Math.abs(npc.position.x - worldState.player.position.x);
-    const deltaY = Math.abs(npc.position.y - worldState.player.position.y);
-    return deltaX + deltaY <= 1;
-  });
-
-  if (!nearbyNpc) {
-    interactionLogElement.textContent = 'No NPC nearby to interact with.';
+  const adjacentTarget = resolveAdjacentTarget(worldState);
+  if (!adjacentTarget) {
+    // No adjacent target — silent no-op.
     return;
   }
 
+  if (adjacentTarget.kind === 'guard') {
+    const result = handleGuardInteraction({ guard: adjacentTarget.target, player: worldState.player });
+    interactionLogElement.textContent = result.responseText;
+    return;
+  }
+
+  if (adjacentTarget.kind === 'door') {
+    const result = handleDoorInteraction({ door: adjacentTarget.target, player: worldState.player });
+    interactionLogElement.textContent = result.responseText;
+    return;
+  }
+
+  // adjacentTarget.kind === 'npc'
   const interactionResult = await npcInteractionService.handleNpcInteraction({
-    npc: nearbyNpc,
+    npc: adjacentTarget.target,
     player: worldState.player,
   });
-
   interactionLogElement.textContent = interactionResult.responseText;
 };
 
