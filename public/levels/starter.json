@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "name": "Starter",
+  "width": 20,
+  "height": 20,
+  "player": { "x": 10, "y": 10 },
+  "guards": [
+    {
+      "id": "guard-1",
+      "displayName": "West Guard",
+      "x": 5,
+      "y": 10,
+      "guardState": "patrolling"
+    },
+    {
+      "id": "guard-2",
+      "displayName": "North Guard",
+      "x": 10,
+      "y": 5,
+      "guardState": "patrolling"
+    }
+  ],
+  "doors": [
+    {
+      "id": "door-1",
+      "displayName": "West Door",
+      "x": 2,
+      "y": 10,
+      "doorState": "closed"
+    },
+    {
+      "id": "door-2",
+      "displayName": "North Door",
+      "x": 10,
+      "y": 2,
+      "doorState": "closed"
+    }
+  ]
+}

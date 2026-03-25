@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import starterJson from '../../public/levels/starter.json';
 import { deserializeLevel, validateLevelData } from './level';
 import type { LevelData } from './types';
 
@@ -141,5 +142,56 @@ describe('validateLevelData', () => {
   it('throws when input is not an object', () => {
     expect(() => validateLevelData(null)).toThrowError('expected an object');
     expect(() => validateLevelData('string')).toThrowError('expected an object');
+  });
+});
+
+describe('starter level', () => {
+  const starterRaw: unknown = starterJson;
+
+  it('passes validateLevelData without throwing', () => {
+    expect(() => validateLevelData(starterRaw)).not.toThrow();
+  });
+
+  it('deserializes to a WorldState with two guards and two doors', () => {
+    const level = validateLevelData(starterRaw);
+    const state = deserializeLevel(level);
+
+    expect(state.guards).toHaveLength(2);
+    expect(state.doors).toHaveLength(2);
+  });
+
+  it('places the player at (10, 10)', () => {
+    const level = validateLevelData(starterRaw);
+    const state = deserializeLevel(level);
+
+    expect(state.player.position).toEqual({ x: 10, y: 10 });
+  });
+
+  it('has a 20×20 grid', () => {
+    const level = validateLevelData(starterRaw);
+    const state = deserializeLevel(level);
+
+    expect(state.grid.width).toBe(20);
+    expect(state.grid.height).toBe(20);
+  });
+
+  it('all guards start in patrolling state and all doors start closed', () => {
+    const level = validateLevelData(starterRaw);
+    const state = deserializeLevel(level);
+
+    for (const guard of state.guards) {
+      expect(guard.guardState).toBe('patrolling');
+    }
+    for (const door of state.doors) {
+      expect(door.doorState).toBe('closed');
+    }
+  });
+
+  it('guard ids and door ids match expected descriptive values', () => {
+    const level = validateLevelData(starterRaw);
+    const state = deserializeLevel(level);
+
+    expect(state.guards.map((g) => g.id)).toEqual(['guard-1', 'guard-2']);
+    expect(state.doors.map((d) => d.id)).toEqual(['door-1', 'door-2']);
   });
 });
