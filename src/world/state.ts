@@ -20,6 +20,8 @@ export const createInitialWorldState = (): WorldState => ({
       dialogueContextKey: 'archive_keeper_intro',
     },
   ],
+  guards: [],
+  doors: [],
   interactiveObjects: [
     {
       id: 'obj-1',
