@@ -53,12 +53,13 @@ Categorize each work package into exactly one type:
 
 ## Working Process
 1. Create a new branch for the ticket.
-2. Run the `plan` skill to produce a concrete implementation plan before coding.
-3. Execute the plan step by step using the `implement` skill, and commit after each completed step.
-4. Open a PR using the `pr` skill.
-5. Run the `check` skill on the opened PR to review consistency and correctness.
-6. Apply cleanup updates before considering the task done.
-7. If PR feedback arrives, run the `address-comments` skill and process comments one by one:
+2. When work starts, move the ticket to `In Progress` (or equivalent active state) before coding.
+3. Run the `plan` skill to produce a concrete implementation plan before coding.
+4. Execute the plan step by step using the `implement` skill, and commit after each completed step.
+5. Open a PR using the `pr` skill.
+6. Run the `check` skill on the opened PR to review consistency and correctness.
+7. Apply cleanup updates before considering the task done.
+8. If PR feedback arrives, run the `address-comments` skill and process comments one by one:
   - evaluate whether each comment should be addressed
   - apply required updates
   - re-validate impacted behavior
@@ -69,6 +70,7 @@ If the user asks you to finish a PR, follow this exact sequence:
 2. If PR passes:
   - consider and apply non-blocking comment adjustments when they improve quality
   - merge the PR
+  - if the merged PR is the final slice for the ticket (for example the PR uses `Closes #<ticket-number>`), move the ticket to `Done`/`Completed`; if it is a partial PR (for example `Refs #<ticket-number>`), keep the ticket in progress/open
   - fast-forward local `main`
 3. If PR does not pass:
   - evaluate blocking comments and apply feasible fixes
@@ -105,6 +107,7 @@ When creating a PR, reference the issue to auto-link:
 
 ### Project Management
 Issues and PRs are managed via the GitHub API tools integrated into Copilot agents.
+When a linked external tracker exists (for example Jira), also keep ticket status in sync (`In Progress` when implementation begins, `Done` when a final PR is merged).
 No additional tools required for project management.
 
 ## Output Format
