@@ -73,9 +73,13 @@ body {
   min-height: 120px;
   border-radius: 0.5rem;
   border: 1px dashed rgba(187, 224, 239, 0.35);
-  display: grid;
-  place-items: center;
-  font-weight: 700;
+  padding: 0.25rem;
+  overflow: auto;
+  background: rgba(5, 10, 18, 0.75);
+}
+
+.guard-game-viewport canvas {
+  display: block;
 }
 
 .guard-game-world-state {
