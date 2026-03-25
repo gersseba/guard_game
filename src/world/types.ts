@@ -16,10 +16,24 @@ export interface Npc {
   dialogueContextKey: string;
 }
 
-export interface InteractiveObject {
+/** Shared base for all interactable world objects. JSON-serializable. */
+export interface Interactable {
   id: string;
   displayName: string;
   position: GridPosition;
+}
+
+/** A guard entity that the player can interact with. */
+export interface Guard extends Interactable {
+  guardState: 'idle' | 'patrolling' | 'alert';
+}
+
+/** A door that the player can pass through or be blocked by. */
+export interface Door extends Interactable {
+  doorState: 'open' | 'closed' | 'locked';
+}
+
+export interface InteractiveObject extends Interactable {
   interactionType: 'inspect' | 'use' | 'talk';
   state: 'idle' | 'used';
 }
@@ -35,6 +49,8 @@ export interface WorldState {
   grid: WorldGrid;
   player: Player;
   npcs: Npc[];
+  guards: Guard[];
+  doors: Door[];
   interactiveObjects: InteractiveObject[];
 }
 
