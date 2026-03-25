@@ -44,6 +44,29 @@ export interface WorldGrid {
   tileSize: number;
 }
 
+/** Flat JSON representation of a level file (public/levels/*.json). Version-stamped for future migrations. */
+export interface LevelData {
+  version: 1;
+  name: string;
+  width: number;
+  height: number;
+  player: { x: number; y: number };
+  guards: Array<{
+    id: string;
+    displayName: string;
+    x: number;
+    y: number;
+    guardState: 'patrolling' | 'alert' | 'idle';
+  }>;
+  doors: Array<{
+    id: string;
+    displayName: string;
+    x: number;
+    y: number;
+    doorState: 'open' | 'closed' | 'locked';
+  }>;
+}
+
 export interface WorldState {
   tick: number;
   grid: WorldGrid;
