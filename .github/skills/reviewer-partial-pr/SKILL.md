@@ -38,7 +38,7 @@ Use this skill to review a single PR as a partial delivery for a ticket.
 For partial PR reviews, use the appropriate category skill based on the PR label:
 1. Verify PR has exactly one primary review label: `CHANGE`, `REFACTORING`, or `AI_BEHAVIOUR`
 2. Use the category-specific skill:
-   - `reviewer-ai-behaviour-adjustments` for `AI_BEHAVIOUR` PRs
+   - `reviewer-ai-behavior` for `AI_BEHAVIOUR` PRs
    - `reviewer-change` for `CHANGE` PRs
    - `reviewer-refactoring` for `REFACTORING` PRs
 3. Follow that skill's review checklist and decision process
