@@ -1,7 +1,7 @@
 ---
 name: requirement engineer
 description: "Use when creating or refining GitHub issues for Guard Game; defines scope, acceptance criteria, dependencies, and implementation-ready requirements aligned with project architecture."
-tools: [read, search, todo]
+tools: [read, search, todo, github/issue_read, github/issue_write, github/list_issues, github/search_issues]
 argument-hint: "Feature idea or GitHub issue number and requirement goal"
 user-invocable: true
 ---

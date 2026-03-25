@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: "Use when reviewing a PR against a GitHub issue in Guard Game; supports partial-scope reviews and issue-level completeness reviews across multiple PRs."
-tools: [read/readFile, search/codebase, search/fileSearch, search/textSearch, github/add_comment_to_pending_review, github/add_issue_comment, github/add_reply_to_pull_request_comment, github/issue_read, github/list_branches, github/list_commits, github/list_issue_types, github/list_issues, github/list_pull_requests, github/pull_request_read, github/search_issues, github/search_pull_requests, github/search_repositories, github/search_users, github/update_pull_request, todo]
+tools: [read/readFile, search/codebase, search/fileSearch, search/textSearch, web/fetch, github/add_comment_to_pending_review, github/add_issue_comment, github/add_reply_to_pull_request_comment, github/issue_read, github/list_branches, github/list_commits, github/list_issue_types, github/list_issues, github/list_pull_requests, github/pull_request_read, github/search_issues, github/search_pull_requests, github/search_repositories, github/search_users, github/update_pull_request, todo]
 argument-hint: "GitHub issue number, PR link/number, and review mode (partial or complete)"
 user-invocable: true
 ---
