@@ -11,6 +11,7 @@ export interface PixiRenderTargets {
 
 interface RenderContext {
   app: Application;
+  boundaryGraphics: Graphics;
   gridGraphics: Graphics;
   playerGraphics: Graphics;
   rootContainer: Container;
@@ -18,30 +19,31 @@ interface RenderContext {
   lastHeight: number;
 }
 
+const VIEWPORT_TILE_WIDTH = 10;
+const VIEWPORT_TILE_HEIGHT = 10;
+const EDGE_BAND_TILES = 1;
+
 const clamp = (value: number, min: number, max: number): number => {
   return Math.max(min, Math.min(max, value));
 };
 
-const measureViewport = (viewport: HTMLElement, worldState: WorldState): { width: number; height: number } => {
+const measureViewport = (worldState: WorldState): { width: number; height: number } => {
   const worldWidth = worldState.grid.width * worldState.grid.tileSize;
   const worldHeight = worldState.grid.height * worldState.grid.tileSize;
-  const measuredWidth = Math.floor(viewport.clientWidth);
-  const measuredHeight = Math.floor(viewport.clientHeight);
-  const fallbackWidth = Math.min(worldWidth, 384);
-  const fallbackHeight = Math.min(worldHeight, 256);
+  const fixedWidth = VIEWPORT_TILE_WIDTH * worldState.grid.tileSize;
+  const fixedHeight = VIEWPORT_TILE_HEIGHT * worldState.grid.tileSize;
 
   return {
-    width: clamp(measuredWidth || fallbackWidth, 1, worldWidth),
-    height: clamp(measuredHeight || fallbackHeight, 1, worldHeight),
+    width: clamp(fixedWidth, 1, worldWidth + EDGE_BAND_TILES * worldState.grid.tileSize * 2),
+    height: clamp(fixedHeight, 1, worldHeight + EDGE_BAND_TILES * worldState.grid.tileSize * 2),
   };
 };
 
 const ensureCanvasSize = (
   context: RenderContext,
   worldState: WorldState,
-  viewport: HTMLElement,
 ): void => {
-  const { width: nextWidth, height: nextHeight } = measureViewport(viewport, worldState);
+  const { width: nextWidth, height: nextHeight } = measureViewport(worldState);
 
   if (context.lastWidth === nextWidth && context.lastHeight === nextHeight) {
     return;
@@ -58,12 +60,27 @@ const updateCamera = (context: RenderContext, worldState: WorldState): void => {
   const worldHeight = worldState.grid.height * tileSize;
   const playerCenterX = worldState.player.position.x * tileSize + tileSize / 2;
   const playerCenterY = worldState.player.position.y * tileSize + tileSize / 2;
-  const minOffsetX = context.lastWidth - worldWidth;
-  const minOffsetY = context.lastHeight - worldHeight;
-  const nextOffsetX = clamp(context.lastWidth / 2 - playerCenterX, minOffsetX, 0);
-  const nextOffsetY = clamp(context.lastHeight / 2 - playerCenterY, minOffsetY, 0);
+  const edgeBandSize = tileSize * EDGE_BAND_TILES;
+  const minOffsetX = context.lastWidth - worldWidth - edgeBandSize;
+  const minOffsetY = context.lastHeight - worldHeight - edgeBandSize;
+  const maxOffsetX = edgeBandSize;
+  const maxOffsetY = edgeBandSize;
+  const nextOffsetX = clamp(context.lastWidth / 2 - playerCenterX, minOffsetX, maxOffsetX);
+  const nextOffsetY = clamp(context.lastHeight / 2 - playerCenterY, minOffsetY, maxOffsetY);
 
   context.rootContainer.position.set(nextOffsetX, nextOffsetY);
+};
+
+const drawBoundaryBand = (context: RenderContext, worldState: WorldState): void => {
+  const tileSize = worldState.grid.tileSize;
+  const worldWidth = worldState.grid.width * tileSize;
+  const worldHeight = worldState.grid.height * tileSize;
+  const edgeBandSize = tileSize * EDGE_BAND_TILES;
+
+  context.boundaryGraphics.clear();
+  context.boundaryGraphics
+    .rect(-edgeBandSize, -edgeBandSize, worldWidth + edgeBandSize * 2, worldHeight + edgeBandSize * 2)
+    .fill({ color: 0x3d2135 });
 };
 
 const drawGrid = (context: RenderContext, worldState: WorldState): void => {
@@ -114,14 +131,17 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
   targets.viewport.replaceChildren(app.canvas);
 
   const gridGraphics = new Graphics();
+  const boundaryGraphics = new Graphics();
   const playerGraphics = new Graphics();
   const rootContainer = new Container();
+  rootContainer.addChild(boundaryGraphics);
   rootContainer.addChild(gridGraphics);
   rootContainer.addChild(playerGraphics);
   app.stage.addChild(rootContainer);
 
   const context: RenderContext = {
     app,
+    boundaryGraphics,
     gridGraphics,
     playerGraphics,
     rootContainer,
@@ -131,7 +151,8 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
 
   return {
     render: (worldState: WorldState) => {
-      ensureCanvasSize(context, worldState, targets.viewport);
+      ensureCanvasSize(context, worldState);
+      drawBoundaryBand(context, worldState);
       drawGrid(context, worldState);
       drawPlayerMarker(context, worldState);
       updateCamera(context, worldState);
