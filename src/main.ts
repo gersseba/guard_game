@@ -1,7 +1,7 @@
 import './style.css';
 import { createCommandBuffer } from './input/commands';
 import { handleNpcInteraction } from './interaction/npcInteraction';
-import { createRenderPortStub } from './render/scene';
+import { createPixiRenderPort } from './render/scene';
 import type { WorldCommand, WorldState } from './world/types';
 import { createWorld } from './world/world';
 
@@ -44,10 +44,6 @@ if (!viewportElement || !worldStateElement || !interactionLogElement) {
 
 const world = createWorld();
 const commandBuffer = createCommandBuffer();
-const renderPort = createRenderPortStub({
-  viewport: viewportElement,
-  worldState: worldStateElement,
-});
 
 const keyToCommandMap: Record<string, WorldCommand> = {
   ArrowUp: { type: 'move', dx: 0, dy: -1 },
@@ -103,21 +99,33 @@ const fixedTickDurationMs = 100;
 let previousFrameTime = performance.now();
 let accumulatedTime = 0;
 
-const runFrame = (currentTime: number): void => {
-  accumulatedTime += currentTime - previousFrameTime;
-  previousFrameTime = currentTime;
+const startRuntime = async (): Promise<void> => {
+  const renderPort = await createPixiRenderPort({
+    viewport: viewportElement,
+  });
 
-  while (accumulatedTime >= fixedTickDurationMs) {
-    const commands = commandBuffer.drain();
-    world.applyCommands(commands);
-    const worldState = world.getState();
-    void runInteractionIfRequested(worldState, commands);
-    accumulatedTime -= fixedTickDurationMs;
-  }
+  const runFrame = (currentTime: number): void => {
+    accumulatedTime += currentTime - previousFrameTime;
+    previousFrameTime = currentTime;
 
-  renderPort.render(world.getState());
+    while (accumulatedTime >= fixedTickDurationMs) {
+      const commands = commandBuffer.drain();
+      world.applyCommands(commands);
+      const worldState = world.getState();
+      void runInteractionIfRequested(worldState, commands);
+      accumulatedTime -= fixedTickDurationMs;
+    }
+
+    const currentWorldState = world.getState();
+    renderPort.render(currentWorldState);
+    worldStateElement.textContent = JSON.stringify(currentWorldState, null, 2);
+    requestAnimationFrame(runFrame);
+  };
+
+  const initialWorldState = world.getState();
+  renderPort.render(initialWorldState);
+  worldStateElement.textContent = JSON.stringify(initialWorldState, null, 2);
   requestAnimationFrame(runFrame);
 };
 
-renderPort.render(world.getState());
-requestAnimationFrame(runFrame);
+void startRuntime();
