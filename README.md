@@ -1,6 +1,6 @@
 # Guard Game
 
-A browser-based 2D grid game about solving puzzles by talking to NPCs using LLMs.
+A browser-based 2D grid game baseline with deterministic world updates, PixiJS rendering, and an LLM interaction boundary.
 
 ## Development Setup
 
@@ -35,12 +35,12 @@ The game enforces strict layer separation to support LLM-driven gameplay:
 
 ```
 /src
-  /world          — Deterministic world model (entities, state, commands)
-  /render         — PixiJS rendering layer (display only)
-  /interaction    — NPC interaction pipeline
-  /input          — Player input handling and command mapping
-  /llm            — LLM API integration boundary
-  main.ts         — Application entry point and main loop
+  /world          — Deterministic world model (state, command application)
+  /render         — PixiJS rendering port (grid, player marker, camera)
+  /interaction    — NPC interaction flow and response formatting
+  /input          — Input command buffering
+  /llm            — LLM client boundary and stubs
+  main.ts         — Runtime bootstrap and frame/tick loop
 ```
 
 ### Key Principles
@@ -48,6 +48,16 @@ The game enforces strict layer separation to support LLM-driven gameplay:
 - **JSON-serializable state:** World state must be serializable for LLM context creation
 - **Layer isolation:** No game logic in rendering; no rendering in world model
 - **Descriptive naming:** Types and interfaces use clear names for LLM reasoning
+
+### Baseline Runtime Loop
+
+The current baseline runtime in `src/main.ts` follows this loop:
+
+1. Keyboard input maps to `WorldCommand` values and is enqueued into `CommandBuffer`.
+2. A fixed simulation tick of 100ms drains buffered commands.
+3. `world.applyCommands(commands)` updates deterministic state and advances `tick`.
+4. If an `interact` command was issued, nearby NPC interaction is resolved through the interaction service and LLM client boundary.
+5. Every animation frame renders the latest world state through the Pixi render port and prints JSON state in the debug panel.
 
 ## Development Workflow
 
@@ -74,11 +84,6 @@ Labels are added automatically via GitHub API during PR creation or review. The 
 - `CHANGE` — Feature/gameplay/rendering changes  
 - `REFACTORING` — Code reorganization without behavior change
 
-### Adding to GitHub Projects
-
-PRs and issues are managed via GitHub API tools integrated into the agent workflow.  
-No CLI required—project management is handled through the agent systems.
-
 ## Agents & Skills
 
 The project uses Copilot agents and skills for automated code review and task management:
@@ -100,37 +105,34 @@ Issues are tracked as GitHub issues instead of Jira. Each issue includes:
 - Clear summary and description
 - Acceptance criteria (testable outcomes)
 - Labels for categorization
-- Project board assignment
-
-### GitHub Projects
-Use GitHub Projects for task board visibility:
-
-```bash
-# View projects
-gh project list --owner gersseba
-
-# Add PR to project
-gh pr edit <number> --projects "Project Name"
-
-# Add issue to project
-gh issue edit <number> --projects "Project Name"
-```
 
 ## Testing & Validation
 
 Before opening a PR, ensure:
 - `npm run build` completes without errors
 - `npm run lint` passes without warnings
-- `npm run test` passes
+- `npm run test` passes (`vitest run --passWithNoTests` is configured)
 - Manual testing confirms the change works as intended
 - Logs or screenshots are included in PR description for verification
+
+## Manual Verification (Baseline)
+
+1. Run `npm install` (first setup only) and `npm run dev`.
+2. Open `http://localhost:5173` and confirm the viewport shows:
+  - a visible tile grid
+  - a player marker centered by camera framing
+  - a world-state JSON panel that updates over time
+3. Press arrow keys or `W/A/S/D` and confirm:
+  - player marker moves one tile per input tick
+  - movement is clamped within grid bounds
+  - `player.position` changes in the JSON panel
+4. Press `E` when not adjacent to an NPC and confirm the interaction panel says no NPC is nearby.
 
 ## Resources
 
 - **Repository:** https://github.com/gersseba/guard_game
 - **Main branch:** main
 - **Development branch template:** feature/<issue>-<summary>
-- **Project board:** GitHub Projects (accessible from repository)
 
 ## Troubleshooting
 
