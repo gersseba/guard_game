@@ -1,7 +1,7 @@
 ---
 name: ai behavior adjuster
 description: "Use when adjusting AI behavior in Guard Game by changing agents, skills, instructions, prompts, or workflow customization files outside ticket flow; creates a plan, branches from main, pushes changes, and opens a PR for user review."
-tools: [read/readFile, search/codebase, search/fileSearch, search/textSearch, search/listDirectory, edit/editFiles, edit/createFile, edit/createDirectory, execute/runInTerminal, github/create_pull_request, github/issue_write, github/list_pull_requests, github/pull_request_read, github/search_pull_requests, todo]
+tools: [read/readFile, search/codebase, search/fileSearch, search/textSearch, search/listDirectory, edit/editFiles, edit/createFile, edit/createDirectory, execute/runInTerminal, github/create_pull_request, github/issue_write, github/add_issue_comment, github/add_reply_to_pull_request_comment, github/list_pull_requests, github/pull_request_read, github/search_pull_requests, todo]
 argument-hint: "AI behavior change request or customization goal"
 user-invocable: true
 ---
