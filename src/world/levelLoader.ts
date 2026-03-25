@@ -28,6 +28,22 @@ export async function fetchLevelManifest(manifestUrl: string): Promise<LevelEntr
     throw new Error('Level manifest must be a JSON array');
   }
 
+  for (let i = 0; i < data.length; i++) {
+    const entry = data[i] as Record<string, unknown>;
+    if (
+      typeof entry !== 'object' ||
+      entry === null ||
+      typeof entry['id'] !== 'string' ||
+      entry['id'] === '' ||
+      typeof entry['name'] !== 'string' ||
+      entry['name'] === ''
+    ) {
+      throw new Error(
+        `Level manifest entry at index ${i} is invalid: 'id' and 'name' must be non-empty strings`,
+      );
+    }
+  }
+
   return data as LevelEntry[];
 }
 
@@ -36,6 +52,11 @@ export async function fetchLevelManifest(manifestUrl: string): Promise<LevelEntr
  * deserializes it into a fresh WorldState. Pure async: no side effects.
  */
 export async function fetchAndLoadLevel(levelUrl: string): Promise<WorldState> {
+  // Guard against path traversal: reject URLs containing '..' path segments.
+  if (levelUrl.split('/').some((segment) => segment === '..')) {
+    throw new Error(`Invalid level URL: path traversal detected in "${levelUrl}"`);
+  }
+
   const response = await fetch(levelUrl);
 
   if (!response.ok) {

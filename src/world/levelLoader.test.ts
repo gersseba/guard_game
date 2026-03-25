@@ -46,6 +46,12 @@ describe('fetchAndLoadLevel', () => {
     await expect(fetchAndLoadLevel('/levels/missing.json')).rejects.toThrow('Failed to fetch level');
   });
 
+  it('throws when levelUrl contains path traversal before fetching', async () => {
+    await expect(fetchAndLoadLevel('/levels/../config.json')).rejects.toThrow(
+      'path traversal detected',
+    );
+  });
+
   it('throws when the JSON does not pass validateLevelData', async () => {
     mockFetch({ version: 2, name: 'Bad' });
 
@@ -73,6 +79,14 @@ describe('fetchLevelManifest', () => {
     const result = await fetchLevelManifest('/levels/manifest.json');
 
     expect(result).toEqual([]);
+  });
+
+  it('throws when an entry is missing a required field', async () => {
+    mockFetch([{ id: 'level-01' }]);
+
+    await expect(fetchLevelManifest('/levels/manifest.json')).rejects.toThrow(
+      'Level manifest entry at index 0 is invalid',
+    );
   });
 
   it('throws when the response is not an array', async () => {
