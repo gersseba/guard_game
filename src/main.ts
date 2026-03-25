@@ -1,6 +1,7 @@
 import './style.css';
 import { createCommandBuffer } from './input/commands';
-import { handleNpcInteraction } from './interaction/npcInteraction';
+import { createNpcInteractionService } from './interaction/npcInteraction';
+import { createStubLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import type { WorldCommand, WorldState } from './world/types';
 import { createWorld } from './world/world';
@@ -44,6 +45,8 @@ if (!viewportElement || !worldStateElement || !interactionLogElement) {
 
 const world = createWorld();
 const commandBuffer = createCommandBuffer();
+const llmClient = createStubLlmClient();
+const npcInteractionService = createNpcInteractionService(llmClient);
 
 const keyToCommandMap: Record<string, WorldCommand> = {
   ArrowUp: { type: 'move', dx: 0, dy: -1 },
@@ -87,7 +90,7 @@ const runInteractionIfRequested = async (
     return;
   }
 
-  const interactionResult = await handleNpcInteraction({
+  const interactionResult = await npcInteractionService.handleNpcInteraction({
     npc: nearbyNpc,
     player: worldState.player,
   });
