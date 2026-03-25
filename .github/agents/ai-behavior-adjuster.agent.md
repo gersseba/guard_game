@@ -16,6 +16,7 @@ These changes are not tied to GitHub issues or gameplay tickets. They may happen
 - Create a short implementation plan before editing files.
 - Record the current branch before switching branches.
 - Create a new branch from `main` with a descriptive name that does not use a ticket prefix.
+- Use GitHub through MCP GitHub tools only; do not use the GitHub CLI (`gh`) for repository, issue, pull request, or label operations.
 - Make only the customization changes needed for the request.
 - Add the `AI_BEHAVIOUR` label to the PR after opening it.
 - Push the branch and open a pull request.

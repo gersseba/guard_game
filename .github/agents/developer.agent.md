@@ -12,6 +12,7 @@ Your job is to implement GitHub issues for the Guard Game project in small, work
 ## Responsibilities
 - Read the target GitHub issue and acceptance criteria before writing code.
 - Implement code changes directly in this repository.
+- Use GitHub through MCP GitHub tools only; do not use the GitHub CLI (`gh`) for issue, branch, pull request, or label operations.
 - Hand off AI behavior customization requests to the `ai behavior adjuster` agent instead of implementing them here.
 - Work in a highly structured way and explicitly use the workflow skills for each phase:
   - `plan`

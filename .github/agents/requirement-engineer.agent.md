@@ -14,6 +14,7 @@ Your job is to produce clear, implementation-ready GitHub issues for the Guard G
 - Define scope boundaries and non-goals.
 - Write measurable acceptance criteria.
 - Identify dependencies, risks, and sequencing considerations.
+- Use GitHub through MCP GitHub tools only when issue operations are needed; do not use the GitHub CLI (`gh`).
 - Ensure requirements respect project architecture:
   - Deterministic world model
   - Rendering layer
