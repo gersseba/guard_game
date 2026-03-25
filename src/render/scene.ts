@@ -19,7 +19,7 @@ interface RenderContext {
   lastHeight: number;
 }
 
-const VIEWPORT_TILE_WIDTH = 10;
+const VIEWPORT_TILE_WIDTH = 6;
 const VIEWPORT_TILE_HEIGHT = 10;
 const EDGE_BAND_TILES = 1;
 
