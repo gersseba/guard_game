@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deserializeLevel } from './level';
+import { deserializeLevel, validateLevelData } from './level';
 import type { LevelData } from './types';
 
 const minimalLevel: LevelData = {
@@ -95,5 +95,51 @@ describe('deserializeLevel', () => {
 
     // WorldState does not expose version, but deserialization must succeed
     expect(state).toBeDefined();
+  });
+});
+
+describe('validateLevelData', () => {
+  it('returns the input unchanged when all required fields are valid', () => {
+    const result = validateLevelData(minimalLevel);
+    expect(result).toEqual(minimalLevel);
+  });
+
+  it('throws when version is not 1', () => {
+    const bad = { ...minimalLevel, version: 2 };
+    expect(() => validateLevelData(bad)).toThrowError('version must be 1');
+  });
+
+  it('throws when name is an empty string', () => {
+    const bad = { ...minimalLevel, name: '' };
+    expect(() => validateLevelData(bad)).toThrowError('name must be a non-empty string');
+  });
+
+  it('throws when width is zero or negative', () => {
+    expect(() => validateLevelData({ ...minimalLevel, width: 0 })).toThrowError('width must be a positive number');
+    expect(() => validateLevelData({ ...minimalLevel, width: -5 })).toThrowError('width must be a positive number');
+  });
+
+  it('throws when height is zero or negative', () => {
+    expect(() => validateLevelData({ ...minimalLevel, height: 0 })).toThrowError('height must be a positive number');
+  });
+
+  it('throws when player is missing x or y', () => {
+    const bad = { ...minimalLevel, player: { x: 1 } };
+    expect(() => validateLevelData(bad)).toThrowError('player must have numeric x and y');
+  });
+
+  it('throws when guards is not an array', () => {
+    const bad = { ...minimalLevel, guards: null };
+    expect(() => validateLevelData(bad)).toThrowError('guards must be an array');
+  });
+
+  it('throws when doors is not an array', () => {
+    const bad = { ...minimalLevel, doors: 'none' };
+    expect(() => validateLevelData(bad)).toThrowError('doors must be an array');
+  });
+
+  it('throws when input is not an object', () => {
+    expect(() => validateLevelData(null)).toThrowError('expected an object');
+    expect(() => validateLevelData('string')).toThrowError('expected an object');
   });
 });
