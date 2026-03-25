@@ -18,9 +18,30 @@ interface RenderContext {
   lastHeight: number;
 }
 
-const ensureCanvasSize = (context: RenderContext, worldState: WorldState): void => {
-  const nextWidth = worldState.grid.width * worldState.grid.tileSize;
-  const nextHeight = worldState.grid.height * worldState.grid.tileSize;
+const clamp = (value: number, min: number, max: number): number => {
+  return Math.max(min, Math.min(max, value));
+};
+
+const measureViewport = (viewport: HTMLElement, worldState: WorldState): { width: number; height: number } => {
+  const worldWidth = worldState.grid.width * worldState.grid.tileSize;
+  const worldHeight = worldState.grid.height * worldState.grid.tileSize;
+  const measuredWidth = Math.floor(viewport.clientWidth);
+  const measuredHeight = Math.floor(viewport.clientHeight);
+  const fallbackWidth = Math.min(worldWidth, 384);
+  const fallbackHeight = Math.min(worldHeight, 256);
+
+  return {
+    width: clamp(measuredWidth || fallbackWidth, 1, worldWidth),
+    height: clamp(measuredHeight || fallbackHeight, 1, worldHeight),
+  };
+};
+
+const ensureCanvasSize = (
+  context: RenderContext,
+  worldState: WorldState,
+  viewport: HTMLElement,
+): void => {
+  const { width: nextWidth, height: nextHeight } = measureViewport(viewport, worldState);
 
   if (context.lastWidth === nextWidth && context.lastHeight === nextHeight) {
     return;
@@ -29,6 +50,20 @@ const ensureCanvasSize = (context: RenderContext, worldState: WorldState): void 
   context.lastWidth = nextWidth;
   context.lastHeight = nextHeight;
   context.app.renderer.resize(nextWidth, nextHeight);
+};
+
+const updateCamera = (context: RenderContext, worldState: WorldState): void => {
+  const tileSize = worldState.grid.tileSize;
+  const worldWidth = worldState.grid.width * tileSize;
+  const worldHeight = worldState.grid.height * tileSize;
+  const playerCenterX = worldState.player.position.x * tileSize + tileSize / 2;
+  const playerCenterY = worldState.player.position.y * tileSize + tileSize / 2;
+  const minOffsetX = context.lastWidth - worldWidth;
+  const minOffsetY = context.lastHeight - worldHeight;
+  const nextOffsetX = clamp(context.lastWidth / 2 - playerCenterX, minOffsetX, 0);
+  const nextOffsetY = clamp(context.lastHeight / 2 - playerCenterY, minOffsetY, 0);
+
+  context.rootContainer.position.set(nextOffsetX, nextOffsetY);
 };
 
 const drawGrid = (context: RenderContext, worldState: WorldState): void => {
@@ -96,9 +131,10 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
 
   return {
     render: (worldState: WorldState) => {
-      ensureCanvasSize(context, worldState);
+      ensureCanvasSize(context, worldState, targets.viewport);
       drawGrid(context, worldState);
       drawPlayerMarker(context, worldState);
+      updateCamera(context, worldState);
     },
   };
 };
