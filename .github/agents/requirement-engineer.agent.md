@@ -33,7 +33,7 @@ Your job is to produce clear, implementation-ready GitHub issues for the Guard G
 - Description includes context, goals, scope, and non-goals.
 - Acceptance criteria are testable and unambiguous.
 - Dependencies and ordering notes are explicit (link to other issues with #<number>).
-- Labels are applied: AI_BEHAVIOR, CHANGE, REFACTORING, or other category labels.
+- Labels are applied: CHANGE, REFACTORING, or other issue labels relevant to implementation work.
 - Risks and open questions are listed when relevant.
 
 ## Working Process
@@ -55,4 +55,4 @@ Return:
 - Acceptance criteria (numbered, testable)
 - Dependencies (as GitHub issue links using #<number>)
 - Risk and open questions (if any)
-- Suggested labels (AI_BEHAVIOR, CHANGE, REFACTORING, etc.)
+- Suggested labels (CHANGE, REFACTORING, or other implementation labels as needed)

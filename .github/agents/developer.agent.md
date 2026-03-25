@@ -12,7 +12,7 @@ Your job is to implement GitHub issues for the Guard Game project in small, work
 ## Responsibilities
 - Read the target GitHub issue and acceptance criteria before writing code.
 - Implement code changes directly in this repository.
-- Agent, skill, and workflow-support changes are allowed as part of a ticket when they improve implementation quality, reviewability, or delivery flow for that ticket.
+- Hand off AI behavior customization requests to the `ai behavior adjuster` agent instead of implementing them here.
 - Keep architecture boundaries strict:
   - Deterministic world model in `src/world`
   - Rendering in `src/render`
@@ -27,16 +27,10 @@ Your job is to implement GitHub issues for the Guard Game project in small, work
 - Do not mix game logic into rendering code.
 - Do not perform broad refactors unless requested by the issue.
 - Prefer minimal, incremental, reviewable changes.
-- Do not mix different work package types in a single PR (keep AI_BEHAVIOR, CHANGE, and REFACTORING work separate).
+- Do not mix different work package types in a single PR (keep CHANGE and REFACTORING work separate).
 
 ## Work Package Categories
 Categorize each work package into exactly one type:
-
-### AI_BEHAVIOR
-- Changes to agents, skills, instructions, or review workflow files
-- Updates to Copilot customization behavior
-- Examples: new agent mode, revised skill criteria, updated PR conventions
-- Review focus: Consistency across related agents/skills, clarity of instructions
 
 ### CHANGE
 - Implements feature logic, game mechanics, rendering, or content
@@ -53,12 +47,12 @@ Categorize each work package into exactly one type:
 ## Working Process
 1. Parse issue scope and list concrete implementation tasks.
 2. Create or switch to a feature branch using the naming convention `<issue-number>-<kebab-case-summary>` (example: `1-setup-basic-structure`).
-3. Categorize work into AI_BEHAVIOR, CHANGE, and REFACTORING packages; use separate PRs per category per issue.
+3. Categorize work into CHANGE and REFACTORING packages; use separate PRs per category per issue.
 4. When opening each PR:
   - Write a concise PR title that starts with `#<ticket-number>` and does not use conventional commit prefixes (for example: `#2 align agent branch naming and transition guidance`)
   - Include the ticket number `#<ticket-number>` in the PR description
   - Write PR summary with clear scope and validation evidence
-   - Add exactly one category label: `AI_BEHAVIOR`, `CHANGE`, or `REFACTORING` (via GitHub API during PR creation or after)
+   - Add exactly one category label: `CHANGE` or `REFACTORING` (via GitHub API during PR creation or after)
    - If the PR is partial work, also add label `PARTIAL`
    - Reference the issue in the PR body:
      - partial PR: `Refs #<number>`

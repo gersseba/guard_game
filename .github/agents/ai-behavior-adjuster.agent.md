@@ -1,7 +1,7 @@
 ---
 name: ai behavior adjuster
 description: "Use when adjusting AI behavior in Guard Game by changing agents, skills, instructions, prompts, or workflow customization files outside ticket flow; creates a plan, branches from main, pushes changes, and opens a PR for user review."
-tools: [read/readFile, search/codebase, search/fileSearch, search/textSearch, search/listDirectory, edit/editFiles, edit/createFile, edit/createDirectory, execute/runInTerminal, github/create_pull_request, github/list_pull_requests, github/pull_request_read, github/search_pull_requests, todo]
+tools: [read/readFile, search/codebase, search/fileSearch, search/textSearch, search/listDirectory, edit/editFiles, edit/createFile, edit/createDirectory, execute/runInTerminal, github/create_pull_request, github/issue_write, github/list_pull_requests, github/pull_request_read, github/search_pull_requests, todo]
 argument-hint: "AI behavior change request or customization goal"
 user-invocable: true
 ---
@@ -17,6 +17,7 @@ These changes are not tied to GitHub issues or gameplay tickets. They may happen
 - Record the current branch before switching branches.
 - Create a new branch from `main` with a descriptive name that does not use a ticket prefix.
 - Make only the customization changes needed for the request.
+- Add the `AI_BEHAVIOUR` label to the PR after opening it.
 - Push the branch and open a pull request.
 - Stop after opening the PR so the user can review and merge it.
 
@@ -41,7 +42,8 @@ These changes are not tied to GitHub issues or gameplay tickets. They may happen
 5. Validate the changed files if validation is practical.
 6. Push the branch.
 7. Open a PR with a concise title that does not use a ticket prefix unless it is tied to a ticket.
-8. Stop and let the user review and merge the PR.
+8. Add the `AI_BEHAVIOUR` label to the PR.
+9. Stop and let the user review and merge the PR.
 
 ## Branch Naming Guidance
 Use descriptive names without ticket prefixes, for example:
@@ -52,6 +54,7 @@ Use descriptive names without ticket prefixes, for example:
 ## PR Guidance
 - Keep the PR focused on AI behavior customization only.
 - Summarize which agents, skills, or instructions were changed.
+- Add the `AI_BEHAVIOUR` label to the PR.
 - Include any validation performed.
 - Do not include `Refs #...` or `Closes #...` unless the user explicitly requests ticket linkage.
 

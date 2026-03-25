@@ -1,9 +1,11 @@
 ---
 name: reviewer-ai-behavior
-description: "Use when reviewing a PR labeled AI_BEHAVIOR for consistency and clarity of agent/skill changes."
+description: "Legacy skill for reviewing older PRs labeled AI_BEHAVIOR; current AI customization PRs should use reviewer-ai-behaviour-adjustments instead."
 ---
 
 # Reviewer AI Behavior
+
+Legacy note: this skill exists for older `AI_BEHAVIOR` PRs. Current AI customization PRs should use `reviewer-ai-behaviour-adjustments` with the `AI_BEHAVIOUR` label.
 
 ## Purpose
 Review PRs labeled `AI_BEHAVIOR` that change agent, skill, instruction, or workflow customization files. Verify consistency across related agents/skills and clarity of the changes.
