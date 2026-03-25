@@ -1,5 +1,6 @@
 import './style.css';
 import { createCommandBuffer } from './input/commands';
+import { bindKeyboardCommands } from './input/keyboard';
 import { createNpcInteractionService } from './interaction/npcInteraction';
 import { createStubLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
@@ -47,28 +48,7 @@ const world = createWorld();
 const commandBuffer = createCommandBuffer();
 const llmClient = createStubLlmClient();
 const npcInteractionService = createNpcInteractionService(llmClient);
-
-const keyToCommandMap: Record<string, WorldCommand> = {
-  ArrowUp: { type: 'move', dx: 0, dy: -1 },
-  ArrowDown: { type: 'move', dx: 0, dy: 1 },
-  ArrowLeft: { type: 'move', dx: -1, dy: 0 },
-  ArrowRight: { type: 'move', dx: 1, dy: 0 },
-  w: { type: 'move', dx: 0, dy: -1 },
-  a: { type: 'move', dx: -1, dy: 0 },
-  s: { type: 'move', dx: 0, dy: 1 },
-  d: { type: 'move', dx: 1, dy: 0 },
-  e: { type: 'interact' },
-};
-
-window.addEventListener('keydown', (event: KeyboardEvent) => {
-  const command = keyToCommandMap[event.key];
-  if (!command) {
-    return;
-  }
-
-  event.preventDefault();
-  commandBuffer.enqueue(command);
-});
+bindKeyboardCommands(window, commandBuffer);
 
 const runInteractionIfRequested = async (
   worldState: WorldState,
