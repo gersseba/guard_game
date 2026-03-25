@@ -55,6 +55,7 @@ describe('starter level integration pipeline', () => {
   it('resolves adjacent door and returns the closed-door response', () => {
     const worldState = createStarterState();
     worldState.player.position = { x: 10, y: 3 };
+    const beforeInteraction = structuredClone(worldState);
 
     const adjacent = resolveAdjacentTarget(worldState);
 
@@ -72,6 +73,7 @@ describe('starter level integration pipeline', () => {
     });
 
     expect(result.responseText).toBe('The door is closed.');
+    expect(worldState).toEqual(beforeInteraction);
   });
 
   it('returns equal canonical initial states across repeated deserializations (reset baseline)', () => {
