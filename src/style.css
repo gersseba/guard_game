@@ -70,11 +70,12 @@ body {
 }
 
 .guard-game-viewport {
-  min-height: 480px;
+  box-sizing: content-box;
+  height: 480px;
   border-radius: 0.5rem;
   border: 1px dashed rgba(187, 224, 239, 0.35);
-  padding: 0.25rem;
-  width: min(100%, 480px);
+  padding: 0;
+  width: 480px;
   overflow: hidden;
   background: rgba(5, 10, 18, 0.75);
 }
