@@ -35,5 +35,8 @@ export const createWorld = (): World => {
         tick: nextState.tick + 1,
       };
     },
+    resetToState: (state: WorldState) => {
+      worldState = state;
+    },
   };
 };
