@@ -7,8 +7,10 @@ import { handleGuardInteraction } from './interaction/guardInteraction';
 import { createNpcInteractionService } from './interaction/npcInteraction';
 import { createStubLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
+import { createLevelUi } from './render/levelUi';
 import type { WorldCommand, WorldState } from './world/types';
 import { createWorld } from './world/world';
+import { fetchAndLoadLevel, fetchLevelManifest } from './world/levelLoader';
 
 const appElement = document.querySelector<HTMLDivElement>('#app');
 
@@ -28,6 +30,10 @@ appElement.innerHTML = `
         <div id="viewport" class="guard-game-viewport"></div>
       </section>
       <section class="guard-game-panel">
+        <h2>Level Controls</h2>
+        <div id="level-controls" class="guard-game-level-controls"></div>
+      </section>
+      <section class="guard-game-panel">
         <h2>World State</h2>
         <pre id="world-state" class="guard-game-world-state"></pre>
       </section>
@@ -40,10 +46,11 @@ appElement.innerHTML = `
 `;
 
 const viewportElement = document.querySelector<HTMLElement>('#viewport');
+const levelControlsElement = document.querySelector<HTMLElement>('#level-controls');
 const worldStateElement = document.querySelector<HTMLElement>('#world-state');
 const interactionLogElement = document.querySelector<HTMLElement>('#interaction-log');
 
-if (!viewportElement || !worldStateElement || !interactionLogElement) {
+if (!viewportElement || !levelControlsElement || !worldStateElement || !interactionLogElement) {
   throw new Error('Expected runtime shell elements to exist.');
 }
 
@@ -52,6 +59,12 @@ const commandBuffer = createCommandBuffer();
 const llmClient = createStubLlmClient();
 const npcInteractionService = createNpcInteractionService(llmClient);
 bindKeyboardCommands(window, commandBuffer);
+
+const LEVELS_BASE_URL = '/levels';
+const MANIFEST_URL = `${LEVELS_BASE_URL}/manifest.json`;
+
+/** Tracks which level id is currently active so reset can reload the same level. */
+let activeLevelId: string | null = null;
 
 const runInteractionIfRequested = async (
   worldState: WorldState,
@@ -96,6 +109,50 @@ const startRuntime = async (): Promise<void> => {
   const renderPort = await createPixiRenderPort({
     viewport: viewportElement,
   });
+
+  // Wire level UI controls (DOM only — no game logic inside levelUi).
+  const levelUi = createLevelUi(levelControlsElement, {
+    onLevelSelect: (levelId: string) => {
+      activeLevelId = levelId;
+      const levelUrl = `${LEVELS_BASE_URL}/${levelId}.json`;
+      fetchAndLoadLevel(levelUrl)
+        .then((newState) => {
+          world.resetToState(newState);
+          levelUi.setSelectedLevel(levelId);
+        })
+        .catch((err: unknown) => {
+          console.error('Failed to load level:', err);
+        });
+    },
+    onReset: () => {
+      if (!activeLevelId) return;
+      const levelUrl = `${LEVELS_BASE_URL}/${activeLevelId}.json`;
+      fetchAndLoadLevel(levelUrl)
+        .then((newState) => {
+          world.resetToState(newState);
+        })
+        .catch((err: unknown) => {
+          console.error('Failed to reset level:', err);
+        });
+    },
+  });
+
+  // Load manifest and populate the level selector. Fail gracefully when absent.
+  fetchLevelManifest(MANIFEST_URL)
+    .then((levels) => {
+      levelUi.populateLevels(levels);
+      if (levels.length > 0) {
+        const first = levels[0];
+        activeLevelId = first.id;
+        levelUi.setSelectedLevel(first.id);
+        return fetchAndLoadLevel(`${LEVELS_BASE_URL}/${first.id}.json`).then((newState) => {
+          world.resetToState(newState);
+        });
+      }
+    })
+    .catch((err: unknown) => {
+      console.error('Failed to load level manifest:', err);
+    });
 
   const runFrame = (currentTime: number): void => {
     accumulatedTime += currentTime - previousFrameTime;

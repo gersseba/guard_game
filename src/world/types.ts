@@ -90,4 +90,6 @@ export type WorldCommand =
 export interface World {
   getState(): WorldState;
   applyCommands(commands: WorldCommand[]): void;
+  /** Replace the current world state wholesale (e.g. level load or reset). */
+  resetToState(state: WorldState): void;
 }
