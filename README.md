@@ -120,7 +120,7 @@ Before opening a PR, ensure:
 1. Run `npm install` (first setup only) and `npm run dev`.
 2. Open `http://localhost:5173` and confirm the viewport shows:
   - a visible tile grid
-  - a player marker centered by camera framing
+  - a player marker framed by the camera, centered when world bounds allow and otherwise clamped near the world edges with the visible edge band
   - a world-state JSON panel that updates over time
 3. Press arrow keys or `W/A/S/D` and confirm:
   - player marker moves one tile per input tick
