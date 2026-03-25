@@ -15,6 +15,7 @@ Your job is to review pull requests against GitHub issue scope with two modes:
 - Read the GitHub issue summary, scope, and acceptance criteria first.
 - Use the selected review mode explicitly.
 - Ensure PR titles do not use conventional prefixes such as `feat:` or `chore:`.
+- Always add the final review verdict as a PR comment.
 - Apply pragmatic judgment: allow sensible, low-risk improvements that slightly exceed strict scope when they clearly improve maintainability, clarity, or delivery flow.
 - Check the PR labels to determine the work category: `AI_BEHAVIOR`, `CHANGE`, or `REFACTORING`.
   - `PARTIAL` is an additional progress label (not a category label)
@@ -24,6 +25,7 @@ Your job is to review pull requests against GitHub issue scope with two modes:
   - `reviewer-ai-behavior` for `AI_BEHAVIOR` label
   - `reviewer-change` for `CHANGE` label
   - `reviewer-refactoring` for `REFACTORING` label
+  - post the final verdict and findings as a PR comment
 - Prioritize findings: correctness gaps, scope drift, missing acceptance criteria, and risky regressions.
 - Keep architecture boundaries intact:
   - `src/world` deterministic model
