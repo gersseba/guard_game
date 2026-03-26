@@ -4,6 +4,7 @@ import { bindKeyboardCommands } from './input/keyboard';
 import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
 import { createGuardInteractionService } from './interaction/guardInteraction';
 import { createNpcInteractionService } from './interaction/npcInteraction';
+import { handleDoorInteraction } from './interaction/doorInteraction';
 import { getNpcConversationHistory } from './interaction/npcThread';
 import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
@@ -134,6 +135,11 @@ const runInteractionIfRequested = async (
   worldState: WorldState,
   commands: WorldCommand[],
 ): Promise<void> => {
+  // Block all interactions if level outcome is already set
+  if (worldState.levelOutcome) {
+    return;
+  }
+
   const includesInteract = commands.some((command) => command.type === 'interact');
   if (!includesInteract) {
     return;
@@ -156,8 +162,17 @@ const runInteractionIfRequested = async (
   }
 
   if (adjacentTarget.kind === 'door') {
-    // Door interactions are currently not displayed in the chat modal.
-    // Silently ignore them or could add a separate notification system.
+    // Handle door interaction and check for level outcome
+    const doorResult = handleDoorInteraction({
+      door: adjacentTarget.target,
+      player: worldState.player,
+    });
+
+    // If door has an outcome, update worldState and trigger modal feedback
+    if (doorResult.levelOutcome) {
+      const updatedState = { ...worldState, levelOutcome: doorResult.levelOutcome };
+      world.resetToState(updatedState);
+    }
     return;
   }
 
@@ -228,10 +243,17 @@ const startRuntime = async (): Promise<void> => {
     previousFrameTime = currentTime;
 
     while (accumulatedTime >= fixedTickDurationMs) {
-      const commands = commandBuffer.drain();
-      world.applyCommands(commands);
+      const worldStateBeforeCommands = world.getState();
+      let commandsToApply = commandBuffer.drain();
+
+      // Block all commands if level outcome is already set
+      if (worldStateBeforeCommands.levelOutcome) {
+        commandsToApply = [];
+      }
+
+      world.applyCommands(commandsToApply);
       const worldState = world.getState();
-      void runInteractionIfRequested(worldState, commands);
+      void runInteractionIfRequested(worldState, commandsToApply);
       accumulatedTime -= fixedTickDurationMs;
     }
 
