@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "name": "Two Guards",
+  "width": 20,
+  "height": 20,
+  "player": { "x": 10, "y": 10 },
+  "guards": [
+    {
+      "id": "guard-truth",
+      "displayName": "Guard A",
+      "x": 5,
+      "y": 10,
+      "guardState": "idle",
+      "honestyTrait": "truth-teller"
+    },
+    {
+      "id": "guard-liar",
+      "displayName": "Guard B",
+      "x": 15,
+      "y": 10,
+      "guardState": "idle",
+      "honestyTrait": "liar"
+    }
+  ],
+  "doors": [
+    {
+      "id": "door-safe",
+      "displayName": "Door A",
+      "x": 2,
+      "y": 10,
+      "doorState": "open",
+      "outcome": "safe"
+    },
+    {
+      "id": "door-danger",
+      "displayName": "Door B",
+      "x": 18,
+      "y": 10,
+      "doorState": "open",
+      "outcome": "danger"
+    }
+  ]
+}
