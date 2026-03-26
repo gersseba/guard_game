@@ -47,6 +47,7 @@ const createWorldState = (): WorldState => ({
       state: 'idle',
     },
   ],
+  npcConversationHistoryByNpcId: {},
 });
 
 describe('render entity circle helpers', () => {

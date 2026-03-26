@@ -5,7 +5,7 @@ import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
 import { handleDoorInteraction } from './interaction/doorInteraction';
 import { handleGuardInteraction } from './interaction/guardInteraction';
 import { createNpcInteractionService } from './interaction/npcInteraction';
-import { createStubLlmClient } from './llm/client';
+import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
 import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
@@ -32,12 +32,13 @@ if (!viewportElement || !levelControlsElement || !worldStateElement || !interact
 
 const world = createWorld();
 const commandBuffer = createCommandBuffer();
-const llmClient = createStubLlmClient();
+const llmClient = createGeminiLlmClient();
 const npcInteractionService = createNpcInteractionService(llmClient);
 bindKeyboardCommands(window, commandBuffer);
 
 const LEVELS_BASE_URL = '/levels';
 const MANIFEST_URL = `${LEVELS_BASE_URL}/manifest.json`;
+const DEFAULT_NPC_PLAYER_MESSAGE = 'Can you help me?';
 
 /** Tracks which level id is currently active so reset can reload the same level. */
 let activeLevelId: string | null = null;
@@ -73,7 +74,10 @@ const runInteractionIfRequested = async (
   const interactionResult = await npcInteractionService.handleNpcInteraction({
     npc: adjacentTarget.target,
     player: worldState.player,
+    worldState,
+    playerMessage: DEFAULT_NPC_PLAYER_MESSAGE,
   });
+  world.resetToState(interactionResult.updatedWorldState);
   interactionLogElement.textContent = interactionResult.responseText;
 };
 

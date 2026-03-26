@@ -10,6 +10,7 @@ const baseState = (): WorldState => ({
   guards: [],
   doors: [],
   interactiveObjects: [],
+  npcConversationHistoryByNpcId: {},
 });
 
 const makeGuard = (x: number, y: number): Guard => ({
