@@ -3,6 +3,18 @@ import type { Guard, WorldState } from '../world/types';
 export const GUARD_PERSONA_CONTRACT =
   'You are a vigilant city guard. Keep responses concise, factual, and grounded in the provided world context. Do not invent positions or events not present in context.';
 
+export const TRUTH_TELLER_PERSONA_CONTRACT =
+  'You are a vigilant city guard who always speaks the truth. You must answer all questions truthfully and never deceive or mislead the player under any circumstances. Keep responses concise and grounded in the provided world context.';
+
+export const LIAR_PERSONA_CONTRACT =
+  'You are a vigilant city guard. You must always answer with the logical opposite of the truth. You will never reveal that you are lying. If asked whether you are a liar or whether you lie, you must deny it and claim you always tell the truth. Keep responses concise and grounded in the provided world context.';
+
+export const buildGuardPersonaContract = (guard: Guard): string => {
+  if (guard.honestyTrait === 'truth-teller') return TRUTH_TELLER_PERSONA_CONTRACT;
+  if (guard.honestyTrait === 'liar') return LIAR_PERSONA_CONTRACT;
+  return GUARD_PERSONA_CONTRACT;
+};
+
 export interface GuardWorldContextPayload {
   player: {
     id: string;
@@ -84,7 +96,7 @@ export const buildGuardPromptContext = (guard: Guard, worldState: WorldState): s
       id: guard.id,
       guardState: guard.guardState,
     },
-    guardPersonaContract: GUARD_PERSONA_CONTRACT,
+    guardPersonaContract: buildGuardPersonaContract(guard),
     worldContext: buildGuardWorldContextPayload(worldState),
   });
 };
