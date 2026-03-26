@@ -5,6 +5,7 @@ import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
 import { handleDoorInteraction } from './interaction/doorInteraction';
 import { handleGuardInteraction } from './interaction/guardInteraction';
 import { createNpcInteractionService } from './interaction/npcInteraction';
+import { renderNpcConversationThread } from './interaction/npcThread';
 import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
@@ -77,8 +78,9 @@ const runInteractionIfRequested = async (
     worldState,
     playerMessage: DEFAULT_NPC_PLAYER_MESSAGE,
   });
-  world.resetToState(interactionResult.updatedWorldState);
-  interactionLogElement.textContent = interactionResult.responseText;
+  const updatedWorldState = interactionResult.updatedWorldState;
+  world.resetToState(updatedWorldState);
+  interactionLogElement.textContent = renderNpcConversationThread(updatedWorldState, adjacentTarget.target.id);
 };
 
 const fixedTickDurationMs = 100;
