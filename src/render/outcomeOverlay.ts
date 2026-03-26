@@ -1,47 +1,38 @@
-import { Graphics, Text } from 'pixi.js';
-import type { WorldState } from '../world/types';
+export interface OutcomeOverlay {
+  show(outcome: 'win' | 'lose'): void;
+  hide(): void;
+}
 
 /**
- * Updates or creates the outcome overlay graphic.
- * Shows a semi-transparent panel with win/lose message when levelOutcome is set.
- * Returns the overlay Graphics object (may be hidden if no outcome).
+ * Creates a full-screen DOM overlay that shows a win or lose message.
+ * Pure DOM component — no game logic.
  */
-export const updateOutcomeOverlay = (
-  worldState: WorldState,
-  canvasWidth: number,
-  canvasHeight: number,
-): { graphics: Graphics; text: Text } => {
-  const overlay = new Graphics();
+export const createOutcomeOverlay = (container: HTMLElement): OutcomeOverlay => {
+  let overlayEl: HTMLElement | null = null;
 
-  if (!worldState.levelOutcome) {
-    // No outcome yet, return empty overlay
-    return { graphics: overlay, text: new Text() };
-  }
+  return {
+    show(outcome: 'win' | 'lose'): void {
+      if (overlayEl) return; // Already shown — idempotent.
 
-  // Draw semi-transparent background panel
-  overlay.rect(0, 0, canvasWidth, canvasHeight).fill({ color: 0x000000, alpha: 0.5 });
-
-  // Create outcome message
-  const message = worldState.levelOutcome === 'win' ? 'You escaped!' : 'You were captured.';
-  const messageColor = worldState.levelOutcome === 'win' ? 0x7ad17a : 0xf26b6b;
-
-  const text = new Text({
-    text: message,
-    style: {
-      fontSize: 48,
-      fill: messageColor,
-      fontFamily: 'Arial',
-      fontWeight: 'bold',
-      align: 'center',
+      const el = document.createElement('div');
+      const bg = outcome === 'win' ? 'rgba(0,120,0,0.93)' : 'rgba(160,0,0,0.93)';
+      el.style.cssText =
+        `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;` +
+        `font-family:Arial,sans-serif;font-size:2.5rem;font-weight:bold;color:#fff;` +
+        `z-index:9999;background:${bg};text-align:center;padding:2rem;`;
+      el.textContent =
+        outcome === 'win'
+          ? 'You Won! 🎉 Refresh to play again.'
+          : 'You Lost! 💀 Refresh to play again.';
+      container.appendChild(el);
+      overlayEl = el;
     },
-  });
 
-  // Center text on canvas
-  text.anchor.set(0.5, 0.5);
-  text.x = canvasWidth / 2;
-  text.y = canvasHeight / 2;
-
-  overlay.addChild(text);
-
-  return { graphics: overlay, text };
+    hide(): void {
+      if (overlayEl) {
+        container.removeChild(overlayEl);
+        overlayEl = null;
+      }
+    },
+  };
 };

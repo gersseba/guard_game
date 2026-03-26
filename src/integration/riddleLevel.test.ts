@@ -16,15 +16,15 @@ describe('riddle level integration pipeline', () => {
     const worldState = deserializeLevel(validated);
 
     expect(worldState).toBeDefined();
-    expect(worldState.player.position).toEqual({ x: 10, y: 10 });
+    expect(worldState.player.position).toEqual({ x: 10, y: 15 });
 
     expect(worldState.guards).toHaveLength(2);
-    expect(worldState.guards.find((guard) => guard.id === 'guard-truth')?.position).toEqual({ x: 5, y: 10 });
-    expect(worldState.guards.find((guard) => guard.id === 'guard-liar')?.position).toEqual({ x: 15, y: 10 });
+    expect(worldState.guards.find((guard) => guard.id === 'guard-truth')?.position).toEqual({ x: 8, y: 10 });
+    expect(worldState.guards.find((guard) => guard.id === 'guard-liar')?.position).toEqual({ x: 12, y: 10 });
 
     expect(worldState.doors).toHaveLength(2);
-    expect(worldState.doors.find((door) => door.id === 'door-safe')?.position).toEqual({ x: 2, y: 10 });
-    expect(worldState.doors.find((door) => door.id === 'door-danger')?.position).toEqual({ x: 18, y: 10 });
+    expect(worldState.doors.find((door) => door.id === 'door-safe')?.position).toEqual({ x: 5, y: 5 });
+    expect(worldState.doors.find((door) => door.id === 'door-danger')?.position).toEqual({ x: 15, y: 5 });
   });
 
   it('has guards with correct honestyTrait values', () => {
@@ -59,7 +59,7 @@ describe('riddle level integration pipeline', () => {
 
   it('resolves adjacent safe door and returns win outcome', () => {
     const worldState = createRiddleState();
-    worldState.player.position = { x: 3, y: 10 };
+    worldState.player.position = { x: 4, y: 5 };
 
     const adjacent = resolveAdjacentTarget(worldState);
 
@@ -82,7 +82,7 @@ describe('riddle level integration pipeline', () => {
 
   it('resolves adjacent danger door and returns lose outcome', () => {
     const worldState = createRiddleState();
-    worldState.player.position = { x: 17, y: 10 };
+    worldState.player.position = { x: 14, y: 5 };
 
     const adjacent = resolveAdjacentTarget(worldState);
 
@@ -119,7 +119,7 @@ describe('riddle level integration pipeline', () => {
     });
 
     worldState.doors.forEach((door) => {
-      expect(door.doorState).toBe('open');
+      expect(door.doorState).toBe('closed');
     });
   });
 });

@@ -1,6 +1,5 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import type { WorldState } from '../world/types';
-import { updateOutcomeOverlay } from './outcomeOverlay';
 
 export interface RenderPort {
   render(worldState: WorldState): void;
@@ -17,7 +16,6 @@ interface RenderContext {
   entityGraphics: Graphics;
   playerGraphics: Graphics;
   rootContainer: Container;
-  outcomeOverlayContainer: Container;
   lastWidth: number;
   lastHeight: number;
 }
@@ -241,14 +239,12 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
   const boundaryGraphics = new Graphics();
   const entityGraphics = new Graphics();
   const playerGraphics = new Graphics();
-  const outcomeOverlayContainer = new Container();
   const rootContainer = new Container();
   rootContainer.addChild(boundaryGraphics);
   rootContainer.addChild(gridGraphics);
   rootContainer.addChild(entityGraphics);
   rootContainer.addChild(playerGraphics);
   app.stage.addChild(rootContainer);
-  app.stage.addChild(outcomeOverlayContainer);
 
   const context: RenderContext = {
     app,
@@ -257,7 +253,6 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
     entityGraphics,
     playerGraphics,
     rootContainer,
-    outcomeOverlayContainer,
     lastWidth: 0,
     lastHeight: 0,
   };
@@ -270,13 +265,6 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
       drawEntityMarkers(context, worldState);
       drawPlayerMarker(context, worldState);
       updateCamera(context, worldState);
-
-      // Update outcome overlay
-      context.outcomeOverlayContainer.removeChildren();
-      if (worldState.levelOutcome) {
-        const { graphics } = updateOutcomeOverlay(worldState, context.lastWidth, context.lastHeight);
-        context.outcomeOverlayContainer.addChild(graphics);
-      }
     },
   };
 };

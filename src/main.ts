@@ -10,6 +10,7 @@ import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
 import { createChatModal } from './render/chatModal';
+import { createOutcomeOverlay } from './render/outcomeOverlay';
 import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
 import type { WorldCommand, WorldState } from './world/types';
 import { createWorld } from './world/world';
@@ -27,8 +28,9 @@ const viewportElement = document.querySelector<HTMLElement>('#viewport');
 const levelControlsElement = document.querySelector<HTMLElement>('#level-controls');
 const worldStateElement = document.querySelector<HTMLElement>('#world-state');
 const chatModalHostElement = document.querySelector<HTMLElement>('#chat-modal-host');
+const outcomeOverlayHostElement = document.querySelector<HTMLElement>('#outcome-overlay-host');
 
-if (!viewportElement || !levelControlsElement || !worldStateElement || !chatModalHostElement) {
+if (!viewportElement || !levelControlsElement || !worldStateElement || !chatModalHostElement || !outcomeOverlayHostElement) {
   throw new Error('Expected runtime shell elements to exist.');
 }
 
@@ -37,6 +39,7 @@ const commandBuffer = createCommandBuffer();
 const llmClient = createGeminiLlmClient();
 const guardInteractionService = createGuardInteractionService(llmClient);
 const npcInteractionService = createNpcInteractionService(llmClient);
+const outcomeOverlay = createOutcomeOverlay(outcomeOverlayHostElement);
 
 /** Tracks the current interaction in progress (for chat modal message handling). */
 interface CurrentInteraction {
@@ -188,6 +191,7 @@ const runInteractionIfRequested = async (
 const fixedTickDurationMs = 100;
 let previousFrameTime = performance.now();
 let accumulatedTime = 0;
+let levelOutcomeShown = false;
 
 const startRuntime = async (): Promise<void> => {
   const renderPort = await createPixiRenderPort({
@@ -203,6 +207,8 @@ const startRuntime = async (): Promise<void> => {
         .then((newState) => {
           world.resetToState(newState);
           levelUi.setSelectedLevel(levelId);
+          outcomeOverlay.hide();
+          levelOutcomeShown = false;
         })
         .catch((err: unknown) => {
           console.error('Failed to load level:', err);
@@ -214,6 +220,8 @@ const startRuntime = async (): Promise<void> => {
       fetchAndLoadLevel(levelUrl)
         .then((newState) => {
           world.resetToState(newState);
+          outcomeOverlay.hide();
+          levelOutcomeShown = false;
         })
         .catch((err: unknown) => {
           console.error('Failed to reset level:', err);
@@ -260,6 +268,12 @@ const startRuntime = async (): Promise<void> => {
     const currentWorldState = world.getState();
     renderPort.render(currentWorldState);
     worldStateElement.textContent = JSON.stringify(currentWorldState, null, 2);
+
+    if (currentWorldState.levelOutcome && !levelOutcomeShown) {
+      levelOutcomeShown = true;
+      outcomeOverlay.show(currentWorldState.levelOutcome);
+    }
+
     requestAnimationFrame(runFrame);
   };
 
