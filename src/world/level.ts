@@ -1,4 +1,5 @@
 import type { LevelData, WorldState } from './types';
+import { validateSpatialLayout } from './spatialRules';
 
 const DEFAULT_TILE_SIZE = 48;
 
@@ -55,7 +56,7 @@ export function validateLevelData(input: unknown): LevelData {
  * Pure and deterministic: same input always produces the same output.
  */
 export function deserializeLevel(levelData: LevelData): WorldState {
-  return {
+  const worldState: WorldState = {
     tick: 0,
     grid: {
       width: levelData.width,
@@ -82,4 +83,6 @@ export function deserializeLevel(levelData: LevelData): WorldState {
     })),
     interactiveObjects: [],
   };
+  validateSpatialLayout(worldState);
+  return worldState;
 }

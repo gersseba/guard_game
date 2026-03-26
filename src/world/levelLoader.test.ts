@@ -57,6 +57,44 @@ describe('fetchAndLoadLevel', () => {
 
     await expect(fetchAndLoadLevel('/levels/bad.json')).rejects.toThrow();
   });
+
+  it('fails deterministically when loaded coordinates are out of bounds', async () => {
+    mockFetch({
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'Out Guard',
+          x: 20,
+          y: 2,
+          guardState: 'idle',
+        },
+      ],
+    });
+
+    await expect(fetchAndLoadLevel('/levels/out-of-bounds.json')).rejects.toThrow(
+      'Invalid world layout: guard:guard-1 is out of bounds at (20, 2)',
+    );
+  });
+
+  it('fails deterministically when loaded entities overlap', async () => {
+    mockFetch({
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'door-1',
+          displayName: 'Overlap Door',
+          x: 2,
+          y: 3,
+          doorState: 'closed',
+        },
+      ],
+    });
+
+    await expect(fetchAndLoadLevel('/levels/overlap.json')).rejects.toThrow(
+      'Invalid world layout: overlapping coordinates at (2, 3) between player:player and door:door-1',
+    );
+  });
 });
 
 describe('fetchLevelManifest', () => {

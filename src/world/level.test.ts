@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import starterJson from '../../public/levels/starter.json';
 import { deserializeLevel, validateLevelData } from './level';
+import * as spatialRules from './spatialRules';
 import type { LevelData } from './types';
 
 const minimalLevel: LevelData = {
@@ -96,6 +97,52 @@ describe('deserializeLevel', () => {
 
     // WorldState does not expose version, but deserialization must succeed
     expect(state).toBeDefined();
+  });
+
+  it('fails deterministically when an entity is out of bounds', () => {
+    const invalid: LevelData = {
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'Out Guard',
+          x: 20,
+          y: 3,
+          guardState: 'idle',
+        },
+      ],
+    };
+
+    expect(() => deserializeLevel(invalid)).toThrowError(
+      'Invalid world layout: guard:guard-1 is out of bounds at (20, 3)',
+    );
+  });
+
+  it('fails deterministically when entities overlap at the same coordinate', () => {
+    const invalid: LevelData = {
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'door-1',
+          displayName: 'Overlap Door',
+          x: 2,
+          y: 3,
+          doorState: 'closed',
+        },
+      ],
+    };
+
+    expect(() => deserializeLevel(invalid)).toThrowError(
+      'Invalid world layout: overlapping coordinates at (2, 3) between player:player and door:door-1',
+    );
+  });
+
+  it('uses the shared spatial rules path during level deserialization', () => {
+    const validateSpy = vi.spyOn(spatialRules, 'validateSpatialLayout');
+
+    deserializeLevel(minimalLevel);
+
+    expect(validateSpy).toHaveBeenCalledTimes(1);
   });
 });
 
