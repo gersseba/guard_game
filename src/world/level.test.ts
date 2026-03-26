@@ -70,16 +70,16 @@ describe('deserializeLevel', () => {
     const level: LevelData = {
       ...minimalLevel,
       doors: [
-        { id: 'door-1', displayName: 'Main Gate', x: 0, y: 10, doorState: 'locked' },
-        { id: 'door-2', displayName: 'Side Door', x: 19, y: 0, doorState: 'open' },
+        { id: 'door-1', displayName: 'Main Gate', x: 0, y: 10, doorState: 'locked', outcome: 'safe' },
+        { id: 'door-2', displayName: 'Side Door', x: 19, y: 0, doorState: 'open', outcome: 'danger' },
       ],
     };
 
     const state = deserializeLevel(level);
 
     expect(state.doors).toEqual([
-      { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, doorState: 'locked' },
-      { id: 'door-2', displayName: 'Side Door', position: { x: 19, y: 0 }, doorState: 'open' },
+      { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, doorState: 'locked', outcome: 'safe' },
+      { id: 'door-2', displayName: 'Side Door', position: { x: 19, y: 0 }, doorState: 'open', outcome: 'danger' },
     ]);
   });
 
@@ -128,6 +128,7 @@ describe('deserializeLevel', () => {
           x: 2,
           y: 3,
           doorState: 'closed',
+          outcome: 'safe',
         },
       ],
     };

@@ -36,6 +36,7 @@ const createWorldState = (): WorldState => ({
       displayName: 'West Door',
       position: { x: 2, y: 10 },
       doorState: 'closed',
+      outcome: 'safe',
     },
   ],
   interactiveObjects: [
@@ -48,6 +49,7 @@ const createWorldState = (): WorldState => ({
     },
   ],
   npcConversationHistoryByNpcId: {},
+  levelOutcome: null,
 });
 
 describe('render entity circle helpers', () => {

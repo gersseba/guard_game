@@ -32,6 +32,7 @@ export const createInitialWorldState = (): WorldState => ({
     },
   ],
   npcConversationHistoryByNpcId: {},
+  levelOutcome: null,
 });
 
 export const serializeWorldState = (worldState: WorldState): string => JSON.stringify(worldState);

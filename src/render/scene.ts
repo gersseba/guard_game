@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Container, Graphics } from 'pixi.js';
 import type { WorldState } from '../world/types';
 import { updateOutcomeOverlay } from './outcomeOverlay';
 
