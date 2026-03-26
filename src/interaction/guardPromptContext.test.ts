@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialWorldState } from '../world/state';
-import { buildGuardPromptContext, buildGuardWorldContextPayload, GUARD_PERSONA_CONTRACT } from './guardPromptContext';
+import {
+  buildGuardPromptContext,
+  buildGuardWorldContextPayload,
+  buildGuardPersonaContract,
+  GUARD_PERSONA_CONTRACT,
+  TRUTH_TELLER_PERSONA_CONTRACT,
+  LIAR_PERSONA_CONTRACT,
+} from './guardPromptContext';
 
 describe('buildGuardWorldContextPayload', () => {
   it('includes player, guard, npc, and interactive object positions including doors', () => {
@@ -128,5 +135,72 @@ describe('buildGuardWorldContextPayload', () => {
 
     expect(parsed.guardPersonaContract).toBe(GUARD_PERSONA_CONTRACT);
     expect(roundTrip.worldContext).toEqual(parsed.worldContext);
+  });
+});
+
+describe('buildGuardPersonaContract', () => {
+  it('returns TRUTH_TELLER_PERSONA_CONTRACT when honestyTrait is truth-teller', () => {
+    const guard = {
+      id: 'g1',
+      displayName: 'Honest Guard',
+      position: { x: 0, y: 0 },
+      guardState: 'idle' as const,
+      honestyTrait: 'truth-teller' as const,
+    };
+    expect(buildGuardPersonaContract(guard)).toBe(TRUTH_TELLER_PERSONA_CONTRACT);
+  });
+
+  it('returns LIAR_PERSONA_CONTRACT when honestyTrait is liar', () => {
+    const guard = {
+      id: 'g2',
+      displayName: 'Liar Guard',
+      position: { x: 0, y: 0 },
+      guardState: 'idle' as const,
+      honestyTrait: 'liar' as const,
+    };
+    expect(buildGuardPersonaContract(guard)).toBe(LIAR_PERSONA_CONTRACT);
+  });
+
+  it('falls back to GUARD_PERSONA_CONTRACT when honestyTrait is absent', () => {
+    const guard = {
+      id: 'g3',
+      displayName: 'Generic Guard',
+      position: { x: 0, y: 0 },
+      guardState: 'idle' as const,
+    };
+    expect(buildGuardPersonaContract(guard)).toBe(GUARD_PERSONA_CONTRACT);
+  });
+
+  it('embeds the correct persona contract in the serialized prompt context', () => {
+    const worldState = createInitialWorldState();
+
+    const truthTeller = {
+      id: 'g-truth',
+      displayName: 'Truth Guard',
+      position: { x: 1, y: 1 },
+      guardState: 'idle' as const,
+      honestyTrait: 'truth-teller' as const,
+    };
+    const liar = {
+      id: 'g-liar',
+      displayName: 'Liar Guard',
+      position: { x: 2, y: 2 },
+      guardState: 'idle' as const,
+      honestyTrait: 'liar' as const,
+    };
+    const generic = {
+      id: 'g-generic',
+      displayName: 'Generic Guard',
+      position: { x: 3, y: 3 },
+      guardState: 'idle' as const,
+    };
+
+    const parsedTruth = JSON.parse(buildGuardPromptContext(truthTeller, worldState)) as { guardPersonaContract: string };
+    const parsedLiar = JSON.parse(buildGuardPromptContext(liar, worldState)) as { guardPersonaContract: string };
+    const parsedGeneric = JSON.parse(buildGuardPromptContext(generic, worldState)) as { guardPersonaContract: string };
+
+    expect(parsedTruth.guardPersonaContract).toBe(TRUTH_TELLER_PERSONA_CONTRACT);
+    expect(parsedLiar.guardPersonaContract).toBe(LIAR_PERSONA_CONTRACT);
+    expect(parsedGeneric.guardPersonaContract).toBe(GUARD_PERSONA_CONTRACT);
   });
 });
