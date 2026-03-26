@@ -19,10 +19,15 @@ Perform a structured self-review of an opened PR.
 - No obvious dead code or leftover debug artifacts.
 4. Validation:
 - Build/tests/manual checks are documented and recent.
+5. Issue linkage and closure intent:
+- PR body includes explicit closure intent (`Closes` vs `Refs`).
+- If this PR is partial (`Refs`), parent-issue closure ownership and timing are stated.
+- Ticket state outcomes after merge are unambiguous (what closes now vs what remains open).
 
 ## Cleanup Actions
 - Make any necessary cleanup commits.
 - Update PR description if scope or validation changed.
+- Update PR description if issue linkage/closure intent is unclear.
 
 ## Output
 - Findings (if any)

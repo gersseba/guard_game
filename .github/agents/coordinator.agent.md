@@ -34,6 +34,9 @@ Your job is to orchestrate a complete ticket workflow across specialized agents 
 5. Completion stage:
 - When merge-ready, invoke `developer` to finish the PR flow.
 - Confirm merge result and local-main fast-forward status.
+- If implementation used partial PR slices, verify parent-ticket completeness before declaring done:
+	- run `reviewer` in complete mode for the parent issue
+	- close the parent issue when complete, or report explicit remaining acceptance-criteria gaps when not complete
 
 ## Constraints
 - Keep each loop focused on one ticket at a time.

@@ -71,6 +71,9 @@ If the user asks you to finish a PR, follow this exact sequence:
   - consider and apply non-blocking comment adjustments when they improve quality
   - merge the PR
   - if the merged PR is the final slice for the ticket (for example the PR uses `Closes #<ticket-number>`), move the ticket to `Done`/`Completed`; if it is a partial PR (for example `Refs #<ticket-number>`), keep the ticket in progress/open
+  - after merge, run a parent-issue closure audit for any `Refs` links in the merged PR:
+    - if all acceptance criteria are now complete across merged slices, close the parent issue with a completion note
+    - if acceptance criteria remain, leave the parent open and add a brief status note describing remaining work
   - fast-forward local `main`
 3. If PR does not pass:
   - evaluate blocking comments and apply feasible fixes

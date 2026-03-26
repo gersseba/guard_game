@@ -36,6 +36,7 @@ Your job is to produce clear, implementation-ready GitHub issues for the Guard G
 - Dependencies and ordering notes are explicit (link to other issues with #<number>).
 - Labels are applied: CHANGE, REFACTORING, or other issue labels relevant to implementation work.
 - Risks and open questions are listed when relevant.
+- If using parent + subtasks, include explicit parent-closure policy (what closes parent and who verifies completion).
 
 ## Working Process
 1. Clarify objective and player-facing outcome.
