@@ -8,6 +8,7 @@ import { createNpcInteractionService } from './interaction/npcInteraction';
 import { createStubLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
+import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
 import type { WorldCommand, WorldState } from './world/types';
 import { createWorld } from './world/world';
 import { fetchAndLoadLevel, fetchLevelManifest } from './world/levelLoader';
@@ -18,32 +19,7 @@ if (!appElement) {
   throw new Error('Expected #app root element.');
 }
 
-appElement.innerHTML = `
-  <div class="guard-game-shell">
-    <header class="guard-game-header">
-      <h1>Guard Game</h1>
-      <p>Deterministic runtime bootstrap</p>
-    </header>
-    <main class="guard-game-main">
-      <section class="guard-game-panel">
-        <h2>Viewport</h2>
-        <div id="viewport" class="guard-game-viewport"></div>
-      </section>
-      <section class="guard-game-panel">
-        <h2>Level Controls</h2>
-        <div id="level-controls" class="guard-game-level-controls"></div>
-      </section>
-      <section class="guard-game-panel">
-        <h2>World State</h2>
-        <pre id="world-state" class="guard-game-world-state"></pre>
-      </section>
-      <section class="guard-game-panel">
-        <h2>Interaction</h2>
-        <p id="interaction-log" class="guard-game-interaction-log">No interaction yet.</p>
-      </section>
-    </main>
-  </div>
-`;
+appElement.innerHTML = getRuntimeLayoutMarkup();
 
 const viewportElement = document.querySelector<HTMLElement>('#viewport');
 const levelControlsElement = document.querySelector<HTMLElement>('#level-controls');
