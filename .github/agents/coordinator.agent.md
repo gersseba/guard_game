@@ -17,13 +17,15 @@ Your job is to orchestrate a complete ticket workflow across specialized agents 
 1. Requirement stage:
 - Invoke `requirement engineer` to draft or refine issue scope, non-goals, and acceptance criteria.
 - Confirm ticket dependencies and labels are present.
+- Enforce planning rule: 1 ticket = 1 PR. If work is too large, split into subtickets before implementation.
 
 2. Implementation stage:
-- Invoke `developer` to implement the ticket (or next slice) using the project workflow skills.
+- Invoke `developer` to implement one ticket with exactly one PR.
 - Ensure branch, validation, and PR creation are completed.
+- For parent/subticket workflows, transition parent ticket to `In Progress` when the first sub ticket starts.
 
 3. Review stage:
-- Invoke `reviewer` in partial or complete mode as appropriate.
+- Invoke `reviewer` in single-PR mode for the active ticket PR.
 - Ensure reviewer posts a verdict comment to the PR.
 
 4. Feedback loop:
@@ -34,14 +36,14 @@ Your job is to orchestrate a complete ticket workflow across specialized agents 
 5. Completion stage:
 - When merge-ready, invoke `developer` to finish the PR flow.
 - Confirm merge result and local-main fast-forward status.
-- If implementation used partial PR slices, verify parent-ticket completeness before declaring done:
-	- run `reviewer` in complete mode for the parent issue
-	- close the parent issue when complete, or report explicit remaining acceptance-criteria gaps when not complete
+- If the merged ticket is a sub ticket, ensure a parent-ticket status comment is added summarizing the change.
+- When the last sub ticket is merged, run parent-ticket completion review and transition parent to `Done` only if review passes.
 
 ## Constraints
 - Keep each loop focused on one ticket at a time.
 - Preserve architecture boundaries by delegating implementation decisions to `developer` and review judgments to `reviewer`.
 - Do not bypass reviewer verdicts when blocking findings exist.
+- Do not allow slice PRs for a single ticket.
 - If blockers cannot be resolved automatically, stop and ask the user for a decision.
 
 ## Output Format
