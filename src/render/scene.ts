@@ -13,15 +13,108 @@ interface RenderContext {
   app: Application;
   boundaryGraphics: Graphics;
   gridGraphics: Graphics;
+  entityGraphics: Graphics;
   playerGraphics: Graphics;
   rootContainer: Container;
   lastWidth: number;
   lastHeight: number;
 }
 
+export interface EntityCircleSpec {
+  typeKey: string;
+  centerX: number;
+  centerY: number;
+  radius: number;
+  color: number;
+}
+
 const VIEWPORT_TILE_WIDTH = 6;
 const VIEWPORT_TILE_HEIGHT = 10;
 const EDGE_BAND_TILES = 1;
+
+const KNOWN_TYPE_COLORS: Record<string, number> = {
+  npc: 0x50d1c8,
+  guard: 0xf26b6b,
+  door: 0x4f8dd8,
+  'interactive-object:inspect': 0x7ad17a,
+  'interactive-object:use': 0xf1a248,
+  'interactive-object:talk': 0xc885f7,
+};
+
+const FALLBACK_PALETTE = [0x87d6b0, 0x7ca9ff, 0xf7b267, 0xff9fa3, 0x9fdbff, 0xc7b8ff];
+
+const hashTypeKey = (typeKey: string): number => {
+  let hash = 0;
+  for (const char of typeKey) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return hash;
+};
+
+export const getColorForEntityType = (typeKey: string): number => {
+  const knownColor = KNOWN_TYPE_COLORS[typeKey];
+  if (knownColor !== undefined) {
+    return knownColor;
+  }
+
+  const hash = hashTypeKey(typeKey);
+  return FALLBACK_PALETTE[hash % FALLBACK_PALETTE.length];
+};
+
+export const buildEntityCircleSpecs = (worldState: WorldState): EntityCircleSpec[] => {
+  const tileSize = worldState.grid.tileSize;
+  const radius = Math.max(5, tileSize * 0.22);
+  const toCenter = (x: number, y: number): { centerX: number; centerY: number } => ({
+    centerX: x * tileSize + tileSize / 2,
+    centerY: y * tileSize + tileSize / 2,
+  });
+
+  const npcCircles = worldState.npcs.map((npc) => {
+    const typeKey = 'npc';
+    const center = toCenter(npc.position.x, npc.position.y);
+    return {
+      typeKey,
+      ...center,
+      radius,
+      color: getColorForEntityType(typeKey),
+    };
+  });
+
+  const guardCircles = worldState.guards.map((guard) => {
+    const typeKey = 'guard';
+    const center = toCenter(guard.position.x, guard.position.y);
+    return {
+      typeKey,
+      ...center,
+      radius,
+      color: getColorForEntityType(typeKey),
+    };
+  });
+
+  const doorCircles = worldState.doors.map((door) => {
+    const typeKey = 'door';
+    const center = toCenter(door.position.x, door.position.y);
+    return {
+      typeKey,
+      ...center,
+      radius,
+      color: getColorForEntityType(typeKey),
+    };
+  });
+
+  const objectCircles = worldState.interactiveObjects.map((interactiveObject) => {
+    const typeKey = `interactive-object:${interactiveObject.interactionType}`;
+    const center = toCenter(interactiveObject.position.x, interactiveObject.position.y);
+    return {
+      typeKey,
+      ...center,
+      radius,
+      color: getColorForEntityType(typeKey),
+    };
+  });
+
+  return [...npcCircles, ...guardCircles, ...doorCircles, ...objectCircles];
+};
 
 const clamp = (value: number, min: number, max: number): number => {
   return Math.max(min, Math.min(max, value));
@@ -106,6 +199,18 @@ const drawGrid = (context: RenderContext, worldState: WorldState): void => {
   }
 };
 
+const drawEntityMarkers = (context: RenderContext, worldState: WorldState): void => {
+  const circles = buildEntityCircleSpecs(worldState);
+
+  context.entityGraphics.clear();
+  for (const circle of circles) {
+    context.entityGraphics.circle(circle.centerX, circle.centerY, circle.radius).fill({ color: circle.color });
+    context.entityGraphics
+      .circle(circle.centerX, circle.centerY, circle.radius)
+      .stroke({ color: 0x102131, width: 2, alpha: 0.9 });
+  }
+};
+
 const drawPlayerMarker = (context: RenderContext, worldState: WorldState): void => {
   const tileSize = worldState.grid.tileSize;
   const centerX = worldState.player.position.x * tileSize + tileSize / 2;
@@ -132,10 +237,12 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
 
   const gridGraphics = new Graphics();
   const boundaryGraphics = new Graphics();
+  const entityGraphics = new Graphics();
   const playerGraphics = new Graphics();
   const rootContainer = new Container();
   rootContainer.addChild(boundaryGraphics);
   rootContainer.addChild(gridGraphics);
+  rootContainer.addChild(entityGraphics);
   rootContainer.addChild(playerGraphics);
   app.stage.addChild(rootContainer);
 
@@ -143,6 +250,7 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
     app,
     boundaryGraphics,
     gridGraphics,
+    entityGraphics,
     playerGraphics,
     rootContainer,
     lastWidth: 0,
@@ -154,6 +262,7 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
       ensureCanvasSize(context, worldState);
       drawBoundaryBand(context, worldState);
       drawGrid(context, worldState);
+      drawEntityMarkers(context, worldState);
       drawPlayerMarker(context, worldState);
       updateCamera(context, worldState);
     },
