@@ -104,32 +104,42 @@ describe('resolveAdjacentTarget', () => {
     });
   });
 
-  describe('multi-target random tie-break', () => {
-    it('selects the first candidate when randomFn returns 0', () => {
+  describe('multi-target deterministic tie-break', () => {
+    it('selects deterministically by kind priority and target id', () => {
       const state = baseState();
       state.guards = [makeGuard(4, 3), makeGuard(2, 3)];
-      const result = resolveAdjacentTarget(state, () => 0);
-      expect(result).toEqual({ kind: 'guard', target: makeGuard(4, 3) });
-    });
+      state.doors = [makeDoor(3, 2)];
 
-    it('selects the last candidate when randomFn returns just below 1', () => {
-      const state = baseState();
-      state.guards = [makeGuard(4, 3), makeGuard(2, 3)];
-      const result = resolveAdjacentTarget(state, () => 0.999);
+      const result = resolveAdjacentTarget(state);
+
       expect(result).toEqual({ kind: 'guard', target: makeGuard(2, 3) });
     });
 
-    it('both candidates are reachable via the random tie-break', () => {
+    it('returns the same target repeatedly for identical state and input sequence', () => {
       const state = baseState();
-      const guardA = makeGuard(4, 3);
-      const guardB = makeGuard(2, 3);
-      state.guards = [guardA, guardB];
+      state.guards = [makeGuard(4, 3), makeGuard(2, 3)];
 
-      const firstResult = resolveAdjacentTarget(state, () => 0);
-      const secondResult = resolveAdjacentTarget(state, () => 0.999);
+      const results = Array.from({ length: 10 }, () => resolveAdjacentTarget(state));
 
-      expect(firstResult?.target.id).toBe(guardA.id);
-      expect(secondResult?.target.id).toBe(guardB.id);
+      expect(results.every((result) => result?.kind === 'guard')).toBe(true);
+      expect(results.every((result) => result?.target.id === 'guard-2-3')).toBe(true);
+    });
+
+    it('stays deterministic when state is reconstructed for each interaction attempt', () => {
+      const evaluate = (): string | null => {
+        const reconstructedState = baseState();
+        reconstructedState.guards = [makeGuard(4, 3), makeGuard(2, 3)];
+        reconstructedState.npcs = [makeNpc(3, 4)];
+        return resolveAdjacentTarget(reconstructedState)?.target.id ?? null;
+      };
+
+      const first = evaluate();
+      const second = evaluate();
+      const third = evaluate();
+
+      expect(first).toBe('guard-2-3');
+      expect(second).toBe(first);
+      expect(third).toBe(first);
     });
 
     it('resolves correctly when only one of multiple guards is adjacent', () => {
