@@ -1,1 +1,5 @@
-[{ "id": "starter", "name": "Starter" }]
+[
+  { "id": "starter", "name": "Starter" },
+  { "id": "riddle", "name": "Two Guards" }
+]
+

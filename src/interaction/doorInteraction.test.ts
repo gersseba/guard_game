@@ -4,11 +4,12 @@ import type { Door, Player } from '../world/types';
 
 const player: Player = { id: 'player-1', displayName: 'Hero', position: { x: 1, y: 1 } };
 
-const makeDoor = (doorState: Door['doorState']): Door => ({
+const makeDoor = (doorState: Door['doorState'], outcome?: Door['outcome']): Door => ({
   id: 'door-1',
   displayName: 'Main Door',
   position: { x: 3, y: 1 },
   doorState,
+  outcome,
 });
 
 describe('handleDoorInteraction', () => {
@@ -35,5 +36,29 @@ describe('handleDoorInteraction', () => {
     const first = handleDoorInteraction({ door, player });
     const second = handleDoorInteraction({ door, player });
     expect(first).toEqual(second);
+  });
+
+  it('returns "win" outcome when door has outcome: "safe"', () => {
+    const door = makeDoor('open', 'safe');
+    const result = handleDoorInteraction({ door, player });
+
+    expect(result.doorId).toBe('door-1');
+    expect(result.levelOutcome).toBe('win');
+  });
+
+  it('returns "lose" outcome when door has outcome: "danger"', () => {
+    const door = makeDoor('open', 'danger');
+    const result = handleDoorInteraction({ door, player });
+
+    expect(result.doorId).toBe('door-1');
+    expect(result.levelOutcome).toBe('lose');
+  });
+
+  it('does not include levelOutcome when door lacks outcome field', () => {
+    const door = makeDoor('open', undefined);
+    const result = handleDoorInteraction({ door, player });
+
+    expect(result.doorId).toBe('door-1');
+    expect(result.levelOutcome).toBeUndefined();
   });
 });

@@ -70,16 +70,16 @@ describe('deserializeLevel', () => {
     const level: LevelData = {
       ...minimalLevel,
       doors: [
-        { id: 'door-1', displayName: 'Main Gate', x: 0, y: 10, doorState: 'locked' },
-        { id: 'door-2', displayName: 'Side Door', x: 19, y: 0, doorState: 'open' },
+        { id: 'door-1', displayName: 'Main Gate', x: 0, y: 10, doorState: 'locked', outcome: 'safe' },
+        { id: 'door-2', displayName: 'Side Door', x: 19, y: 0, doorState: 'open', outcome: 'danger' },
       ],
     };
 
     const state = deserializeLevel(level);
 
     expect(state.doors).toEqual([
-      { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, doorState: 'locked' },
-      { id: 'door-2', displayName: 'Side Door', position: { x: 19, y: 0 }, doorState: 'open' },
+      { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, doorState: 'locked', outcome: 'safe' },
+      { id: 'door-2', displayName: 'Side Door', position: { x: 19, y: 0 }, doorState: 'open', outcome: 'danger' },
     ]);
   });
 
@@ -128,6 +128,7 @@ describe('deserializeLevel', () => {
           x: 2,
           y: 3,
           doorState: 'closed',
+          outcome: 'safe',
         },
       ],
     };
@@ -242,3 +243,112 @@ describe('starter level', () => {
     expect(state.doors.map((d) => d.id)).toEqual(['door-1', 'door-2']);
   });
 });
+
+describe('honestyTrait field', () => {
+  it('accepts guards with honestyTrait: "truth-teller"', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      guards: [{ id: 'guard-1', displayName: 'Truthful', x: 5, y: 7, guardState: 'idle', honestyTrait: 'truth-teller' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.guards[0].honestyTrait).toBe('truth-teller');
+  });
+
+  it('accepts guards with honestyTrait: "liar"', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      guards: [{ id: 'guard-1', displayName: 'Lying', x: 5, y: 7, guardState: 'idle', honestyTrait: 'liar' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.guards[0].honestyTrait).toBe('liar');
+  });
+
+  it('accepts guards without honestyTrait field', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      guards: [{ id: 'guard-1', displayName: 'Unknown', x: 5, y: 7, guardState: 'idle' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.guards[0].honestyTrait).toBeUndefined();
+  });
+
+  it('rejects guards with invalid honestyTrait value', () => {
+    const bad = {
+      ...minimalLevel,
+      guards: [{ id: 'guard-1', displayName: 'Bad', x: 5, y: 7, guardState: 'idle', honestyTrait: 'dishonest' as unknown }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid honestyTrait');
+  });
+});
+
+describe('outcome field', () => {
+  it('accepts doors with outcome: "safe"', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'Safe', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.doors[0].outcome).toBe('safe');
+  });
+
+  it('accepts doors with outcome: "danger"', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'Danger', x: 0, y: 10, doorState: 'open', outcome: 'danger' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.doors[0].outcome).toBe('danger');
+  });
+
+  it('rejects doors without outcome field', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'No outcome', x: 0, y: 10, doorState: 'open' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('must have id, displayName, x, y, doorState, and outcome');
+  });
+
+  it('rejects doors with invalid outcome value', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'Bad', x: 0, y: 10, doorState: 'open', outcome: 'unclear' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid outcome');
+  });
+});
+
+describe('levelOutcome field', () => {
+  it('initializes to null when level is deserialized', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const state = deserializeLevel(validateLevelData(level));
+
+    expect(state.levelOutcome).toBeNull();
+  });
+});
+

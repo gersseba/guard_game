@@ -26,14 +26,16 @@
       "displayName": "West Door",
       "x": 2,
       "y": 10,
-      "doorState": "closed"
+      "doorState": "closed",
+      "outcome": "safe"
     },
     {
       "id": "door-2",
       "displayName": "North Door",
       "x": 10,
       "y": 2,
-      "doorState": "closed"
+      "doorState": "closed",
+      "outcome": "danger"
     }
   ]
 }

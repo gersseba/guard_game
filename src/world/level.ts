@@ -44,8 +44,56 @@ export function validateLevelData(input: unknown): LevelData {
     throw new Error('Invalid level data: guards must be an array');
   }
 
+  for (let i = 0; i < (raw['guards'] as unknown[]).length; i++) {
+    const guard = (raw['guards'] as unknown[])[i] as Record<string, unknown>;
+    if (
+      typeof guard !== 'object' ||
+      guard === null ||
+      typeof guard['id'] !== 'string' ||
+      typeof guard['displayName'] !== 'string' ||
+      typeof guard['x'] !== 'number' ||
+      typeof guard['y'] !== 'number' ||
+      typeof guard['guardState'] !== 'string'
+    ) {
+      throw new Error(
+        `Invalid level data: guard at index ${i} must have id, displayName, x, y, and guardState`,
+      );
+    }
+    // honestyTrait is optional
+    if (guard['honestyTrait'] !== undefined) {
+      if (guard['honestyTrait'] !== 'truth-teller' && guard['honestyTrait'] !== 'liar') {
+        throw new Error(
+          `Invalid level data: guard at index ${i} has invalid honestyTrait (must be 'truth-teller' or 'liar')`,
+        );
+      }
+    }
+  }
+
   if (!Array.isArray(raw['doors'])) {
     throw new Error('Invalid level data: doors must be an array');
+  }
+
+  for (let i = 0; i < (raw['doors'] as unknown[]).length; i++) {
+    const door = (raw['doors'] as unknown[])[i] as Record<string, unknown>;
+    if (
+      typeof door !== 'object' ||
+      door === null ||
+      typeof door['id'] !== 'string' ||
+      typeof door['displayName'] !== 'string' ||
+      typeof door['x'] !== 'number' ||
+      typeof door['y'] !== 'number' ||
+      typeof door['doorState'] !== 'string' ||
+      typeof door['outcome'] !== 'string'
+    ) {
+      throw new Error(
+        `Invalid level data: door at index ${i} must have id, displayName, x, y, doorState, and outcome`,
+      );
+    }
+    if (door['outcome'] !== 'safe' && door['outcome'] !== 'danger') {
+      throw new Error(
+        `Invalid level data: door at index ${i} has invalid outcome (must be 'safe' or 'danger')`,
+      );
+    }
   }
 
   return raw as unknown as LevelData;
@@ -74,15 +122,18 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       displayName: g.displayName,
       position: { x: g.x, y: g.y },
       guardState: g.guardState,
+      honestyTrait: g.honestyTrait,
     })),
     doors: levelData.doors.map((d) => ({
       id: d.id,
       displayName: d.displayName,
       position: { x: d.x, y: d.y },
       doorState: d.doorState,
+      outcome: d.outcome,
     })),
     interactiveObjects: [],
     npcConversationHistoryByNpcId: {},
+    levelOutcome: null,
   };
   validateSpatialLayout(worldState);
   return worldState;

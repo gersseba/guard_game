@@ -4,11 +4,13 @@ import { bindKeyboardCommands } from './input/keyboard';
 import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
 import { createGuardInteractionService } from './interaction/guardInteraction';
 import { createNpcInteractionService } from './interaction/npcInteraction';
+import { handleDoorInteraction } from './interaction/doorInteraction';
 import { getNpcConversationHistory } from './interaction/npcThread';
 import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
 import { createChatModal } from './render/chatModal';
+import { createOutcomeOverlay } from './render/outcomeOverlay';
 import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
 import type { WorldCommand, WorldState } from './world/types';
 import { createWorld } from './world/world';
@@ -26,8 +28,9 @@ const viewportElement = document.querySelector<HTMLElement>('#viewport');
 const levelControlsElement = document.querySelector<HTMLElement>('#level-controls');
 const worldStateElement = document.querySelector<HTMLElement>('#world-state');
 const chatModalHostElement = document.querySelector<HTMLElement>('#chat-modal-host');
+const outcomeOverlayHostElement = document.querySelector<HTMLElement>('#outcome-overlay-host');
 
-if (!viewportElement || !levelControlsElement || !worldStateElement || !chatModalHostElement) {
+if (!viewportElement || !levelControlsElement || !worldStateElement || !chatModalHostElement || !outcomeOverlayHostElement) {
   throw new Error('Expected runtime shell elements to exist.');
 }
 
@@ -36,6 +39,7 @@ const commandBuffer = createCommandBuffer();
 const llmClient = createGeminiLlmClient();
 const guardInteractionService = createGuardInteractionService(llmClient);
 const npcInteractionService = createNpcInteractionService(llmClient);
+const outcomeOverlay = createOutcomeOverlay(outcomeOverlayHostElement);
 
 /** Tracks the current interaction in progress (for chat modal message handling). */
 interface CurrentInteraction {
@@ -134,6 +138,11 @@ const runInteractionIfRequested = async (
   worldState: WorldState,
   commands: WorldCommand[],
 ): Promise<void> => {
+  // Block all interactions if level outcome is already set
+  if (worldState.levelOutcome) {
+    return;
+  }
+
   const includesInteract = commands.some((command) => command.type === 'interact');
   if (!includesInteract) {
     return;
@@ -156,8 +165,17 @@ const runInteractionIfRequested = async (
   }
 
   if (adjacentTarget.kind === 'door') {
-    // Door interactions are currently not displayed in the chat modal.
-    // Silently ignore them or could add a separate notification system.
+    // Handle door interaction and check for level outcome
+    const doorResult = handleDoorInteraction({
+      door: adjacentTarget.target,
+      player: worldState.player,
+    });
+
+    // If door has an outcome, update worldState and trigger modal feedback
+    if (doorResult.levelOutcome) {
+      const updatedState = { ...worldState, levelOutcome: doorResult.levelOutcome };
+      world.resetToState(updatedState);
+    }
     return;
   }
 
@@ -173,6 +191,7 @@ const runInteractionIfRequested = async (
 const fixedTickDurationMs = 100;
 let previousFrameTime = performance.now();
 let accumulatedTime = 0;
+let levelOutcomeShown = false;
 
 const startRuntime = async (): Promise<void> => {
   const renderPort = await createPixiRenderPort({
@@ -188,6 +207,8 @@ const startRuntime = async (): Promise<void> => {
         .then((newState) => {
           world.resetToState(newState);
           levelUi.setSelectedLevel(levelId);
+          outcomeOverlay.hide();
+          levelOutcomeShown = false;
         })
         .catch((err: unknown) => {
           console.error('Failed to load level:', err);
@@ -199,6 +220,8 @@ const startRuntime = async (): Promise<void> => {
       fetchAndLoadLevel(levelUrl)
         .then((newState) => {
           world.resetToState(newState);
+          outcomeOverlay.hide();
+          levelOutcomeShown = false;
         })
         .catch((err: unknown) => {
           console.error('Failed to reset level:', err);
@@ -228,16 +251,29 @@ const startRuntime = async (): Promise<void> => {
     previousFrameTime = currentTime;
 
     while (accumulatedTime >= fixedTickDurationMs) {
-      const commands = commandBuffer.drain();
-      world.applyCommands(commands);
+      const worldStateBeforeCommands = world.getState();
+      let commandsToApply = commandBuffer.drain();
+
+      // Block all commands if level outcome is already set
+      if (worldStateBeforeCommands.levelOutcome) {
+        commandsToApply = [];
+      }
+
+      world.applyCommands(commandsToApply);
       const worldState = world.getState();
-      void runInteractionIfRequested(worldState, commands);
+      void runInteractionIfRequested(worldState, commandsToApply);
       accumulatedTime -= fixedTickDurationMs;
     }
 
     const currentWorldState = world.getState();
     renderPort.render(currentWorldState);
     worldStateElement.textContent = JSON.stringify(currentWorldState, null, 2);
+
+    if (currentWorldState.levelOutcome && !levelOutcomeShown) {
+      levelOutcomeShown = true;
+      outcomeOverlay.show(currentWorldState.levelOutcome);
+    }
+
     requestAnimationFrame(runFrame);
   };
 

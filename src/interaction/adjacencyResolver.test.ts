@@ -11,6 +11,7 @@ const baseState = (): WorldState => ({
   doors: [],
   interactiveObjects: [],
   npcConversationHistoryByNpcId: {},
+  levelOutcome: null,
 });
 
 const makeGuard = (x: number, y: number): Guard => ({
@@ -25,6 +26,7 @@ const makeDoor = (x: number, y: number): Door => ({
   displayName: 'Door',
   position: { x, y },
   doorState: 'closed',
+  outcome: 'safe',
 });
 
 const makeNpc = (x: number, y: number): Npc => ({

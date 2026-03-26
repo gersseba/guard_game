@@ -33,11 +33,13 @@ export interface Interactable {
 /** A guard entity that the player can interact with. */
 export interface Guard extends Interactable {
   guardState: 'idle' | 'patrolling' | 'alert';
+  honestyTrait?: 'truth-teller' | 'liar';
 }
 
 /** A door that the player can pass through or be blocked by. */
 export interface Door extends Interactable {
   doorState: 'open' | 'closed' | 'locked';
+  outcome?: 'safe' | 'danger';
 }
 
 export interface InteractiveObject extends Interactable {
@@ -64,6 +66,7 @@ export interface LevelData {
     x: number;
     y: number;
     guardState: 'patrolling' | 'alert' | 'idle';
+    honestyTrait?: 'truth-teller' | 'liar';
   }>;
   doors: Array<{
     id: string;
@@ -71,6 +74,7 @@ export interface LevelData {
     x: number;
     y: number;
     doorState: 'open' | 'closed' | 'locked';
+    outcome: 'safe' | 'danger';
   }>;
 }
 
@@ -83,6 +87,7 @@ export interface WorldState {
   doors: Door[];
   interactiveObjects: InteractiveObject[];
   npcConversationHistoryByNpcId: NpcConversationHistoryByNpcId;
+  levelOutcome: 'win' | 'lose' | null;
 }
 
 export type WorldCommand =

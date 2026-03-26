@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "name": "Two Guards, Two Doors",
+  "width": 20,
+  "height": 20,
+  "player": { "x": 10, "y": 15 },
+  "guards": [
+    {
+      "id": "guard-truth",
+      "displayName": "Guard True",
+      "x": 8,
+      "y": 10,
+      "guardState": "idle",
+      "honestyTrait": "truth-teller"
+    },
+    {
+      "id": "guard-liar",
+      "displayName": "Guard False",
+      "x": 12,
+      "y": 10,
+      "guardState": "idle",
+      "honestyTrait": "liar"
+    }
+  ],
+  "doors": [
+    {
+      "id": "door-safe",
+      "displayName": "Left Door",
+      "x": 5,
+      "y": 5,
+      "doorState": "closed",
+      "outcome": "safe"
+    },
+    {
+      "id": "door-danger",
+      "displayName": "Right Door",
+      "x": 15,
+      "y": 5,
+      "doorState": "closed",
+      "outcome": "danger"
+    }
+  ]
+}
