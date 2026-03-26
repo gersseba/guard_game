@@ -6,7 +6,12 @@
       "request": "launch",
       "name": "Run: Guard Game",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/src",
+      "webRoot": "${workspaceFolder}",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**",
+        "!**/.vite/**"
+      ],
       "preLaunchTask": "vite: dev"
     }
   ]
