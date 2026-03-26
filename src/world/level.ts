@@ -82,6 +82,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       doorState: d.doorState,
     })),
     interactiveObjects: [],
+    npcConversationHistoryByNpcId: {},
   };
   validateSpatialLayout(worldState);
   return worldState;

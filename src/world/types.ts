@@ -16,6 +16,13 @@ export interface Npc {
   dialogueContextKey: string;
 }
 
+export interface ConversationMessage {
+  role: 'player' | 'assistant';
+  text: string;
+}
+
+export type NpcConversationHistoryByNpcId = Record<string, ConversationMessage[]>;
+
 /** Shared base for all interactable world objects. JSON-serializable. */
 export interface Interactable {
   id: string;
@@ -75,6 +82,7 @@ export interface WorldState {
   guards: Guard[];
   doors: Door[];
   interactiveObjects: InteractiveObject[];
+  npcConversationHistoryByNpcId: NpcConversationHistoryByNpcId;
 }
 
 export type WorldCommand =
