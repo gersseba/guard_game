@@ -20,14 +20,18 @@ Perform a structured self-review of an opened PR.
 4. Validation:
 - Build/tests/manual checks are documented and recent.
 5. Issue linkage and closure intent:
-- PR body includes explicit closure intent (`Closes` vs `Refs`).
-- If this PR is partial (`Refs`), parent-issue closure ownership and timing are stated.
-- Ticket state outcomes after merge are unambiguous (what closes now vs what remains open).
+- PR body uses `Closes #<issue>` for the implementation ticket.
+- No slice-PR `Refs` usage for implementation delivery.
+- If ticket is a sub ticket, parent linkage is present and post-merge parent comment plan is clear.
+6. Label policy:
+- Exactly one category label is present: `DOCUMENTATION`, `BUGS`, `ENHANCEMENT`, `AI_BEHAVIOR`, or `REFACTORING`.
+- `AI_BEHAVIOR` is used only for AI workflow customization changes.
 
 ## Cleanup Actions
 - Make any necessary cleanup commits.
 - Update PR description if scope or validation changed.
 - Update PR description if issue linkage/closure intent is unclear.
+- Fix missing or incorrect category labels before final readiness.
 
 ## Output
 - Findings (if any)

@@ -34,16 +34,32 @@ Your job is to implement GitHub issues for the Guard Game project in small, work
 - Do not mix game logic into rendering code.
 - Do not perform broad refactors unless requested by the issue.
 - Prefer minimal, incremental, reviewable changes.
-- Do not mix different work package types in a single PR (keep CHANGE and REFACTORING work separate).
+- Enforce 1 ticket = 1 PR. Do not use slice PRs for the same ticket.
+- If a ticket is too large, stop and ask to split it into explicit subtickets before implementation.
+- Do not mix different work package types in a single PR.
+- If a completed ticket later has a defect, handle it through a new `BUGS` ticket (do not reopen scope in unrelated tickets).
 
 ## Work Package Categories
 Categorize each work package into exactly one type:
 
-### CHANGE
+### ENHANCEMENT
 - Implements feature logic, game mechanics, rendering, or content
 - Adds new gameplay, modifies world state, updates UI rendering
 - Examples: player movement, NPC dialogue, grid rendering, puzzle mechanics
 - Review focus: AC progress, correctness, completeness within scope
+
+### BUGS
+- Fixes defects in already delivered behavior
+- Scope is limited to defect correction and regression protection
+- Review focus: root-cause fix quality and regression coverage
+
+### DOCUMENTATION
+- Updates docs or process guidance without runtime behavior changes
+- Review focus: accuracy and maintainability of guidance
+
+### AI_BEHAVIOR
+- Reserved for the `ai behavior adjuster` agent only
+- Developer agent must not create AI behavior work packages
 
 ### REFACTORING
 - Reorganizes or improves code without changing observable behavior
@@ -70,10 +86,9 @@ If the user asks you to finish a PR, follow this exact sequence:
 2. If PR passes:
   - consider and apply non-blocking comment adjustments when they improve quality
   - merge the PR
-  - if the merged PR is the final slice for the ticket (for example the PR uses `Closes #<ticket-number>`), move the ticket to `Done`/`Completed`; if it is a partial PR (for example `Refs #<ticket-number>`), keep the ticket in progress/open
-  - after merge, run a parent-issue closure audit for any `Refs` links in the merged PR:
-    - if all acceptance criteria are now complete across merged slices, close the parent issue with a completion note
-    - if acceptance criteria remain, leave the parent open and add a brief status note describing remaining work
+  - close the ticket as `Done`/`Completed` (the merged PR must be the ticket's only implementation PR)
+  - if this was a sub ticket, add a parent-ticket comment summarizing what changed and linking the merged PR
+  - if this was the last open sub ticket under a parent ticket, run parent completion review and close parent only when review passes
   - fast-forward local `main`
 3. If PR does not pass:
   - evaluate blocking comments and apply feasible fixes
@@ -99,13 +114,13 @@ Example: `1-setup-basic-structure`
 
 ### PR Description Convention
 - Include the ticket number `#<ticket-number>` in the PR description.
-- For partial PRs, include `Refs #<ticket-number>`.
-- Use `Closes #<ticket-number>` only when the PR is intended to complete the ticket.
+- Use `Closes #<ticket-number>` for implementation PRs.
+- Do not use partial `Refs #<ticket-number>` PRs for ticket delivery.
 
 ### Linking PR to Issue
 When creating a PR, reference the issue to auto-link:
 ```markdown
-## Refs #2
+## Closes #2
 ```
 
 ### Project Management
