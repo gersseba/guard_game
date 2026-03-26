@@ -25,7 +25,7 @@ export interface GeminiLlmClientOptions {
   fetchImpl?: typeof fetch;
 }
 
-const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
 const DEFAULT_TIMEOUT_MS = 6_000;
 
 export const MISSING_API_KEY_FALLBACK_TEXT =
