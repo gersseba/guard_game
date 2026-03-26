@@ -2,7 +2,6 @@ import './style.css';
 import { createCommandBuffer } from './input/commands';
 import { bindKeyboardCommands } from './input/keyboard';
 import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
-import { handleDoorInteraction } from './interaction/doorInteraction';
 import { createGuardInteractionService } from './interaction/guardInteraction';
 import { createNpcInteractionService } from './interaction/npcInteraction';
 import { getNpcConversationHistory } from './interaction/npcThread';
@@ -55,12 +54,13 @@ const chatModal = createChatModal(chatModalHostElement, {
       return; // Safety check.
     }
 
+    const interaction = currentInteraction; // Capture for async closure.
     const currentWorldState = world.getState();
     chatModal.setLoading(true);
     chatModal.appendMessage('player', playerMessage);
 
-    if (currentInteraction.kind === 'npc') {
-      const npc = currentWorldState.npcs.find((n) => n.id === currentInteraction.actorId);
+    if (interaction.kind === 'npc') {
+      const npc = currentWorldState.npcs.find((n) => n.id === interaction.actorId);
       if (!npc) {
         chatModal.setLoading(false);
         return;
@@ -75,7 +75,7 @@ const chatModal = createChatModal(chatModalHostElement, {
         });
 
         // Extract the AI response text from the updated history.
-        const history = getNpcConversationHistory(result.updatedWorldState, currentInteraction.actorId);
+        const history = getNpcConversationHistory(result.updatedWorldState, interaction.actorId);
         const lastMessage = history[history.length - 1];
         if (lastMessage?.role === 'assistant') {
           chatModal.appendMessage('assistant', lastMessage.text);
@@ -85,8 +85,8 @@ const chatModal = createChatModal(chatModalHostElement, {
         world.resetToState(result.updatedWorldState);
         chatModal.setLoading(false);
       })();
-    } else if (currentInteraction.kind === 'guard') {
-      const guard = currentWorldState.guards.find((g) => g.id === currentInteraction.actorId);
+    } else if (interaction.kind === 'guard') {
+      const guard = currentWorldState.guards.find((g) => g.id === interaction.actorId);
       if (!guard) {
         chatModal.setLoading(false);
         return;
@@ -102,7 +102,7 @@ const chatModal = createChatModal(chatModalHostElement, {
 
         // Extract the AI response from the updated history.
         const history =
-          result.updatedWorldState.npcConversationHistoryByNpcId[currentInteraction.actorId] ?? [];
+          result.updatedWorldState.npcConversationHistoryByNpcId[interaction.actorId] ?? [];
         const lastMessage = history[history.length - 1];
         if (lastMessage?.role === 'assistant') {
           chatModal.appendMessage('assistant', lastMessage.text);
