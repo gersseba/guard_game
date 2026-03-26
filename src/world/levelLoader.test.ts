@@ -87,6 +87,7 @@ describe('fetchAndLoadLevel', () => {
           x: 2,
           y: 3,
           doorState: 'closed',
+          outcome: 'safe',
         },
       ],
     });
