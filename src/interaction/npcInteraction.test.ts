@@ -3,6 +3,7 @@ import { REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
 import { createNpcInteractionService } from './npcInteraction';
 import { renderNpcConversationThread } from './npcThread';
 import { createInitialWorldState } from '../world/state';
+import { GUARD_PERSONA_CONTRACT } from './guardPromptContext';
 import type { ConversationMessage } from '../world/types';
 
 describe('createNpcInteractionService', () => {
@@ -29,6 +30,12 @@ describe('createNpcInteractionService', () => {
         conversationHistory: [{ role: 'player', text: 'Where are the archives?' }],
       }),
     );
+    const calledPrompt = complete.mock.calls.at(0)?.at(0) as { context: string } | undefined;
+    expect(calledPrompt).toBeDefined();
+    if (!calledPrompt) {
+      throw new Error('Expected NPC LLM prompt to be provided.');
+    }
+    expect(calledPrompt.context).not.toContain(GUARD_PERSONA_CONTRACT);
     expect(result.responseText).toBe('Archivist: The archives are west of here.');
     expect(result.updatedWorldState.npcConversationHistoryByNpcId[npc.id]).toEqual([
       { role: 'player', text: 'Where are the archives?' },
