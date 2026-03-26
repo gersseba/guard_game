@@ -1,6 +1,5 @@
 import { REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
-import type { WorldState } from '../world/types';
-import type { Guard, Player } from '../world/types';
+import type { ConversationMessage, Guard, Player, WorldState } from '../world/types';
 import { buildGuardPromptContext } from './guardPromptContext';
 
 export interface GuardInteractionRequest {
@@ -13,6 +12,10 @@ export interface GuardInteractionResult {
   responseText: string;
 }
 
+export interface GuardLlmInteractionResult extends GuardInteractionResult {
+  updatedWorldState: WorldState;
+}
+
 export interface GuardLlmInteractionRequest {
   guard: Guard;
   player: Player;
@@ -21,7 +24,7 @@ export interface GuardLlmInteractionRequest {
 }
 
 export interface GuardInteractionService {
-  handleGuardInteraction(request: GuardLlmInteractionRequest): Promise<GuardInteractionResult>;
+  handleGuardInteraction(request: GuardLlmInteractionRequest): Promise<GuardLlmInteractionResult>;
 }
 
 const GUARD_STATE_RESPONSES: Record<Guard['guardState'], string> = {
@@ -40,20 +43,42 @@ export const handleGuardInteraction = (
 export const createGuardInteractionService = (llmClient: LlmClient): GuardInteractionService => ({
   handleGuardInteraction: async (
     request: GuardLlmInteractionRequest,
-  ): Promise<GuardInteractionResult> => {
+  ): Promise<GuardLlmInteractionResult> => {
+    const previousHistory =
+      request.worldState.npcConversationHistoryByNpcId[request.guard.id] ?? [];
+    const playerMessageRecord: ConversationMessage = {
+      role: 'player',
+      text: request.playerMessage,
+    };
+    const historyWithPlayerMessage = [...previousHistory, playerMessageRecord];
+
     const assistantText = await llmClient
       .complete({
         actorId: request.guard.id,
         context: buildGuardPromptContext(request.guard, request.worldState),
         playerMessage: request.playerMessage,
-        conversationHistory: [{ role: 'player', text: request.playerMessage }],
+        conversationHistory: historyWithPlayerMessage,
       })
       .then((llmResponse) => llmResponse.text)
       .catch(() => REQUEST_FAILURE_FALLBACK_TEXT);
 
+    const assistantMessageRecord: ConversationMessage = {
+      role: 'assistant',
+      text: assistantText,
+    };
+
+    const updatedWorldState: WorldState = {
+      ...request.worldState,
+      npcConversationHistoryByNpcId: {
+        ...request.worldState.npcConversationHistoryByNpcId,
+        [request.guard.id]: [...historyWithPlayerMessage, assistantMessageRecord],
+      },
+    };
+
     return {
       guardId: request.guard.id,
       responseText: `${request.guard.displayName}: ${assistantText}`,
+      updatedWorldState,
     };
   },
 });

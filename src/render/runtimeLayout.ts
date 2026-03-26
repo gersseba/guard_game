@@ -11,10 +11,6 @@ export const getRuntimeLayoutMarkup = (): string => {
           <h2>Viewport</h2>
           <div id="viewport" class="guard-game-viewport"></div>
         </section>
-        <section class="guard-game-panel guard-game-panel-interaction">
-          <h2>Interaction</h2>
-          <p id="interaction-log" class="guard-game-interaction-log">No interaction yet.</p>
-        </section>
       </section>
       <section class="guard-game-secondary" aria-label="Level controls and world state">
         <section class="guard-game-panel">
@@ -28,5 +24,6 @@ export const getRuntimeLayoutMarkup = (): string => {
       </section>
     </main>
   </div>
+  <div id="chat-modal-host"></div>
 `;
 };

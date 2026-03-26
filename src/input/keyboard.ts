@@ -21,13 +21,24 @@ export interface KeyboardCommandInputBinding {
   dispose(): void;
 }
 
+export interface KeyboardBindingOptions {
+  /** Optional callback to check if modal/input is open; suppresses movement if true. */
+  isModalOpen?: () => boolean;
+}
+
 export const bindKeyboardCommands = (
   target: Window,
   commandBuffer: CommandBuffer,
+  options?: KeyboardBindingOptions,
 ): KeyboardCommandInputBinding => {
   const onKeyDown = (event: KeyboardEvent): void => {
     const command = mapKeyboardEventToWorldCommand(event.key);
     if (!command) {
+      return;
+    }
+
+    // Suppress movement and interact commands while modal is open.
+    if (options?.isModalOpen?.()) {
       return;
     }
 
