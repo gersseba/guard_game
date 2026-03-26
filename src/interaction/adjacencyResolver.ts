@@ -11,16 +11,29 @@ const isOrthogonallyAdjacent = (player: Player, position: { x: number; y: number
   return deltaX + deltaY === 1;
 };
 
+const kindPriority: Record<AdjacentTarget['kind'], number> = {
+  guard: 0,
+  door: 1,
+  npc: 2,
+};
+
+const sortCandidatesDeterministically = (a: AdjacentTarget, b: AdjacentTarget): number => {
+  const kindDiff = kindPriority[a.kind] - kindPriority[b.kind];
+  if (kindDiff !== 0) {
+    return kindDiff;
+  }
+
+  return a.target.id.localeCompare(b.target.id);
+};
+
 /**
  * Resolves the adjacent interactable target for the player.
  * Returns null when no orthogonally adjacent target exists (silent no-op).
- * Returns a random target when multiple adjacent targets exist.
- *
- * @param randomFn - injectable random source for testability; defaults to Math.random
+ * Uses a deterministic tie-break when multiple adjacent targets exist:
+ * kind priority (guard, door, npc), then lexical target id.
  */
 export const resolveAdjacentTarget = (
   worldState: WorldState,
-  randomFn: () => number = Math.random,
 ): AdjacentTarget | null => {
   const { player, guards, doors, npcs } = worldState;
 
@@ -40,6 +53,6 @@ export const resolveAdjacentTarget = (
     return null;
   }
 
-  const index = Math.floor(randomFn() * candidates.length);
-  return candidates[index];
+  candidates.sort(sortCandidatesDeterministically);
+  return candidates[0];
 };
