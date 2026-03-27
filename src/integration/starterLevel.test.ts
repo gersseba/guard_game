@@ -19,10 +19,18 @@ describe('starter level integration pipeline', () => {
 
     expect(worldState).toBeDefined();
     expect(worldState.player.position).toEqual({ x: 10, y: 10 });
+    expect(worldState.player.spriteAssetPath).toBe('/assets/medieval_player_town_guard.svg');
 
     expect(worldState.guards).toHaveLength(2);
     expect(worldState.guards.find((guard) => guard.id === 'guard-1')?.position).toEqual({ x: 5, y: 10 });
     expect(worldState.guards.find((guard) => guard.id === 'guard-2')?.position).toEqual({ x: 10, y: 5 });
+    expect(worldState.guards.every((guard) => guard.spriteAssetPath === '/assets/medieval_guard_spear.svg')).toBe(
+      true,
+    );
+
+    expect(worldState.npcs).toHaveLength(1);
+    expect(worldState.npcs[0].id).toBe('npc-villager-1');
+    expect(worldState.npcs[0].spriteAssetPath).toBe('/assets/medieval_npc_villager.svg');
 
     expect(worldState.doors).toHaveLength(2);
     expect(worldState.doors.find((door) => door.id === 'door-1')?.position).toEqual({ x: 2, y: 10 });

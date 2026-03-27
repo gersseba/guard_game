@@ -19,6 +19,7 @@ Source of truth:
 - `id: string`
 - `displayName: string`
 - `position: GridPosition`
+- `spriteAssetPath?: string`
 
 ### Npc
 - `id: string`
@@ -26,11 +27,13 @@ Source of truth:
 - `position: GridPosition`
 - `npcType: string` - Categorizes the NPC's role (for prompt profile resolution)
 - `dialogueContextKey: string` - Deterministically derived from `npcType` via `npc_${npcType.toLowerCase()}`
+- `spriteAssetPath?: string`
 
 ### Guard
 Extends `Interactable`:
 - `guardState: 'idle' | 'patrolling' | 'alert'`
 - `honestyTrait?: 'truth-teller' | 'liar'`
+- `spriteAssetPath?: string`
 
 ### Door
 Extends `Interactable`:
@@ -118,11 +121,12 @@ Required fields:
 - `width: number`
 - `height: number`
 - `player: { x: number; y: number }`
-- `guards: Array<{ id, displayName, x, y, guardState, honestyTrait? }>`
+- `guards: Array<{ id, displayName, x, y, guardState, honestyTrait?, spriteAssetPath? }>`
 - `doors: Array<{ id, displayName, x, y, doorState, outcome }>`
 
 Optional fields:
-- `npcs: Array<{ id, displayName, x, y, npcType }>`
+- `player.spriteAssetPath?: string`
+- `npcs: Array<{ id, displayName, x, y, npcType, spriteAssetPath? }>`
 - `interactiveObjects: Array<...>` with the same object fields as `InteractiveObject`, but `x/y` instead of `position`
 
 Example NPC entry:

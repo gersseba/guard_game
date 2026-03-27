@@ -4,9 +4,9 @@ The render layer translates `WorldState` into visual state and DOM-only runtime 
 
 ## Responsibilities
 - Initialize and own PixiJS app/container setup
-- Render grid, boundary band, entity markers, and player marker
+- Render grid, boundary band, character sprites (when available), and marker fallbacks
 - Keep viewport/camera centered around player with clamped world bounds
-- Map world entities to deterministic marker visuals by type
+- Map world entities to deterministic visuals by type and optional asset metadata
 - Manage DOM-only render utilities for runtime layout, chat UI, viewport pause presentation, and level-outcome presentation
 
 Implementation entry points:
@@ -25,9 +25,10 @@ Implementation entry points:
 Per render pass:
 1. Ensure canvas size from tile-grid viewport config.
 2. Update camera offset from player center and world bounds.
-3. Draw boundary band and grid.
-4. Build and draw entity circles for NPCs, guards, doors, and interactive objects.
-5. Draw player marker.
+3. Request sprite loads for player, guards, and NPCs with configured `spriteAssetPath`.
+4. Draw boundary band and grid.
+5. Draw character sprites that have loaded successfully.
+6. Draw marker circles for doors, interactive objects, and any character still in fallback mode.
 
 ### DOM Render Utilities
 
@@ -73,13 +74,20 @@ Current behavior:
 
 ## Asset Metadata and Usage
 
-Interactive objects can carry `spriteAssetPath` metadata in world state (for example, `/assets/medieval_supply_crate_inspect.svg`).
+Character and object entities can carry `spriteAssetPath` metadata in world state (for example, `/assets/medieval_player_town_guard.svg` or `/assets/medieval_supply_crate_inspect.svg`).
+
+Current character contract:
+- `player.spriteAssetPath?: string`
+- `guard.spriteAssetPath?: string`
+- `npc.spriteAssetPath?: string`
 
 Current renderer behavior:
-- Uses marker circles only.
-- Does not yet load or draw `spriteAssetPath`.
+- Attempts to load configured character sprite assets via Pixi asset loading.
+- Renders characters as sprites only when the asset has loaded.
+- Falls back to deterministic marker circles when path metadata is missing, loading is in progress, or loading failed.
+- Keeps door and interactive-object rendering marker-based.
 
-This is intentional for now and keeps rendering decoupled from interaction logic while preserving forward-compatible asset metadata in level files.
+This preserves render-only ownership of visual decisions while keeping gameplay logic and world determinism unchanged.
 
 ## Tests
 

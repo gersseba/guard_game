@@ -34,6 +34,13 @@ All fields are serializable primitives, arrays, or plain objects.
 - Optional `npcs` — array of level-defined NPCs with required `id`, `displayName`, `x`, `y`, and `npcType` fields
 - Optional `interactiveObjects`
 
+Character entities now support optional sprite metadata in serializable level JSON:
+- `player.spriteAssetPath?: string`
+- `guard.spriteAssetPath?: string`
+- `npc.spriteAssetPath?: string`
+
+Validation follows existing typing-only schema patterns: when present, each `spriteAssetPath` must be a string. Path format correctness is intentionally handled by render fallback behavior, not world-level rejection.
+
 For `npcs`, validation enforces:
 - required identity/position fields (`id`, `displayName`, `x`, `y`)
 - required `npcType: string` — categorizes the NPC's role (e.g., `'archive_keeper'`, `'scholar'`)
@@ -62,7 +69,8 @@ NPCs from level JSON are transformed to runtime `Npc` objects with deterministic
   displayName: 'Archivist',
   position: { x: 8, y: 5 },
   npcType: 'archive_keeper',
-  dialogueContextKey: 'npc_archive_keeper'  // deterministically derived: npc_${npcType.toLowerCase()}
+  dialogueContextKey: 'npc_archive_keeper', // deterministically derived: npc_${npcType.toLowerCase()}
+  spriteAssetPath: '/assets/medieval_npc_villager.svg' // optional passthrough metadata
 }
 ```
 
