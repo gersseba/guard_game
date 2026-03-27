@@ -10,7 +10,7 @@ import { createLevelUi } from './render/levelUi';
 import { createChatModal } from './render/chatModal';
 import { createOutcomeOverlay } from './render/outcomeOverlay';
 import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
-import type { WorldCommand, WorldState } from './world/types';
+import type { WorldCommand, WorldState, ConversationMessage } from './world/types';
 import { createWorld } from './world/world';
 import { fetchAndLoadLevel, fetchLevelManifest } from './world/levelLoader';
 
@@ -119,7 +119,7 @@ const resultDispatcher = createResultDispatcher({
   onConversationStarted: (
     targetId: string,
     displayName: string,
-    conversationHistory: unknown[],
+      conversationHistory: ConversationMessage[],
     interactionKind: 'guard' | 'npc',
   ) => {
     currentInteraction = {
