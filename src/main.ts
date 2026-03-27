@@ -13,6 +13,7 @@ import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
 import { createChatModal } from './render/chatModal';
 import { createOutcomeOverlay } from './render/outcomeOverlay';
+import { createViewportOverlay } from './render/viewportOverlay';
 import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
 import { createRuntimeController } from './runtimeController';
 import type { WorldCommand, WorldState, ConversationMessage } from './world/types';
@@ -42,6 +43,7 @@ const commandBuffer = createCommandBuffer();
 const llmClient = createGeminiLlmClient();
 const interactionDispatcher = createInteractionDispatcher({ llmClient });
 const outcomeOverlay = createOutcomeOverlay(outcomeOverlayHostElement);
+const viewportPauseOverlay = createViewportOverlay(viewportElement);
 
 /**
  * Chat modal instance with callbacks wired to game logic.
@@ -91,6 +93,7 @@ const chatModal = createChatModal(chatModalHostElement, {
 
   onClose(): void {
     runtimeController.closeConversation();
+    viewportPauseOverlay.hide();
   },
 });
 
@@ -106,6 +109,7 @@ const resultDispatcher = createResultDispatcher({
     conversationHistory: ConversationMessage[],
   ) => {
     runtimeController.openConversation(targetId);
+    viewportPauseOverlay.show();
     chatModal.open(targetId, displayName, conversationHistory);
   },
   onLevelOutcomeChanged: (levelOutcome: 'win' | 'lose') => {
