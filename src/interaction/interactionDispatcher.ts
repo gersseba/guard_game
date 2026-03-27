@@ -23,6 +23,17 @@ export interface InteractionHandlerResult {
 export type InteractionDispatchResult = InteractionHandlerResult | Promise<InteractionHandlerResult>;
 
 /**
+ * Conditionally async interaction handler.
+ * Returns synchronously for immediate open-chat interactions and
+ * asynchronously for player-message LLM turns.
+ */
+export type ConditionalInteractionHandler = (
+  target: AdjacentTarget,
+  worldState: WorldState,
+  playerMessage?: string,
+) => InteractionDispatchResult;
+
+/**
  * Sync interaction handler.
  * Used for immediate, non-async interactions (door, object).
  */
@@ -45,7 +56,10 @@ export type AsyncInteractionHandler = (
 /**
  * Union type of all handler types.
  */
-export type InteractionHandler = SyncInteractionHandler | AsyncInteractionHandler;
+export type InteractionHandler =
+  | SyncInteractionHandler
+  | AsyncInteractionHandler
+  | ConditionalInteractionHandler;
 
 /**
  * Registry keyed by target kind.
@@ -148,10 +162,10 @@ const createObjectHandler = (): SyncInteractionHandler => {
 /**
  * Wraps guard interaction logic into dispatcher handler format (async).
  */
-const createGuardHandler = (llmClient: LlmClient): AsyncInteractionHandler => {
+const createGuardHandler = (llmClient: LlmClient): ConditionalInteractionHandler => {
   const guardService = createGuardInteractionService(llmClient);
 
-  return async (target: AdjacentTarget, worldState: WorldState, playerMessage?: string) => {
+  return (target: AdjacentTarget, worldState: WorldState, playerMessage?: string) => {
     if (target.kind !== 'guard') {
       throw new Error('Guard handler called with non-guard target');
     }
@@ -167,31 +181,31 @@ const createGuardHandler = (llmClient: LlmClient): AsyncInteractionHandler => {
       };
     }
 
-    const result = await guardService.handleGuardInteraction({
-      guard: target.target,
-      player: worldState.player,
-      worldState,
-      playerMessage,
-    });
-
-    return {
-      kind: 'guard',
-      targetId: result.guardId,
-      displayName: target.target.displayName,
-      responseText: result.responseText,
-      updatedWorldState: result.updatedWorldState,
-      isConversational: true,
-    };
+    return guardService
+      .handleGuardInteraction({
+        guard: target.target,
+        player: worldState.player,
+        worldState,
+        playerMessage,
+      })
+      .then((result) => ({
+        kind: 'guard' as const,
+        targetId: result.guardId,
+        displayName: target.target.displayName,
+        responseText: result.responseText,
+        updatedWorldState: result.updatedWorldState,
+        isConversational: true,
+      }));
   };
 };
 
 /**
  * Wraps NPC interaction logic into dispatcher handler format (async).
  */
-const createNpcHandler = (llmClient: LlmClient): AsyncInteractionHandler => {
+const createNpcHandler = (llmClient: LlmClient): ConditionalInteractionHandler => {
   const npcService = createNpcInteractionService(llmClient);
 
-  return async (target: AdjacentTarget, worldState: WorldState, playerMessage?: string) => {
+  return (target: AdjacentTarget, worldState: WorldState, playerMessage?: string) => {
     if (target.kind !== 'npc') {
       throw new Error('NPC handler called with non-npc target');
     }
@@ -207,21 +221,21 @@ const createNpcHandler = (llmClient: LlmClient): AsyncInteractionHandler => {
       };
     }
 
-    const result = await npcService.handleNpcInteraction({
-      npc: target.target,
-      player: worldState.player,
-      worldState,
-      playerMessage,
-    });
-
-    return {
-      kind: 'npc',
-      targetId: result.npcId,
-      displayName: target.target.displayName,
-      responseText: result.responseText,
-      updatedWorldState: result.updatedWorldState,
-      isConversational: true,
-    };
+    return npcService
+      .handleNpcInteraction({
+        npc: target.target,
+        player: worldState.player,
+        worldState,
+        playerMessage,
+      })
+      .then((result) => ({
+        kind: 'npc' as const,
+        targetId: result.npcId,
+        displayName: target.target.displayName,
+        responseText: result.responseText,
+        updatedWorldState: result.updatedWorldState,
+        isConversational: true,
+      }));
   };
 };
 

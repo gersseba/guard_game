@@ -76,13 +76,18 @@ describe('InteractionDispatcher', () => {
   });
 
   describe('dispatch routing by kind', () => {
-    it('dispatches guard interactions', async () => {
+    it('dispatches guard interactions synchronously when no player message is provided', () => {
       const dispatcher = createInteractionDispatcher({ llmClient });
       const guard = createTestGuard('guard-1');
       const worldState = createTestWorldState({ guards: [guard] });
       const target = { kind: 'guard' as const, target: guard };
 
-      const result = await dispatcher.dispatch(target, worldState);
+      const result = dispatcher.dispatch(target, worldState);
+
+      expect(isPromiseLike(result)).toBe(false);
+      if (isPromiseLike(result)) {
+        throw new Error('Expected guard open dispatch to remain synchronous');
+      }
 
       expect(result.kind).toBe('guard');
       expect(result.targetId).toBe('guard-1');
@@ -107,13 +112,18 @@ describe('InteractionDispatcher', () => {
       expect(result.isConversational).toBe(false);
     });
 
-    it('dispatches npc interactions', async () => {
+    it('dispatches npc interactions synchronously when no player message is provided', () => {
       const dispatcher = createInteractionDispatcher({ llmClient });
       const npc = createTestNpc('npc-1');
       const worldState = createTestWorldState({ npcs: [npc] });
       const target = { kind: 'npc' as const, target: npc };
 
-      const result = await dispatcher.dispatch(target, worldState);
+      const result = dispatcher.dispatch(target, worldState);
+
+      expect(isPromiseLike(result)).toBe(false);
+      if (isPromiseLike(result)) {
+        throw new Error('Expected npc open dispatch to remain synchronous');
+      }
 
       expect(result.kind).toBe('npc');
       expect(result.targetId).toBe('npc-1');
@@ -138,22 +148,48 @@ describe('InteractionDispatcher', () => {
       expect(result.isConversational).toBe(false);
     });
 
-    it('dispatches guard interactions asynchronously', async () => {
+    it('dispatches guard interactions asynchronously when player message is provided', async () => {
       const dispatcher = createInteractionDispatcher({ llmClient });
       const guard = createTestGuard('guard-1');
-      const worldState = createTestWorldState({ guards: [guard] });
+      const worldState = createTestWorldState({
+        guards: [guard],
+        npcConversationHistoryByNpcId: { 'guard-1': [] },
+      });
       const target = { kind: 'guard' as const, target: guard };
 
-      const result = dispatcher.dispatch(target, worldState);
+      const result = dispatcher.dispatch(target, worldState, 'Hello guard');
 
       expect(isPromiseLike(result)).toBe(true);
       if (!isPromiseLike(result)) {
-        throw new Error('Expected guard dispatch to be asynchronous');
+        throw new Error('Expected guard conversational dispatch to be asynchronous');
       }
 
       const resolved = await result;
       expect(resolved.kind).toBe('guard');
       expect(resolved.targetId).toBe('guard-1');
+      expect(resolved.isConversational).toBe(true);
+    });
+
+    it('dispatches npc interactions asynchronously when player message is provided', async () => {
+      const dispatcher = createInteractionDispatcher({ llmClient });
+      const npc = createTestNpc('npc-1');
+      const worldState = createTestWorldState({
+        npcs: [npc],
+        npcConversationHistoryByNpcId: { 'npc-1': [] },
+      });
+      const target = { kind: 'npc' as const, target: npc };
+
+      const result = dispatcher.dispatch(target, worldState, 'Hello npc');
+
+      expect(isPromiseLike(result)).toBe(true);
+      if (!isPromiseLike(result)) {
+        throw new Error('Expected npc conversational dispatch to be asynchronous');
+      }
+
+      const resolved = await result;
+      expect(resolved.kind).toBe('npc');
+      expect(resolved.targetId).toBe('npc-1');
+      expect(resolved.isConversational).toBe(true);
     });
   });
 
@@ -435,6 +471,62 @@ describe('InteractionDispatcher', () => {
       callbackOrder.push('after-dispatch');
 
       expect(callbackOrder).toEqual(['before-dispatch', 'worldStateUpdated', 'after-dispatch']);
+    });
+
+    it('applies guard conversational open callback synchronously in dispatch order', () => {
+      const callbackOrder: string[] = [];
+      const dispatcher = createResultDispatcher({
+        onConversationStarted: () => {
+          callbackOrder.push('conversation');
+        },
+        onLevelOutcomeChanged: () => {
+          callbackOrder.push('outcome');
+        },
+        onWorldStateUpdated: () => {
+          callbackOrder.push('worldStateUpdated');
+        },
+        getCurrentWorldState: () => createTestWorldState(),
+        getConversationHistory: () => [],
+      });
+
+      callbackOrder.push('before-dispatch');
+      dispatcher.dispatch({
+        kind: 'guard',
+        targetId: 'guard-1',
+        displayName: 'Test Guard',
+        isConversational: false,
+      });
+      callbackOrder.push('after-dispatch');
+
+      expect(callbackOrder).toEqual(['before-dispatch', 'conversation', 'after-dispatch']);
+    });
+
+    it('applies npc conversational open callback synchronously in dispatch order', () => {
+      const callbackOrder: string[] = [];
+      const dispatcher = createResultDispatcher({
+        onConversationStarted: () => {
+          callbackOrder.push('conversation');
+        },
+        onLevelOutcomeChanged: () => {
+          callbackOrder.push('outcome');
+        },
+        onWorldStateUpdated: () => {
+          callbackOrder.push('worldStateUpdated');
+        },
+        getCurrentWorldState: () => createTestWorldState(),
+        getConversationHistory: () => [],
+      });
+
+      callbackOrder.push('before-dispatch');
+      dispatcher.dispatch({
+        kind: 'npc',
+        targetId: 'npc-1',
+        displayName: 'Test NPC',
+        isConversational: false,
+      });
+      callbackOrder.push('after-dispatch');
+
+      expect(callbackOrder).toEqual(['before-dispatch', 'conversation', 'after-dispatch']);
     });
   });
 });
