@@ -187,9 +187,11 @@ describe('render entity circle helpers', () => {
       ...createWorldState(),
       player: {
         ...createWorldState().player,
+        facingDirection: 'right',
         spriteSet: {
           default: '/assets/medieval_player_town_guard.svg',
           front: '/assets/medieval_player_town_guard.svg',
+          right: '/assets/medieval_player_town_guard_right.svg',
         },
       },
       guards: [
@@ -210,7 +212,7 @@ describe('render entity circle helpers', () => {
     };
 
     const spriteStatuses = new Map([
-      ['/assets/medieval_player_town_guard.svg', 'loaded' as const],
+      ['/assets/medieval_player_town_guard_right.svg', 'loaded' as const],
       ['/assets/medieval_guard_spear.svg', 'loaded' as const],
       ['/assets/medieval_npc_villager.svg', 'loaded' as const],
     ]);
@@ -220,6 +222,25 @@ describe('render entity circle helpers', () => {
     expect(modes.player).toBe('sprite');
     expect(modes.guardsById['guard-1']).toBe('sprite');
     expect(modes.npcsById['npc-1']).toBe('sprite');
+  });
+
+  it('defaults player sprite direction selection to front when no directional input has occurred', () => {
+    const worldState: WorldState = {
+      ...createWorldState(),
+      player: {
+        ...createWorldState().player,
+        spriteSet: {
+          front: '/assets/medieval_player_front.svg',
+          away: '/assets/medieval_player_away.svg',
+        },
+      },
+    };
+
+    const spriteStatuses = new Map([['/assets/medieval_player_front.svg', 'loaded' as const]]);
+
+    const modes = buildCharacterRenderModes(worldState, spriteStatuses);
+
+    expect(modes.player).toBe('sprite');
   });
 
   it('falls back to marker mode for player, guard, and npc when loading fails or is unresolved', () => {
