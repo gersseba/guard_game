@@ -44,7 +44,7 @@ Dispatcher contract:
 `createResultDispatcher()` in `src/interaction/interactionDispatcher.ts` owns a second registry keyed by `InteractionHandlerResult['kind']`.
 
 Registered result handlers:
-- `guard`/`npc` -> open chat modal with latest conversation history
+- `guard`/`npc` -> open chat modal with the latest actor conversation thread for that target id
 - `door` -> apply level outcome callback if present
 - `interactiveObject` -> apply immutable world-state reset callback if present
 
@@ -59,6 +59,8 @@ Result dispatcher keeps main-loop side effects centralized and testable.
 4. If sync result, call `resultDispatcher.dispatch(...)` immediately.
 
 This removes target-kind branching from `main.ts` and preserves behavior parity from pre-refactor logic.
+
+The runtime bridge and tests use the shared actor-neutral helper in `src/interaction/actorConversationThread.ts` to read and render conversation history.
 
 ## Behavior Parity Expectations
 

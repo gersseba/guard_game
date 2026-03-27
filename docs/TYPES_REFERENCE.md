@@ -53,8 +53,10 @@ Extends `Interactable`:
 - `role: 'player' | 'assistant'`
 - `text: string`
 
-### NpcConversationHistoryByNpcId
+### ActorConversationHistoryByActorId
 `Record<string, ConversationMessage[]>`
+
+Stores conversation history by actor id. The current conversational actors are guards and NPCs, but the type and naming stay actor-neutral so shared thread helpers and world state do not encode NPC-only semantics.
 
 ### WorldState
 - `tick: number`
@@ -64,7 +66,7 @@ Extends `Interactable`:
 - `guards: Guard[]`
 - `doors: Door[]`
 - `interactiveObjects: InteractiveObject[]`
-- `npcConversationHistoryByNpcId: NpcConversationHistoryByNpcId`
+- `actorConversationHistoryByActorId: ActorConversationHistoryByActorId`
 - `levelOutcome: 'win' | 'lose' | null`
 
 ## Level File Shape

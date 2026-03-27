@@ -41,7 +41,7 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 **Examples:**
 - `WorldCommand` (not just `Command`)
 - `InteractionHandlerResult` and `ResultDispatcher` (not ad-hoc branches in runtime)
-- `NpcThread` (for conversation context, not `Dialog`)
+- `ActorConversationThread` (for shared actor-scoped conversation context, not `Dialog`)
 
 ## Data Flow
 
@@ -103,7 +103,7 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 
 ### LLM Layer
 - **Responsibility:** Provide context and API boundary for LLM calls.
-- **Input:** Interaction context (NPC/guard, player state, conversation thread).
+- **Input:** Interaction context (target actor, player state, conversation thread).
 - **Output:** LLM response text and conversation updates.
 - **Guarantee:** LLM calls occur only for conversational player-message turns.
 

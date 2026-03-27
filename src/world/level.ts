@@ -209,7 +209,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       firstUseOutcome: o.firstUseOutcome,
       spriteAssetPath: o.spriteAssetPath,
     })),
-    npcConversationHistoryByNpcId: {},
+    actorConversationHistoryByActorId: {},
     levelOutcome: null,
   };
   validateSpatialLayout(worldState);

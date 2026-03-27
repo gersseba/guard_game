@@ -7,7 +7,7 @@ import {
   createResultDispatcher,
   isPromiseLike,
 } from './interaction/interactionDispatcher';
-import { getNpcConversationHistory } from './interaction/npcThread';
+import { getActorConversationHistory } from './interaction/actorConversationThread';
 import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
@@ -76,7 +76,7 @@ const chatModal = createChatModal(chatModalHostElement, {
       const result = await interactionDispatcher.dispatch(target, currentWorldState, playerMessage);
 
       // Extract the AI response from the updated history.
-      const history = getNpcConversationHistory(
+      const history = getActorConversationHistory(
         result.updatedWorldState ?? currentWorldState,
         interaction.actorId,
       );
@@ -125,7 +125,7 @@ const resultDispatcher = createResultDispatcher({
   },
   getCurrentWorldState: () => world.getState(),
   getConversationHistory: (worldState: WorldState, targetId: string) =>
-    getNpcConversationHistory(worldState, targetId),
+    getActorConversationHistory(worldState, targetId),
 });
 
 const LEVELS_BASE_URL = '/levels';

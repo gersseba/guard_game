@@ -29,7 +29,8 @@ const buildPromptContext = (request: NpcInteractionRequest): string => {
 
 export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractionService => ({
   handleNpcInteraction: async (request: NpcInteractionRequest): Promise<NpcInteractionResult> => {
-    const previousHistory = request.worldState.npcConversationHistoryByNpcId[request.npc.id] ?? [];
+    const previousHistory =
+      request.worldState.actorConversationHistoryByActorId[request.npc.id] ?? [];
     const playerMessageRecord: ConversationMessage = {
       role: 'player',
       text: request.playerMessage,
@@ -51,14 +52,14 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
       text: assistantText,
     };
 
-    const updatedHistoryByNpcId = {
-      ...request.worldState.npcConversationHistoryByNpcId,
+    const updatedHistoryByActorId = {
+      ...request.worldState.actorConversationHistoryByActorId,
       [request.npc.id]: [...historyWithPlayerMessage, assistantMessageRecord],
     };
 
     const updatedWorldState: WorldState = {
       ...request.worldState,
-      npcConversationHistoryByNpcId: updatedHistoryByNpcId,
+      actorConversationHistoryByActorId: updatedHistoryByActorId,
     };
 
     return {
@@ -81,15 +82,15 @@ export const handleNpcInteraction = async (
     role: 'assistant',
     text: fallbackText,
   };
-  const previousHistory = request.worldState.npcConversationHistoryByNpcId[request.npc.id] ?? [];
+  const previousHistory = request.worldState.actorConversationHistoryByActorId[request.npc.id] ?? [];
 
   return {
     npcId: request.npc.id,
     responseText: fallbackText,
     updatedWorldState: {
       ...request.worldState,
-      npcConversationHistoryByNpcId: {
-        ...request.worldState.npcConversationHistoryByNpcId,
+      actorConversationHistoryByActorId: {
+        ...request.worldState.actorConversationHistoryByActorId,
         [request.npc.id]: [...previousHistory, playerMessageRecord, assistantMessageRecord],
       },
     },

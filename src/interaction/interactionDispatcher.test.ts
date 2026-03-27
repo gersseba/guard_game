@@ -30,7 +30,7 @@ const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => ({
   doors: [],
   npcs: [],
   interactiveObjects: [],
-  npcConversationHistoryByNpcId: {},
+  actorConversationHistoryByActorId: {},
   levelOutcome: null,
   ...overrides,
 });
@@ -153,7 +153,7 @@ describe('InteractionDispatcher', () => {
       const guard = createTestGuard('guard-1');
       const worldState = createTestWorldState({
         guards: [guard],
-        npcConversationHistoryByNpcId: { 'guard-1': [] },
+        actorConversationHistoryByActorId: { 'guard-1': [] },
       });
       const target = { kind: 'guard' as const, target: guard };
 
@@ -175,7 +175,7 @@ describe('InteractionDispatcher', () => {
       const npc = createTestNpc('npc-1');
       const worldState = createTestWorldState({
         npcs: [npc],
-        npcConversationHistoryByNpcId: { 'npc-1': [] },
+        actorConversationHistoryByActorId: { 'npc-1': [] },
       });
       const target = { kind: 'npc' as const, target: npc };
 
@@ -249,7 +249,7 @@ describe('InteractionDispatcher', () => {
       const guard = createTestGuard('guard-1');
       const worldState = createTestWorldState({
         guards: [guard],
-        npcConversationHistoryByNpcId: { 'guard-1': [] },
+        actorConversationHistoryByActorId: { 'guard-1': [] },
       });
       const target = { kind: 'guard' as const, target: guard };
 
@@ -268,7 +268,7 @@ describe('InteractionDispatcher', () => {
       const npc = createTestNpc('npc-1');
       const worldState = createTestWorldState({
         npcs: [npc],
-        npcConversationHistoryByNpcId: { 'npc-1': [] },
+        actorConversationHistoryByActorId: { 'npc-1': [] },
       });
       const target = { kind: 'npc' as const, target: npc };
 
@@ -340,13 +340,13 @@ describe('InteractionDispatcher', () => {
       const guard = createTestGuard('guard-1');
       const worldState = createTestWorldState({
         guards: [guard],
-        npcConversationHistoryByNpcId: { 'guard-1': [] },
+        actorConversationHistoryByActorId: { 'guard-1': [] },
       });
       const target = { kind: 'guard' as const, target: guard };
 
       const result = await dispatcher.dispatch(target, worldState, 'Hello');
 
-      const history = result.updatedWorldState?.npcConversationHistoryByNpcId['guard-1'];
+      const history = result.updatedWorldState?.actorConversationHistoryByActorId['guard-1'];
       expect(history).toBeDefined();
       expect(history?.length).toBeGreaterThan(0);
       // Verify structure: player message then assistant response
@@ -359,13 +359,13 @@ describe('InteractionDispatcher', () => {
       const npc = createTestNpc('npc-1');
       const worldState = createTestWorldState({
         npcs: [npc],
-        npcConversationHistoryByNpcId: { 'npc-1': [] },
+        actorConversationHistoryByActorId: { 'npc-1': [] },
       });
       const target = { kind: 'npc' as const, target: npc };
 
       const result = await dispatcher.dispatch(target, worldState, 'Hello');
 
-      const history = result.updatedWorldState?.npcConversationHistoryByNpcId['npc-1'];
+      const history = result.updatedWorldState?.actorConversationHistoryByActorId['npc-1'];
       expect(history).toBeDefined();
       expect(history?.length).toBeGreaterThan(0);
       // Verify structure: player message then assistant response
