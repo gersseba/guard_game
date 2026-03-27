@@ -62,6 +62,24 @@ This removes target-kind branching from `main.ts` and preserves behavior parity 
 
 The runtime bridge and tests use the shared actor-neutral helper in `src/interaction/actorConversationThread.ts` to read and render conversation history.
 
+## Conversation Pause Lifecycle
+
+When the result dispatcher opens a guard or NPC conversation (`onConversationStarted`), it calls `runtimeController.openConversation(actorId)`, which:
+1. Sets the runtime to paused state.
+2. Records the target actor id as the active `RuntimeConversationSession`.
+3. Clears any buffered commands so pre-conversation inputs do not bleed into the first resumed tick.
+
+While paused, `runtimeController.stepSimulation()` drains and discards buffered commands each tick without updating world state or dispatching interactions.
+
+When the chat modal closes (`onClose`), it calls `runtimeController.closeConversation()`, which:
+1. Clears the active conversation session.
+2. Clears buffered commands accumulated during the conversation.
+3. Resumes normal simulation on the next tick.
+
+Door and interactive object results never trigger `onConversationStarted`, so they never cause a pause. This is enforced by the result dispatcher and verified in `src/interaction/interactionDispatcher.test.ts` under the `result dispatcher timing parity` suite.
+
+Pause state is kept outside `WorldState`. It is transient runtime orchestration state managed by `RuntimeController` and must not be serialized or included in LLM context.
+
 ## NPC Prompt Profile Context
 
 NPC conversational turns call `buildNpcPromptContext()` from `src/interaction/npcPromptContext.ts`.
@@ -108,7 +126,8 @@ See `src/interaction/guardInteraction.ts`, `src/interaction/npcInteraction.ts`, 
 
 ## Tests
 
-- `src/interaction/interactionDispatcher.test.ts`: dispatch routing by kind, sync/async behavior parity, result dispatcher timing parity
+- `src/interaction/interactionDispatcher.test.ts`: dispatch routing by kind, sync/async behavior parity, result dispatcher timing parity, door/object non-pause guarantee
+- `src/runtimeController.test.ts`: pause entry/exit lifecycle, command gating while paused, resume without command leak, level-outcome gating independent of pause state
 - `src/interaction/npcPromptContext.test.ts`: profile registry resolution, deterministic fallback, context shape determinism
 - `src/interaction/objectInteraction.test.ts`: object-type dispatcher behavior, first-use outcomes, repeat interactions
 - `src/integration/starterLevel.test.ts`: end-to-end adjacent object resolution and state updates

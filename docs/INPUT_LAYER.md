@@ -12,7 +12,10 @@ The input layer captures keyboard input and translates it into `WorldCommand` va
 ## Core Concepts
 
 ### CommandBuffer
-A queue of `WorldCommand` values waiting to be applied to the world. Drained once per tick.
+A queue of `WorldCommand` values waiting to be applied to the world. Three operations:
+- `enqueue(command)` — adds a command to the buffer (called by the keyboard handler).
+- `drain()` — atomically returns and clears all pending commands; called once per tick by `RuntimeController.stepSimulation()`.
+- `clear()` — discards all pending commands without returning them; called by `RuntimeController` on conversation pause entry and exit to prevent buffered inputs from leaking into resumed ticks.
 
 ### WorldCommand
 Represents a player action. Examples: `MoveForward`, `MoveBackward`, `TurnLeft`, `TurnRight`, `Interact`.
