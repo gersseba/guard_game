@@ -53,6 +53,7 @@ describe('createGuardInteractionService', () => {
         id: 'npc-1',
         displayName: 'Archivist',
         position: { x: 8, y: 3 },
+        npcType: 'archive_keeper',
         dialogueContextKey: 'archive_keeper_intro',
       },
     ];
