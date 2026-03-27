@@ -257,6 +257,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       id: 'player',
       displayName: 'Player',
       position: { x: levelData.player.x, y: levelData.player.y },
+      facingDirection: 'front',
       ...(levelData.player.spriteAssetPath !== undefined
         ? { spriteAssetPath: levelData.player.spriteAssetPath }
         : {}),

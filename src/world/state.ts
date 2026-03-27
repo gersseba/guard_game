@@ -11,6 +11,7 @@ export const createInitialWorldState = (): WorldState => ({
     id: 'player-1',
     displayName: 'Guard',
     position: { x: 1, y: 1 },
+    facingDirection: 'front',
   },
   npcs: [
     {
