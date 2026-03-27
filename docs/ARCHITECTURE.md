@@ -7,7 +7,7 @@ Guard Game enforces strict layer separation to support deterministic world updat
 ```
 /src
   /world               - Deterministic world model (state, command application, ticks)
-  /render              - PixiJS rendering port (grid, sprites, camera, viewport)
+  /render              - PixiJS rendering port plus DOM overlays for viewport pause, chat, and outcomes
   /interaction         - Interaction dispatch + result routing across target kinds
   /input               - Input command buffering and keyboard mapping
   /llm                 - LLM client boundary and context generation stubs
@@ -50,8 +50,8 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 1. **Input Phase:** Keyboard input is captured and mapped to `WorldCommand` values, enqueued into `CommandBuffer`.
 2. **Tick Phase** (fixed 100ms): `runtimeController.stepSimulation()` is called. It drains the command buffer, gates commands based on current pause state and level outcome, then applies the resolved command set to world state via `world.applyCommands(commands)`. If the runtime is paused (a guard or NPC conversation is open), buffered commands are discarded and no world update or interaction dispatch occurs for that tick.
 3. **Interaction Dispatch:** If an `interact` command was issued and the runtime is not paused, `runInteractionIfRequested()` resolves one adjacent target and calls `interactionDispatcher.dispatch(...)`.
-4. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into main-loop side effects.
-5. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port.
+4. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into main-loop side effects. Conversational open results synchronously call `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`. Door and interactive-object results stay local to world-state reset and level-outcome callbacks.
+5. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port. Separate DOM render utilities manage the chat modal, paused-viewport overlay, and level-outcome overlay.
 6. **Debug Phase:** Current JSON world state is serialized and printed to the debug panel.
 
 ```
@@ -67,12 +67,12 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
        |
 [Result Dispatcher] <- result-kind side-effect registry
        |
-[Render Port] <- reads updated state, draws sprites
+[Render Layer] <- Pixi scene + DOM overlays
        |
 [Debug Panel] <- serializes and displays JSON state
 ```
 
-> **Pause state is external to `WorldState`.** `RuntimeController` owns the pause flag and the active `RuntimeConversationSession`. This state is transient, non-serializable, and intentionally excluded from LLM context and replay.
+> **Pause state is external to `WorldState`.** `RuntimeController` owns the gameplay pause flag and the active `RuntimeConversationSession`. The render layer separately owns transient DOM pause presentation (`.viewport-pause-overlay`, chat modal visibility, focus cleanup). None of that state is serialized or included in LLM context and replay.
 
 ## Layer Contracts
 
@@ -84,8 +84,8 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 
 ### Render Layer
 - **Responsibility:** Translate world state into visual representation.
-- **Input:** `WorldState` (read-only reference).
-- **Output:** PixiJS display objects and viewport positioning.
+- **Input:** `WorldState` (read-only reference) plus runtime UI callbacks.
+- **Output:** PixiJS display objects, DOM overlay state, and viewport positioning.
 - **Guarantee:** No game logic; only read and draw.
 
 ### Interaction Layer
@@ -104,7 +104,7 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 - **Responsibility:** Map keyboard input to game commands.
 - **Input:** Keyboard events.
 - **Output:** `WorldCommand[]` enqueued into `CommandBuffer`.
-- **Guarantee:** Commands are created from input; no world state modification.
+- **Guarantee:** Commands are created from input; no world state modification. When the chat modal is open, gameplay commands are suppressed before enqueueing.
 
 ### LLM Layer
 - **Responsibility:** Provide context and API boundary for LLM calls.

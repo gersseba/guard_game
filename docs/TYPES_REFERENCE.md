@@ -1,6 +1,6 @@
 # Type Reference
 
-This document tracks the core serializable types used by the runtime.
+This document tracks the core serializable types and selected transient runtime interfaces used by the runtime.
 
 Source of truth:
 - `src/world/types.ts`
@@ -8,6 +8,7 @@ Source of truth:
 - `src/interaction/objectInteraction.ts`
 - `src/interaction/adjacencyResolver.ts`
 - `src/runtimeController.ts`
+- `src/render/viewportOverlay.ts`
 
 ## World Types
 
@@ -195,16 +196,16 @@ Defined in `src/world/types.ts`:
 
 ### CommandBuffer
 Defined in `src/input/commands.ts`:
-- `enqueue(command: WorldCommand): void` — adds a command (called by the keyboard handler)
-- `drain(): WorldCommand[]` — atomically returns and empties the buffer; called once per tick
-- `clear(): void` — discards all pending commands without returning them; called by `RuntimeController` on pause entry and exit
+- `enqueue(command: WorldCommand): void` - adds a command (called by the keyboard handler)
+- `drain(): WorldCommand[]` - atomically returns and empties the buffer; called once per tick
+- `clear(): void` - discards all pending commands without returning them; called by `RuntimeController` on pause entry and exit
 
 ## Runtime Controller Types
 
 Defined in `src/runtimeController.ts`. These types are **not** part of `WorldState`; pause state is transient runtime orchestration and must not be serialized or included in LLM context.
 
 ### RuntimeConversationSession
-- `actorId: string` — id of the currently active conversational actor (guard or NPC)
+- `actorId: string` - id of the currently active conversational actor (guard or NPC)
 
 ### RuntimeControllerDependencies
 - `world: Pick<World, 'getState' | 'applyCommands'>`
@@ -212,8 +213,18 @@ Defined in `src/runtimeController.ts`. These types are **not** part of `WorldSta
 - `runInteractions: (worldState: WorldState, commands: WorldCommand[]) => void`
 
 ### RuntimeController
-- `stepSimulation(): void` — advances one fixed tick; if paused, drains and discards the buffer without updating world state
-- `openConversation(actorId: string): void` — pauses simulation, records active actor, and clears the command buffer
-- `closeConversation(): void` — resumes simulation, clears the active session, and clears the command buffer
-- `isPaused(): boolean` — returns current pause state
-- `getCurrentInteraction(): RuntimeConversationSession | null` — returns the active session or `null`
+- `stepSimulation(): void` - advances one fixed tick; if paused, drains and discards the buffer without updating world state
+- `openConversation(actorId: string): void` - pauses simulation, records active actor, and clears the command buffer
+- `closeConversation(): void` - resumes simulation, clears the active session, and clears the command buffer
+- `isPaused(): boolean` - returns current pause state
+- `getCurrentInteraction(): RuntimeConversationSession | null` - returns the active session or `null`
+
+## Render Runtime Interfaces
+
+### ViewportOverlay
+Defined in `src/render/viewportOverlay.ts`:
+- `show(): void` - reveals `.viewport-pause-overlay` and sets `inert` on the viewport root
+- `hide(): void` - hides the overlay and removes `inert` from the viewport root
+- `isVisible(): boolean` - returns whether the viewport pause overlay is currently visible
+
+`ViewportOverlay` is transient DOM state only. It is not serialized and is not stored in `WorldState`.

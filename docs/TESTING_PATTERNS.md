@@ -17,10 +17,16 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
 - **No mocking:** World is pure logic; test the full stack
 
 ### Render Layer Tests
-- **What to test:** Sprite positioning, sprite lifecycle, viewport math
+- **What to test:** Sprite positioning, sprite lifecycle, viewport math, and DOM render utility behavior
 - **Type:** Unit tests
-- **Pattern:** Render state to PixiJS container, assert sprite properties
-- **Caveat:** Rendering is mostly integration; focus on coordinate transforms
+- **Pattern:** Render world state to the PixiJS container or mount a DOM render helper, then assert sprite properties or DOM attributes/events
+- **Caveat:** Rendering is mostly integration; focus on coordinate transforms and stable UI contracts
+- **Paused-world UI regression checks:**
+  - pause overlay starts hidden and becomes visible only after `show()`
+  - viewport `inert` toggles on `show()` / `hide()`
+  - paused viewport cannot gain focus and paused viewport click handlers do not fire
+  - close button and Escape both call `onClose` and close the modal
+  - closing the modal restores focus to `document.body`
 
 ### Interaction Layer Tests
 - **What to test:** Interaction orchestration, dispatcher routing, prompt context building, thread updates
@@ -30,6 +36,7 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   - conversational open path is synchronous
   - conversational player-message path is asynchronous
   - deterministic door/object paths stay synchronous
+  - door/object results do not trigger paused-world UI side effects
 - **Prompt-profile checks (NPC):**
   - same `npcType` resolves to same profile contract
   - different `npcType` values resolve to distinct profiles
@@ -38,9 +45,9 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
 - **Example:** Verify that a player interaction is routed by dispatcher kind and the correct result handler callback fires in order
 
 ### Input Layer Tests
-- **What to test:** Keyboard mapping, command buffering
+- **What to test:** Keyboard mapping, command buffering, modal-open suppression
 - **Type:** Unit tests
-- **Pattern:** Simulate keyboard events, assert commands in buffer
+- **Pattern:** Simulate keyboard events, assert commands in buffer or that no command is enqueued when chat is open
 - **Example:**
   ```typescript
   input.onKeyDown({ key: 'ArrowUp' });
@@ -60,6 +67,7 @@ When features cross layer boundaries, write integration tests:
 - **Input + world:** Keyboard input flows through buffer and updates world state
 - **Interaction + result routing:** Interact command resolves target, dispatcher returns result, result dispatcher applies side effect
 - **NPC interaction + LLM:** Player message triggers LLM call and updates conversation thread
+- **Conversation pause lifecycle:** Conversational open pauses the runtime, shows pause UI, and close/Escape resume the runtime through the shared `onClose` path
 
 **Pattern:** End-to-end flow through multiple layers, assert final observable state.
 
@@ -87,6 +95,7 @@ Minimum assertions:
 1. Sync path callbacks fire between `before-dispatch` and `after-dispatch` markers.
 2. Async path callbacks only fire after promise resolution.
 3. Existing level-outcome and world-state update effects are unchanged.
+4. Only conversational results trigger pause UI wiring.
 
 Reference: `src/interaction/interactionDispatcher.test.ts` timing parity tests.
 
