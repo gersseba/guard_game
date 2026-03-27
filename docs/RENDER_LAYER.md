@@ -1,34 +1,47 @@
 # Render Layer
 
-The render layer is responsible for translating world state into visual representation via PixiJS. It reads from world state but does not modify it.
+The render layer translates `WorldState` into PixiJS visuals. It never mutates gameplay state.
 
 ## Responsibilities
-- Initialize PixiJS application and root container
-- Draw grid, sprites, and UI elements based on world state
-- Manage camera/viewport positioning
-- Handle sprite lifecycle (create, update transform, destroy)
-- Keep rendering code free of game logic
+- Initialize and own PixiJS app/container setup
+- Render grid, boundary band, entity markers, and player marker
+- Keep viewport/camera centered around player with clamped world bounds
+- Map world entities to deterministic marker visuals by type
 
-## Core Concepts
+Implementation entry point: `src/render/scene.ts`.
 
-### Render Port
-A PixiJS-based rendering interface that consumes `WorldState` and produces visual output. No game logic is permitted here.
+## Current Rendering Model
 
-### Sprite Management
-Sprites represent game entities (player, NPCs, interactive objects). Each sprite is updated every frame to reflect world state.
+`createPixiRenderPort()` returns a render port with `render(worldState)`.
 
-### Camera/Viewport
-Manages the visible area of the grid. Follows the player and ensures world coordinates map to screen coordinates correctly.
+Per render pass:
+1. Ensure canvas size from tile-grid viewport config
+2. Update camera offset from player center and world bounds
+3. Draw boundary band and grid
+4. Build and draw entity circles for NPCs, guards, doors, and interactive objects
+5. Draw player marker
 
-## Extension Pattern: Add a new sprite type
+## Entity Marker Mapping
 
-When adding a new entity type to the world (new NPC type, new interactive object):
-1. Define the sprite in the render layer
-2. Update the render loop to draw it based on world state
-3. Ensure sprite position/rotation/appearance matches world state exactly
+`buildEntityCircleSpecs()` maps entities to type keys:
+- `npc`
+- `guard`
+- `door`
+- `interactive-object:<interactionType>` for interactive objects
 
-See [System Architecture](ARCHITECTURE.md) for the rendering contract.
+Known type keys use fixed colors; unknown keys fall back to a deterministic hash palette.
 
----
+## Asset Metadata and Usage
 
-*Detailed extension patterns and sprite factory utilities will be documented as rendering features are implemented.*
+Interactive objects can carry `spriteAssetPath` metadata in world state (for example, `/assets/medieval_supply_crate_inspect.svg`).
+
+Current renderer behavior:
+- Uses marker circles only
+- Does not yet load or draw `spriteAssetPath`
+
+This is intentional for now and keeps rendering decoupled from interaction logic while preserving forward-compatible asset metadata in level files.
+
+## Tests
+
+- `src/render/scene.test.ts`: color mapping, marker specs, and rendering invariants
+- `src/render/runtimeLayout.test.ts`: viewport/layout behavior
