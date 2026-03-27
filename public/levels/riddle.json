@@ -3,7 +3,17 @@
   "name": "Two Guards, Two Doors",
   "width": 20,
   "height": 20,
-  "player": { "x": 10, "y": 15 },
+  "player": {
+    "x": 10,
+    "y": 15,
+    "spriteSet": {
+      "default": "/assets/medieval_player_farmer_front.svg",
+      "front": "/assets/medieval_player_farmer_front.svg",
+      "away": "/assets/medieval_player_farmer_away.svg",
+      "left": "/assets/medieval_player_farmer_left.svg",
+      "right": "/assets/medieval_player_farmer_right.svg"
+    }
+  },
   "guards": [
     {
       "id": "guard-truth",
@@ -11,7 +21,14 @@
       "x": 8,
       "y": 10,
       "guardState": "idle",
-      "honestyTrait": "truth-teller"
+      "honestyTrait": "truth-teller",
+      "spriteSet": {
+        "default": "/assets/medieval_guard_shield_spear_front.svg",
+        "front": "/assets/medieval_guard_shield_spear_front.svg",
+        "away": "/assets/medieval_guard_shield_spear_away.svg",
+        "left": "/assets/medieval_guard_shield_spear_left.svg",
+        "right": "/assets/medieval_guard_shield_spear_right.svg"
+      }
     },
     {
       "id": "guard-liar",
@@ -19,7 +36,14 @@
       "x": 12,
       "y": 10,
       "guardState": "idle",
-      "honestyTrait": "liar"
+      "honestyTrait": "liar",
+      "spriteSet": {
+        "default": "/assets/medieval_guard_shield_spear_front.svg",
+        "front": "/assets/medieval_guard_shield_spear_front.svg",
+        "away": "/assets/medieval_guard_shield_spear_away.svg",
+        "left": "/assets/medieval_guard_shield_spear_left.svg",
+        "right": "/assets/medieval_guard_shield_spear_right.svg"
+      }
     }
   ],
   "doors": [
@@ -29,7 +53,10 @@
       "x": 7,
       "y": 8,
       "doorState": "closed",
-      "outcome": "safe"
+      "outcome": "safe",
+      "spriteSet": {
+        "default": "/assets/medieval_door_wooden_closed.svg"
+      }
     },
     {
       "id": "door-danger",
@@ -37,7 +64,10 @@
       "x": 13,
       "y": 8,
       "doorState": "closed",
-      "outcome": "danger"
+      "outcome": "danger",
+      "spriteSet": {
+        "default": "/assets/medieval_door_wooden_closed.svg"
+      }
     }
   ],
   "npcs": []

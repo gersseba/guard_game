@@ -34,6 +34,27 @@ describe('deserializeLevel', () => {
     expect(state.player.spriteAssetPath).toBe('/assets/medieval_player_town_guard.svg');
   });
 
+  it('maps optional player spriteSet when configured', () => {
+    const state = deserializeLevel({
+      ...minimalLevel,
+      player: {
+        x: 2,
+        y: 3,
+        spriteSet: {
+          default: '/assets/medieval_player_farmer_front.svg',
+          front: '/assets/medieval_player_farmer_front.svg',
+          away: '/assets/medieval_player_farmer_away.svg',
+        },
+      },
+    });
+
+    expect(state.player.spriteSet).toEqual({
+      default: '/assets/medieval_player_farmer_front.svg',
+      front: '/assets/medieval_player_farmer_front.svg',
+      away: '/assets/medieval_player_farmer_away.svg',
+    });
+  });
+
   it('sets grid dimensions from level width/height and preserves a fixed tileSize', () => {
     const state = deserializeLevel(minimalLevel);
 
@@ -93,6 +114,32 @@ describe('deserializeLevel', () => {
     expect(state.guards[0].spriteAssetPath).toBe('/assets/medieval_guard_spear.svg');
   });
 
+  it('maps optional guard spriteSet when configured', () => {
+    const state = deserializeLevel({
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'North Guard',
+          x: 5,
+          y: 7,
+          guardState: 'patrolling',
+          spriteSet: {
+            default: '/assets/medieval_guard_shield_spear_front.svg',
+            front: '/assets/medieval_guard_shield_spear_front.svg',
+            away: '/assets/medieval_guard_shield_spear_away.svg',
+          },
+        },
+      ],
+    });
+
+    expect(state.guards[0].spriteSet).toEqual({
+      default: '/assets/medieval_guard_shield_spear_front.svg',
+      front: '/assets/medieval_guard_shield_spear_front.svg',
+      away: '/assets/medieval_guard_shield_spear_away.svg',
+    });
+  });
+
   it('maps door flat fields to nested Door with correct position and doorState', () => {
     const level: LevelData = {
       ...minimalLevel,
@@ -108,6 +155,60 @@ describe('deserializeLevel', () => {
       { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, doorState: 'locked', outcome: 'safe' },
       { id: 'door-2', displayName: 'Side Door', position: { x: 19, y: 0 }, doorState: 'open', outcome: 'danger' },
     ]);
+  });
+
+  it('maps optional door spriteSet when configured', () => {
+    const state = deserializeLevel({
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'door-1',
+          displayName: 'Main Gate',
+          x: 0,
+          y: 10,
+          doorState: 'closed',
+          outcome: 'safe',
+          spriteSet: {
+            default: '/assets/medieval_door_wooden_closed.svg',
+          },
+        },
+      ],
+    });
+
+    expect(state.doors[0].spriteSet).toEqual({
+      default: '/assets/medieval_door_wooden_closed.svg',
+    });
+  });
+
+  it('keeps spriteSet data JSON-serializable in deserialized world state', () => {
+    const state = deserializeLevel({
+      ...minimalLevel,
+      player: {
+        x: 2,
+        y: 3,
+        spriteSet: {
+          default: '/assets/medieval_player_farmer_front.svg',
+          front: '/assets/medieval_player_farmer_front.svg',
+        },
+      },
+      doors: [
+        {
+          id: 'door-1',
+          displayName: 'Main Gate',
+          x: 0,
+          y: 10,
+          doorState: 'closed',
+          outcome: 'safe',
+          spriteSet: {
+            default: '/assets/medieval_door_wooden_closed.svg',
+          },
+        },
+      ],
+    });
+
+    const roundTrip = JSON.parse(JSON.stringify(state)) as typeof state;
+    expect(roundTrip.player.spriteSet?.default).toBe('/assets/medieval_player_farmer_front.svg');
+    expect(roundTrip.doors[0].spriteSet?.default).toBe('/assets/medieval_door_wooden_closed.svg');
   });
 
   it('is deterministic — same input always produces the same output', () => {
@@ -207,6 +308,16 @@ describe('validateLevelData', () => {
   it('throws when player spriteAssetPath is not a string', () => {
     const bad = { ...minimalLevel, player: { x: 2, y: 3, spriteAssetPath: 42 } };
     expect(() => validateLevelData(bad)).toThrowError('player spriteAssetPath must be a string');
+  });
+
+  it('throws when player spriteSet is not an object', () => {
+    const bad = { ...minimalLevel, player: { x: 2, y: 3, spriteSet: 'bad-shape' } };
+    expect(() => validateLevelData(bad)).toThrowError('player spriteSet must be an object');
+  });
+
+  it('throws when spriteSet is present but has no configured sprite path', () => {
+    const bad = { ...minimalLevel, player: { x: 2, y: 3, spriteSet: {} } };
+    expect(() => validateLevelData(bad)).toThrowError('player spriteSet must provide at least one sprite path');
   });
 
   it('throws when guards is not an array', () => {
@@ -335,6 +446,25 @@ describe('honestyTrait field', () => {
 
     expect(() => validateLevelData(bad)).toThrowError('invalid spriteAssetPath');
   });
+
+  it('rejects guards with non-string spriteSet directional value', () => {
+    const bad = {
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'Bad',
+          x: 5,
+          y: 7,
+          guardState: 'idle',
+          spriteSet: { front: 42 },
+        },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('spriteSet.front must be a string');
+  });
 });
 
 describe('outcome field', () => {
@@ -378,6 +508,15 @@ describe('outcome field', () => {
     };
 
     expect(() => validateLevelData(bad)).toThrowError('invalid outcome');
+  });
+
+  it('rejects doors with non-string spriteSet default', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'Bad', x: 0, y: 10, doorState: 'open', outcome: 'safe', spriteSet: { default: 7 } }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('spriteSet.default must be a string');
   });
 });
 

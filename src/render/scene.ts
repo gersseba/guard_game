@@ -1,5 +1,5 @@
 import { Application, Assets, Container, Graphics, Sprite } from 'pixi.js';
-import type { WorldState } from '../world/types';
+import type { SpriteDirection, SpriteSet, WorldState } from '../world/types';
 
 export interface RenderPort {
   render(worldState: WorldState): void;
@@ -40,6 +40,40 @@ export interface EntityCircleSpec {
   color: number;
 }
 
+const RENDER_DIRECTION: SpriteDirection = 'front';
+
+const DIRECTION_FALLBACK_ORDER: Record<SpriteDirection, Array<keyof SpriteSet>> = {
+  front: ['front', 'default', 'away', 'left', 'right'],
+  away: ['away', 'default', 'front', 'left', 'right'],
+  left: ['left', 'default', 'front', 'away', 'right'],
+  right: ['right', 'default', 'front', 'away', 'left'],
+};
+
+export const resolveSpriteAssetPathForDirection = (
+  spriteSet: SpriteSet | undefined,
+  requestedDirection: SpriteDirection,
+): string | undefined => {
+  if (spriteSet === undefined) {
+    return undefined;
+  }
+
+  for (const key of DIRECTION_FALLBACK_ORDER[requestedDirection]) {
+    const path = spriteSet[key];
+    if (path !== undefined) {
+      return path;
+    }
+  }
+
+  return undefined;
+};
+
+const resolveCharacterSpriteAssetPath = (
+  entity: { spriteAssetPath?: string; spriteSet?: SpriteSet },
+): string | undefined => {
+  const directionalSpritePath = resolveSpriteAssetPathForDirection(entity.spriteSet, RENDER_DIRECTION);
+  return directionalSpritePath ?? entity.spriteAssetPath;
+};
+
 const getCharacterRenderMode = (
   spriteAssetPath: string | undefined,
   spriteLoadStatusByPath: ReadonlyMap<string, SpriteLoadStatus>,
@@ -58,16 +92,19 @@ export const buildCharacterRenderModes = (
 ): CharacterRenderModes => {
   const guardsById: Record<string, CharacterRenderMode> = {};
   for (const guard of worldState.guards) {
-    guardsById[guard.id] = getCharacterRenderMode(guard.spriteAssetPath, spriteLoadStatusByPath);
+    guardsById[guard.id] = getCharacterRenderMode(
+      resolveCharacterSpriteAssetPath(guard),
+      spriteLoadStatusByPath,
+    );
   }
 
   const npcsById: Record<string, CharacterRenderMode> = {};
   for (const npc of worldState.npcs) {
-    npcsById[npc.id] = getCharacterRenderMode(npc.spriteAssetPath, spriteLoadStatusByPath);
+    npcsById[npc.id] = getCharacterRenderMode(resolveCharacterSpriteAssetPath(npc), spriteLoadStatusByPath);
   }
 
   return {
-    player: getCharacterRenderMode(worldState.player.spriteAssetPath, spriteLoadStatusByPath),
+    player: getCharacterRenderMode(resolveCharacterSpriteAssetPath(worldState.player), spriteLoadStatusByPath),
     guardsById,
     npcsById,
   };
@@ -163,17 +200,20 @@ export const buildEntityCircleSpecs = (worldState: WorldState): EntityCircleSpec
 
 const requestCharacterSpriteLoads = (context: RenderContext, worldState: WorldState): void => {
   const characterSpritePaths = new Set<string>();
-  if (worldState.player.spriteAssetPath !== undefined) {
-    characterSpritePaths.add(worldState.player.spriteAssetPath);
+  const playerSpritePath = resolveCharacterSpriteAssetPath(worldState.player);
+  if (playerSpritePath !== undefined) {
+    characterSpritePaths.add(playerSpritePath);
   }
   for (const guard of worldState.guards) {
-    if (guard.spriteAssetPath !== undefined) {
-      characterSpritePaths.add(guard.spriteAssetPath);
+    const spritePath = resolveCharacterSpriteAssetPath(guard);
+    if (spritePath !== undefined) {
+      characterSpritePaths.add(spritePath);
     }
   }
   for (const npc of worldState.npcs) {
-    if (npc.spriteAssetPath !== undefined) {
-      characterSpritePaths.add(npc.spriteAssetPath);
+    const spritePath = resolveCharacterSpriteAssetPath(npc);
+    if (spritePath !== undefined) {
+      characterSpritePaths.add(spritePath);
     }
   }
 
@@ -231,25 +271,28 @@ const syncCharacterSprites = (
     centerY: y * tileSize + tileSize / 2,
   });
 
-  if (characterRenderModes.player === 'sprite' && worldState.player.spriteAssetPath !== undefined) {
+  const playerSpritePath = resolveCharacterSpriteAssetPath(worldState.player);
+  if (characterRenderModes.player === 'sprite' && playerSpritePath !== undefined) {
     const center = toCenter(worldState.player.position.x, worldState.player.position.y);
-    upsert('player', worldState.player.spriteAssetPath, center.centerX, center.centerY);
+    upsert('player', playerSpritePath, center.centerX, center.centerY);
   }
 
   for (const guard of worldState.guards) {
-    if (characterRenderModes.guardsById[guard.id] !== 'sprite' || guard.spriteAssetPath === undefined) {
+    const spritePath = resolveCharacterSpriteAssetPath(guard);
+    if (characterRenderModes.guardsById[guard.id] !== 'sprite' || spritePath === undefined) {
       continue;
     }
     const center = toCenter(guard.position.x, guard.position.y);
-    upsert(`guard:${guard.id}`, guard.spriteAssetPath, center.centerX, center.centerY);
+    upsert(`guard:${guard.id}`, spritePath, center.centerX, center.centerY);
   }
 
   for (const npc of worldState.npcs) {
-    if (characterRenderModes.npcsById[npc.id] !== 'sprite' || npc.spriteAssetPath === undefined) {
+    const spritePath = resolveCharacterSpriteAssetPath(npc);
+    if (characterRenderModes.npcsById[npc.id] !== 'sprite' || spritePath === undefined) {
       continue;
     }
     const center = toCenter(npc.position.x, npc.position.y);
-    upsert(`npc:${npc.id}`, npc.spriteAssetPath, center.centerX, center.centerY);
+    upsert(`npc:${npc.id}`, spritePath, center.centerX, center.centerY);
   }
 
   for (const [entityId, entry] of context.characterSpritesByEntityId.entries()) {

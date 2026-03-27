@@ -15,11 +15,25 @@ Source of truth:
 ### GridPosition
 `{ x: number; y: number }`
 
+### SpriteDirection
+`'front' | 'away' | 'left' | 'right'`
+
+### SpriteSet
+Serializable optional directional sprite metadata:
+- `default?: string`
+- `front?: string`
+- `away?: string`
+- `left?: string`
+- `right?: string`
+
+`default` is the deterministic base asset for missing directional keys.
+
 ### Player
 - `id: string`
 - `displayName: string`
 - `position: GridPosition`
 - `spriteAssetPath?: string`
+- `spriteSet?: SpriteSet`
 
 ### Npc
 - `id: string`
@@ -28,17 +42,21 @@ Source of truth:
 - `npcType: string` - Categorizes the NPC's role (for prompt profile resolution)
 - `dialogueContextKey: string` - Deterministically derived from `npcType` via `npc_${npcType.toLowerCase()}`
 - `spriteAssetPath?: string`
+- `spriteSet?: SpriteSet`
 
 ### Guard
 Extends `Interactable`:
 - `guardState: 'idle' | 'patrolling' | 'alert'`
 - `honestyTrait?: 'truth-teller' | 'liar'`
 - `spriteAssetPath?: string`
+- `spriteSet?: SpriteSet`
 
 ### Door
 Extends `Interactable`:
 - `doorState: 'open' | 'closed' | 'locked'`
 - `outcome?: 'safe' | 'danger'`
+- `spriteAssetPath?: string`
+- `spriteSet?: SpriteSet`
 
 ### InteractiveObject
 Extends `Interactable`:
@@ -49,6 +67,7 @@ Extends `Interactable`:
 - `usedMessage?: string`
 - `firstUseOutcome?: 'win' | 'lose'`
 - `spriteAssetPath?: string`
+- `spriteSet?: SpriteSet`
 
 ### WorldGrid
 - `width: number`
@@ -120,18 +139,17 @@ Required fields:
 - `name: string`
 - `width: number`
 - `height: number`
-- `player: { x: number; y: number; spriteAssetPath?: string }`
-- `guards: Array<{ id, displayName, x, y, guardState, honestyTrait?, spriteAssetPath? }>`
-- `doors: Array<{ id, displayName, x, y, doorState, outcome }>`
+- `player: { x: number; y: number; spriteAssetPath?: string; spriteSet?: SpriteSet }`
+- `guards: Array<{ id, displayName, x, y, guardState, honestyTrait?, spriteAssetPath?, spriteSet? }>`
+- `doors: Array<{ id, displayName, x, y, doorState, outcome, spriteAssetPath?, spriteSet? }>`
 
 Optional fields:
-- `npcs: Array<{ id, displayName, x, y, npcType, spriteAssetPath? }>`
+- `npcs: Array<{ id, displayName, x, y, npcType, spriteAssetPath?, spriteSet? }>`
 - `interactiveObjects: Array<...>` with the same object fields as `InteractiveObject`, but `x/y` instead of `position`
 
-Shipped starter-level character sprite examples:
-- `player.spriteAssetPath: /assets/medieval_player_town_guard.svg`
-- `guards[*].spriteAssetPath: /assets/medieval_guard_spear.svg`
-- `npcs[*].spriteAssetPath: /assets/medieval_npc_villager.svg`
+Shipped level sprite metadata examples:
+- `public/levels/starter.json` shows single-path `spriteAssetPath` usage.
+- `public/levels/riddle.json` shows directional `spriteSet` usage for player and guards, and `default` door sprite sets.
 
 Example NPC entry:
 

@@ -23,14 +23,30 @@ Implementation entry points:
 `createPixiRenderPort()` returns a render port with `render(worldState)`.
 
 Per render pass:
-1. Request sprite loads for player, guards, and NPCs with configured `spriteAssetPath`.
-2. Resolve character render mode (`sprite` or `marker`) from sprite load status.
-3. Ensure canvas size from tile-grid viewport config.
-4. Draw boundary band and grid.
-5. Draw character sprites that have loaded successfully.
-6. Draw marker circles for doors, interactive objects, and any character still in fallback mode.
-7. Draw player marker only when the player is in fallback mode.
-8. Update camera offset from player center and world bounds.
+1. Resolve character asset paths from `spriteSet` and legacy `spriteAssetPath` metadata.
+2. Request sprite loads for player, guards, and NPCs using resolved character asset paths.
+3. Resolve character render mode (`sprite` or `marker`) from sprite load status.
+4. Ensure canvas size from tile-grid viewport config.
+5. Draw boundary band and grid.
+6. Draw character sprites that have loaded successfully.
+7. Draw marker circles for doors, interactive objects, and any character still in fallback mode.
+8. Draw player marker only when the player is in fallback mode.
+9. Update camera offset from player center and world bounds.
+
+### Directional Sprite Resolution
+
+`scene.ts` resolves directional assets through `resolveSpriteAssetPathForDirection(spriteSet, requestedDirection)` with deterministic fallback order.
+
+Current requested direction is fixed to `front`, and fallback order is:
+- `front`
+- `default`
+- `away`
+- `left`
+- `right`
+
+If no `spriteSet` key resolves, renderer falls back to legacy `spriteAssetPath`, then to marker circles if loading fails or no path exists.
+
+This keeps rendering deterministic even with partially configured sprite sets.
 
 ### DOM Render Utilities
 
@@ -76,40 +92,41 @@ Current behavior:
 
 ## Asset Metadata and Usage
 
-Character and object entities can carry `spriteAssetPath` metadata in world state (for example, `/assets/medieval_player_town_guard.svg` or `/assets/medieval_supply_crate_inspect.svg`).
+Character and object entities can carry sprite metadata in world state:
+- `spriteAssetPath` for single-asset usage
+- `spriteSet` for optional directional/default usage
 
 Current character contract:
-- `player.spriteAssetPath?: string`
-- `guard.spriteAssetPath?: string`
-- `npc.spriteAssetPath?: string`
+- `player.spriteAssetPath?: string`, `player.spriteSet?: SpriteSet`
+- `guard.spriteAssetPath?: string`, `guard.spriteSet?: SpriteSet`
+- `npc.spriteAssetPath?: string`, `npc.spriteSet?: SpriteSet`
 
 Current renderer behavior:
-- Attempts to load configured character sprite assets via Pixi asset loading.
-- Renders characters as sprites only when the asset has loaded.
-- Falls back to deterministic marker circles when path metadata is missing, loading is in progress, or loading failed.
-- Keeps door and interactive-object rendering marker-based.
+- attempts to load resolved character sprite assets via Pixi asset loading
+- renders characters as sprites only when the resolved asset has loaded
+- falls back to deterministic marker circles when metadata is missing, loading is in progress, or loading failed
+- keeps door and interactive-object rendering marker-based
 
 Render-layer boundary:
-- Sprite load status (`loading` | `loaded` | `failed`) and Pixi `Sprite` instances are transient render state only.
-- No sprite loading status is written back into `WorldState`.
+- sprite load status (`loading` | `loaded` | `failed`) and Pixi `Sprite` instances are transient render state only
+- no sprite loading status is written back into `WorldState`
 
 This preserves render-only ownership of visual decisions while keeping gameplay logic and world determinism unchanged.
 
-## Shipped Starter Level Demonstration
+## Shipped Level Demonstration
 
-The shipped starter level now demonstrates configured character sprite paths for all character kinds:
-- Player: `/assets/medieval_player_town_guard.svg`
-- Guards: `/assets/medieval_guard_spear.svg`
-- NPC: `/assets/medieval_npc_villager.svg`
+The shipped levels now demonstrate both sprite metadata forms:
+- starter level: single-path `spriteAssetPath` on player, guards, and NPC
+- riddle level: directional `spriteSet` on player and guards, default-only `spriteSet` on doors
 
 Source and verification:
-- Level data: [public/levels/starter.json](../public/levels/starter.json)
-- Integration assertions: [src/integration/starterLevel.test.ts](../src/integration/starterLevel.test.ts)
-- Render mode/fallback assertions: [src/render/scene.test.ts](../src/render/scene.test.ts)
+- level data: [public/levels/starter.json](../public/levels/starter.json), [public/levels/riddle.json](../public/levels/riddle.json)
+- integration assertions: [src/integration/starterLevel.test.ts](../src/integration/starterLevel.test.ts), [src/integration/riddleLevel.test.ts](../src/integration/riddleLevel.test.ts)
+- render fallback assertions: [src/render/scene.test.ts](../src/render/scene.test.ts)
 
 ## Tests
 
-- `src/render/scene.test.ts`: color mapping, marker specs, and rendering invariants
+- `src/render/scene.test.ts`: color mapping, marker specs, sprite-mode behavior, and deterministic directional fallback order
 - `src/render/runtimeLayout.test.ts`: viewport/layout behavior
 - `src/render/viewportOverlay.test.ts`: overlay visibility, `inert` toggling, focus blocking, and pointer blocking
 - `src/render/chatModal.test.ts`: close button and Escape exit behavior, modal visibility, and focus cleanup

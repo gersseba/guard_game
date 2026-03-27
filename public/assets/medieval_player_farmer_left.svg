@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Medieval Player Farmer Left</title>
+  <desc id="desc">A left-facing farmer player with a straw hat and simple tunic.</desc>
+  <ellipse cx="32" cy="57" rx="14" ry="4" fill="#1f1a15" opacity="0.35"/>
+  <ellipse cx="32" cy="14" rx="11" ry="3" fill="#b38745" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="23" y="14" width="18" height="4" rx="1" fill="#c79a53" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M27 16c2-2 5-2 8 0v9h-8z" fill="#c79a53" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M37 20c0 3-2 6-5 6-4 0-6-2-6-6 0-4 3-6 6-6 3 0 5 2 5 6z" fill="#caa27f" stroke="#2d1f14" stroke-width="2"/>
+  <circle cx="29" cy="20" r="1" fill="#2d1f14"/>
+  <path d="M24 31c2-6 6-9 10-9 3 0 6 3 8 9v5H24z" fill="#6b513a" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M23 36h19l-4 15H25z" fill="#4c6d3b" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="20" y="37" width="5" height="11" rx="2" fill="#6b513a" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="38" y="39" width="5" height="10" rx="2" fill="#6b513a" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="25" y="50" width="5" height="8" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="33" y="50" width="5" height="8" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+</svg>

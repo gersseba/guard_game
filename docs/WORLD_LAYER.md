@@ -34,12 +34,17 @@ All fields are serializable primitives, arrays, or plain objects.
 - Optional `npcs` - array of level-defined NPCs with required `id`, `displayName`, `x`, `y`, and `npcType` fields
 - Optional `interactiveObjects`
 
-Character entities now support optional sprite metadata in serializable level JSON:
-- `player.spriteAssetPath?: string`
-- `guard.spriteAssetPath?: string`
-- `npc.spriteAssetPath?: string`
+Sprite metadata contracts:
+- `spriteAssetPath?: string` remains optional for player, guards, doors, npcs, and interactive objects.
+- `spriteSet?: SpriteSet` is now optional for player, guards, doors, npcs, and interactive objects.
 
-Validation follows existing typing-only schema patterns: when present, each `spriteAssetPath` must be a string. Path format correctness and loadability are intentionally handled by render fallback behavior, not world-level rejection.
+When `spriteSet` is present, validation enforces:
+- it must be an object
+- only known keys are read (`default`, `front`, `away`, `left`, `right`)
+- each provided key must be a string path
+- at least one sprite path must be present
+
+Path format correctness and asset loadability are intentionally handled by render fallback behavior, not world-level rejection.
 
 For `npcs`, validation enforces:
 - required identity/position fields (`id`, `displayName`, `x`, `y`)
@@ -55,6 +60,12 @@ For `interactiveObjects`, validation enforces:
 ## Deserialization
 
 `deserializeLevel()` in `src/world/level.ts` maps level JSON into runtime entities and applies `validateSpatialLayout()` before returning state.
+
+Deserialization now passes through both optional sprite forms:
+- `spriteAssetPath`
+- `spriteSet`
+
+The world layer does not resolve directional variants. It preserves serializable metadata only; render chooses final visual assets.
 
 ### NPC Deserialization
 NPCs from level JSON are transformed to runtime `Npc` objects with deterministically derived `dialogueContextKey`:
@@ -76,8 +87,8 @@ NPCs from level JSON are transformed to runtime `Npc` objects with deterministic
   displayName: 'Archivist',
   position: { x: 8, y: 5 },
   npcType: 'archive_keeper',
-  dialogueContextKey: 'npc_archive_keeper', // deterministic derivation: npc_${npcType.toLowerCase()}
-  spriteAssetPath: '/assets/medieval_npc_villager.svg' // optional passthrough metadata
+  dialogueContextKey: 'npc_archive_keeper',
+  spriteAssetPath: '/assets/medieval_npc_villager.svg'
 }
 ```
 
@@ -85,24 +96,32 @@ Deserialization remains deterministic: the same `npcType` always produces the sa
 
 ### Interactive Object Deserialization
 
-Interactive object instance fields now deserialize directly:
+Interactive object instance fields deserialize directly:
 - `idleMessage`
 - `usedMessage`
 - `firstUseOutcome`
 - `spriteAssetPath`
+- `spriteSet`
 
 This enables shared behavior per object type while preserving instance-specific text, outcomes, and asset metadata.
 
-## Shipped Starter Level Demonstration
+## Shipped Level Demonstrations
 
-The shipped starter level demonstrates the optional character sprite metadata flowing through world validation and deserialization:
+Starter level demonstrates single-asset character metadata via `spriteAssetPath`:
 - `player.spriteAssetPath: /assets/medieval_player_town_guard.svg`
 - `guards[*].spriteAssetPath: /assets/medieval_guard_spear.svg`
 - `npcs[*].spriteAssetPath: /assets/medieval_npc_villager.svg`
 
+Riddle level demonstrates directional and default sprite-set wiring:
+- player `spriteSet` includes `default/front/away/left/right`
+- both guards include `default/front/away/left/right`
+- both doors include `spriteSet.default`
+
 References:
-- Level JSON: [public/levels/starter.json](../public/levels/starter.json)
-- Integration proof: [src/integration/starterLevel.test.ts](../src/integration/starterLevel.test.ts)
+- [public/levels/starter.json](../public/levels/starter.json)
+- [public/levels/riddle.json](../public/levels/riddle.json)
+- [src/integration/starterLevel.test.ts](../src/integration/starterLevel.test.ts)
+- [src/integration/riddleLevel.test.ts](../src/integration/riddleLevel.test.ts)
 
 ## Interaction State Updates
 
@@ -110,8 +129,9 @@ Conversational interactions write immutable updates into `actorConversationHisto
 
 ## Testing Strategy
 
-- `src/world/level.test.ts`: schema validation + deserialization coverage
-- `src/integration/starterLevel.test.ts`: full level pipeline including sprite metadata assertions
+- `src/world/level.test.ts`: schema validation + deserialization coverage for `spriteAssetPath` and `spriteSet`
+- `src/integration/starterLevel.test.ts`: starter level pipeline and sprite metadata assertions
+- `src/integration/riddleLevel.test.ts`: riddle-level sprite-set wiring assertions for player/guards/doors
 - `src/world/spatialRules.test.ts` and `src/world/world.test.ts`: occupancy and world invariants with interactive objects
 
 Determinism rule remains unchanged: identical starting state + identical command/interaction sequence => identical resulting state.

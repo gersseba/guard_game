@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildCharacterRenderModes, buildEntityCircleSpecs, getColorForEntityType } from './scene';
+import {
+  buildCharacterRenderModes,
+  buildEntityCircleSpecs,
+  getColorForEntityType,
+  resolveSpriteAssetPathForDirection,
+} from './scene';
 import type { WorldState } from '../world/types';
 
 const createWorldState = (): WorldState => ({
@@ -55,6 +60,37 @@ const createWorldState = (): WorldState => ({
 });
 
 describe('render entity circle helpers', () => {
+  it('resolves spriteSet direction with deterministic fallback order', () => {
+    expect(
+      resolveSpriteAssetPathForDirection(
+        {
+          default: '/assets/default.svg',
+          away: '/assets/away.svg',
+        },
+        'front',
+      ),
+    ).toBe('/assets/default.svg');
+
+    expect(
+      resolveSpriteAssetPathForDirection(
+        {
+          front: '/assets/front.svg',
+          away: '/assets/away.svg',
+        },
+        'away',
+      ),
+    ).toBe('/assets/away.svg');
+
+    expect(
+      resolveSpriteAssetPathForDirection(
+        {
+          front: '/assets/front.svg',
+        },
+        'right',
+      ),
+    ).toBe('/assets/front.svg');
+  });
+
   it('maps entity type to deterministic color', () => {
     expect(getColorForEntityType('npc')).toBe(getColorForEntityType('npc'));
     expect(getColorForEntityType('interactive-object:inspect')).toBe(
@@ -151,12 +187,18 @@ describe('render entity circle helpers', () => {
       ...createWorldState(),
       player: {
         ...createWorldState().player,
-        spriteAssetPath: '/assets/medieval_player_town_guard.svg',
+        spriteSet: {
+          default: '/assets/medieval_player_town_guard.svg',
+          front: '/assets/medieval_player_town_guard.svg',
+        },
       },
       guards: [
         {
           ...createWorldState().guards[0],
-          spriteAssetPath: '/assets/medieval_guard_spear.svg',
+          spriteSet: {
+            default: '/assets/medieval_guard_spear.svg',
+            front: '/assets/medieval_guard_spear.svg',
+          },
         },
       ],
       npcs: [
@@ -185,12 +227,18 @@ describe('render entity circle helpers', () => {
       ...createWorldState(),
       player: {
         ...createWorldState().player,
-        spriteAssetPath: '/assets/medieval_player_town_guard.svg',
+        spriteSet: {
+          default: '/assets/medieval_player_town_guard.svg',
+          front: '/assets/medieval_player_town_guard.svg',
+        },
       },
       guards: [
         {
           ...createWorldState().guards[0],
-          spriteAssetPath: '/assets/medieval_guard_spear.svg',
+          spriteSet: {
+            default: '/assets/medieval_guard_spear.svg',
+            front: '/assets/medieval_guard_spear.svg',
+          },
         },
       ],
       npcs: [
