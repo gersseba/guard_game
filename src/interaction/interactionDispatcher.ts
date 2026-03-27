@@ -1,5 +1,5 @@
 import type { LlmClient } from '../llm/client';
-import type { WorldState } from '../world/types';
+import type { WorldState, ConversationMessage } from '../world/types';
 import type { AdjacentTarget } from './adjacencyResolver';
 import { handleDoorInteraction } from './doorInteraction';
 import { createGuardInteractionService } from './guardInteraction';
@@ -257,14 +257,15 @@ export interface ResultHandlerConfig {
   onConversationStarted: (
     targetId: string,
     displayName: string,
-    conversationHistory: unknown[],
+    conversationHistory: ConversationMessage[],
+    interactionKind: 'guard' | 'npc',
   ) => void;
   onLevelOutcomeChanged: (levelOutcome: 'win' | 'lose') => void;
   onWorldStateUpdated: (worldState: WorldState) => void;
   // Accessor for current world state
   getCurrentWorldState: () => WorldState;
   // Accessor for getting conversation history
-  getConversationHistory: (worldState: WorldState, targetId: string) => unknown[];
+  getConversationHistory: (worldState: WorldState, targetId: string) => ConversationMessage[];
 }
 
 /**
@@ -291,6 +292,7 @@ const createConversationalResultHandler = (): ResultHandler => {
       result.targetId,
       result.displayName || `${result.kind}-${result.targetId}`,
       history,
+      result.kind,
     );
   };
 };

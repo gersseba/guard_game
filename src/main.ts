@@ -2,7 +2,7 @@ import './style.css';
 import { createCommandBuffer } from './input/commands';
 import { bindKeyboardCommands } from './input/keyboard';
 import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
-import { createInteractionDispatcher } from './interaction/interactionDispatcher';
+import { createInteractionDispatcher, createResultDispatcher } from './interaction/interactionDispatcher';
 import { getNpcConversationHistory } from './interaction/npcThread';
 import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
@@ -114,6 +114,33 @@ bindKeyboardCommands(window, commandBuffer, {
   isModalOpen: () => chatModal.isOpen(),
 });
 
+// Create result dispatcher with config that bridges interaction results to main loop state
+const resultDispatcher = createResultDispatcher({
+  onConversationStarted: (
+    targetId: string,
+    displayName: string,
+    conversationHistory: unknown[],
+    interactionKind: 'guard' | 'npc',
+  ) => {
+    currentInteraction = {
+      kind: interactionKind,
+      actorId: targetId,
+    };
+    chatModal.open(targetId, displayName, conversationHistory);
+  },
+  onLevelOutcomeChanged: (levelOutcome: 'win' | 'lose') => {
+    const currentWorldState = world.getState();
+    const updatedState = { ...currentWorldState, levelOutcome };
+    world.resetToState(updatedState);
+  },
+  onWorldStateUpdated: (worldState: WorldState) => {
+    world.resetToState(worldState);
+  },
+  getCurrentWorldState: () => world.getState(),
+  getConversationHistory: (worldState: WorldState, targetId: string) =>
+    getNpcConversationHistory(worldState, targetId),
+});
+
 const LEVELS_BASE_URL = '/levels';
 const MANIFEST_URL = `${LEVELS_BASE_URL}/manifest.json`;
 
@@ -140,39 +167,11 @@ const runInteractionIfRequested = async (
     return;
   }
 
-  // Dispatch interaction via unified dispatcher (no explicit per-kind branching).
+  // Dispatch interaction via unified dispatcher
   const result = await interactionDispatcher.dispatch(adjacentTarget, worldState);
 
-  // Handle result based on interaction type.
-  if (result.kind === 'guard' || result.kind === 'npc') {
-    // Conversational interaction: open chat modal for user input.
-    currentInteraction = {
-      kind: result.kind,
-      actorId: result.targetId,
-    };
-    const history = getNpcConversationHistory(worldState, result.targetId);
-    // Use displayName from the resolved target for the chat modal header.
-    const displayName = adjacentTarget.target.displayName;
-    chatModal.open(result.targetId, displayName, history);
-    return;
-  }
-
-  if (result.kind === 'door') {
-    // Immediate interaction: apply level outcome if present.
-    if (result.levelOutcome) {
-      const updatedState = { ...worldState, levelOutcome: result.levelOutcome };
-      world.resetToState(updatedState);
-    }
-    return;
-  }
-
-  if (result.kind === 'interactiveObject') {
-    // Immediate interaction: apply world state update.
-    if (result.updatedWorldState) {
-      world.resetToState(result.updatedWorldState);
-    }
-    return;
-  }
+  // Route result to appropriate handler via result dispatcher
+  resultDispatcher.dispatch(result);
 };
 
 const fixedTickDurationMs = 100;
