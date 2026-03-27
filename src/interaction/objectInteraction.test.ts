@@ -28,7 +28,7 @@ const createWorldState = (...interactiveObjects: InteractiveObject[]): WorldStat
   guards: [],
   doors: [],
   interactiveObjects,
-  npcConversationHistoryByNpcId: {},
+  actorConversationHistoryByActorId: {},
   levelOutcome: null,
 });
 

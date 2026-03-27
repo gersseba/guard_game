@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
 import { createNpcInteractionService } from './npcInteraction';
-import { renderNpcConversationThread } from './npcThread';
+import { renderActorConversationThread } from './actorConversationThread';
 import { createInitialWorldState } from '../world/state';
 import { GUARD_PERSONA_CONTRACT } from './guardPromptContext';
 import type { ConversationMessage } from '../world/types';
@@ -37,7 +37,7 @@ describe('createNpcInteractionService', () => {
     }
     expect(calledPrompt.context).not.toContain(GUARD_PERSONA_CONTRACT);
     expect(result.responseText).toBe('Archivist: The archives are west of here.');
-    expect(result.updatedWorldState.npcConversationHistoryByNpcId[npc.id]).toEqual([
+    expect(result.updatedWorldState.actorConversationHistoryByActorId[npc.id]).toEqual([
       { role: 'player', text: 'Where are the archives?' },
       { role: 'assistant', text: 'The archives are west of here.' },
     ]);
@@ -57,8 +57,8 @@ describe('createNpcInteractionService', () => {
 
     const seededState = {
       ...worldState,
-      npcConversationHistoryByNpcId: {
-        ...worldState.npcConversationHistoryByNpcId,
+      actorConversationHistoryByActorId: {
+        ...worldState.actorConversationHistoryByActorId,
         [npc.id]: priorHistory,
       },
     };
@@ -70,7 +70,7 @@ describe('createNpcInteractionService', () => {
       playerMessage: 'What about the lower vault?',
     });
 
-    expect(result.updatedWorldState.npcConversationHistoryByNpcId[npc.id]).toEqual([
+    expect(result.updatedWorldState.actorConversationHistoryByActorId[npc.id]).toEqual([
       ...priorHistory,
       { role: 'player', text: 'What about the lower vault?' },
       { role: 'assistant', text: 'The lower vault is sealed.' },
@@ -95,13 +95,13 @@ describe('createNpcInteractionService', () => {
     });
 
     expect(result.responseText).toBe(`Archivist: ${REQUEST_FAILURE_FALLBACK_TEXT}`);
-    expect(result.updatedWorldState.npcConversationHistoryByNpcId[npc.id]).toEqual([
+    expect(result.updatedWorldState.actorConversationHistoryByActorId[npc.id]).toEqual([
       { role: 'player', text: 'Can you hear me?' },
       { role: 'assistant', text: REQUEST_FAILURE_FALLBACK_TEXT },
     ]);
   });
 
-  it('keeps npc conversation history JSON-serializable', async () => {
+  it('keeps conversation history JSON-serializable', async () => {
     const llmClient: LlmClient = {
       complete: async () => ({ text: 'Stay on patrol routes.' }),
     };
@@ -119,7 +119,7 @@ describe('createNpcInteractionService', () => {
     const json = JSON.stringify(result.updatedWorldState);
     const parsed = JSON.parse(json) as typeof result.updatedWorldState;
 
-    expect(parsed.npcConversationHistoryByNpcId[npc.id]).toEqual([
+    expect(parsed.actorConversationHistoryByActorId[npc.id]).toEqual([
       { role: 'player', text: 'Any advice?' },
       { role: 'assistant', text: 'Stay on patrol routes.' },
     ]);
@@ -140,7 +140,7 @@ describe('createNpcInteractionService', () => {
       playerMessage: 'Can you help me?',
     });
 
-    const interactionPanelText = renderNpcConversationThread(result.updatedWorldState, npc.id);
+    const interactionPanelText = renderActorConversationThread(result.updatedWorldState, npc.id);
     expect(interactionPanelText).toBe('Player: Can you help me?\nNPC: Start with the north corridor.');
   });
 
@@ -160,7 +160,7 @@ describe('createNpcInteractionService', () => {
       worldState,
       playerMessage: 'Where are the archives?',
     });
-    const firstPanelText = renderNpcConversationThread(firstResult.updatedWorldState, npc.id);
+    const firstPanelText = renderActorConversationThread(firstResult.updatedWorldState, npc.id);
     expect(firstPanelText).toBe('Player: Where are the archives?\nNPC: The archives are west.');
 
     const secondResult = await service.handleNpcInteraction({
@@ -170,7 +170,7 @@ describe('createNpcInteractionService', () => {
       playerMessage: 'What key do I need?',
     });
 
-    const secondPanelText = renderNpcConversationThread(secondResult.updatedWorldState, npc.id);
+    const secondPanelText = renderActorConversationThread(secondResult.updatedWorldState, npc.id);
     expect(secondPanelText).toBe(
       [
         'Player: Where are the archives?',
@@ -180,7 +180,7 @@ describe('createNpcInteractionService', () => {
       ].join('\n'),
     );
 
-    expect(secondResult.updatedWorldState.npcConversationHistoryByNpcId[npc.id]).toEqual([
+    expect(secondResult.updatedWorldState.actorConversationHistoryByActorId[npc.id]).toEqual([
       { role: 'player', text: 'Where are the archives?' },
       { role: 'assistant', text: 'The archives are west.' },
       { role: 'player', text: 'What key do I need?' },
@@ -223,8 +223,8 @@ describe('createNpcInteractionService', () => {
       playerMessage: 'Hello engineer',
     });
 
-    const firstNpcPanelText = renderNpcConversationThread(secondNpcResult.updatedWorldState, firstNpc.id);
-    const secondNpcPanelText = renderNpcConversationThread(secondNpcResult.updatedWorldState, secondNpc.id);
+    const firstNpcPanelText = renderActorConversationThread(secondNpcResult.updatedWorldState, firstNpc.id);
+    const secondNpcPanelText = renderActorConversationThread(secondNpcResult.updatedWorldState, secondNpc.id);
 
     expect(firstNpcPanelText).toBe('Player: Hello archivist\nNPC: Archivist response.');
     expect(secondNpcPanelText).toBe('Player: Hello engineer\nNPC: Engineer response.');

@@ -10,7 +10,7 @@ const baseState = (): WorldState => ({
   guards: [],
   doors: [],
   interactiveObjects: [],
-  npcConversationHistoryByNpcId: {},
+  actorConversationHistoryByActorId: {},
   levelOutcome: null,
 });
 

@@ -50,7 +50,7 @@ const createWorldState = (): WorldState => ({
       state: 'idle',
     },
   ],
-  npcConversationHistoryByNpcId: {},
+  actorConversationHistoryByActorId: {},
   levelOutcome: null,
 });
 
