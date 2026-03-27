@@ -14,6 +14,7 @@ import { createLevelUi } from './render/levelUi';
 import { createChatModal } from './render/chatModal';
 import { createOutcomeOverlay } from './render/outcomeOverlay';
 import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
+import { createRuntimeController } from './runtimeController';
 import type { WorldCommand, WorldState, ConversationMessage } from './world/types';
 import { createWorld } from './world/world';
 import { fetchAndLoadLevel, fetchLevelManifest } from './world/levelLoader';
@@ -42,18 +43,12 @@ const llmClient = createGeminiLlmClient();
 const interactionDispatcher = createInteractionDispatcher({ llmClient });
 const outcomeOverlay = createOutcomeOverlay(outcomeOverlayHostElement);
 
-/** Tracks the current interaction in progress (for chat modal message handling). */
-interface CurrentInteraction {
-  actorId: string;
-}
-
-let currentInteraction: CurrentInteraction | null = null;
-
 /**
  * Chat modal instance with callbacks wired to game logic.
  */
 const chatModal = createChatModal(chatModalHostElement, {
   onSend(playerMessage: string): void {
+    const currentInteraction = runtimeController.getCurrentInteraction();
     if (!currentInteraction) {
       return; // Safety check.
     }
@@ -95,7 +90,7 @@ const chatModal = createChatModal(chatModalHostElement, {
   },
 
   onClose(): void {
-    currentInteraction = null;
+    runtimeController.closeConversation();
   },
 });
 
@@ -110,9 +105,7 @@ const resultDispatcher = createResultDispatcher({
     displayName: string,
     conversationHistory: ConversationMessage[],
   ) => {
-    currentInteraction = {
-      actorId: targetId,
-    };
+    runtimeController.openConversation(targetId);
     chatModal.open(targetId, displayName, conversationHistory);
   },
   onLevelOutcomeChanged: (levelOutcome: 'win' | 'lose') => {
@@ -165,6 +158,12 @@ const runInteractionIfRequested = (
 
   resultDispatcher.dispatch(dispatchResult);
 };
+
+const runtimeController = createRuntimeController({
+  world,
+  commandBuffer,
+  runInteractions: runInteractionIfRequested,
+});
 
 const fixedTickDurationMs = 100;
 let previousFrameTime = performance.now();
@@ -229,17 +228,7 @@ const startRuntime = async (): Promise<void> => {
     previousFrameTime = currentTime;
 
     while (accumulatedTime >= fixedTickDurationMs) {
-      const worldStateBeforeCommands = world.getState();
-      let commandsToApply = commandBuffer.drain();
-
-      // Block all commands if level outcome is already set
-      if (worldStateBeforeCommands.levelOutcome) {
-        commandsToApply = [];
-      }
-
-      world.applyCommands(commandsToApply);
-      const worldState = world.getState();
-      runInteractionIfRequested(worldState, commandsToApply);
+      runtimeController.stepSimulation();
       accumulatedTime -= fixedTickDurationMs;
     }
 
