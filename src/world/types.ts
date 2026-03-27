@@ -7,6 +7,7 @@ export interface Player {
   id: string;
   displayName: string;
   position: GridPosition;
+  spriteAssetPath?: string;
 }
 
 export interface Npc {
@@ -15,6 +16,7 @@ export interface Npc {
   position: GridPosition;
   npcType: string;
   dialogueContextKey: string;
+  spriteAssetPath?: string;
 }
 
 export interface ConversationMessage {
@@ -35,6 +37,7 @@ export interface Interactable {
 export interface Guard extends Interactable {
   guardState: 'idle' | 'patrolling' | 'alert';
   honestyTrait?: 'truth-teller' | 'liar';
+  spriteAssetPath?: string;
 }
 
 /** A door that the player can pass through or be blocked by. */
@@ -65,7 +68,7 @@ export interface LevelData {
   name: string;
   width: number;
   height: number;
-  player: { x: number; y: number };
+  player: { x: number; y: number; spriteAssetPath?: string };
   guards: Array<{
     id: string;
     displayName: string;
@@ -73,6 +76,7 @@ export interface LevelData {
     y: number;
     guardState: 'patrolling' | 'alert' | 'idle';
     honestyTrait?: 'truth-teller' | 'liar';
+    spriteAssetPath?: string;
   }>;
   doors: Array<{
     id: string;
@@ -88,6 +92,7 @@ export interface LevelData {
     x: number;
     y: number;
     npcType: string;
+    spriteAssetPath?: string;
   }>;
   interactiveObjects?: Array<{
     id: string;

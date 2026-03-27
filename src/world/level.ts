@@ -40,6 +40,13 @@ export function validateLevelData(input: unknown): LevelData {
     throw new Error('Invalid level data: player must have numeric x and y');
   }
 
+  if (
+    (player as Record<string, unknown>)['spriteAssetPath'] !== undefined &&
+    typeof (player as Record<string, unknown>)['spriteAssetPath'] !== 'string'
+  ) {
+    throw new Error('Invalid level data: player spriteAssetPath must be a string when provided');
+  }
+
   if (!Array.isArray(raw['guards'])) {
     throw new Error('Invalid level data: guards must be an array');
   }
@@ -66,6 +73,12 @@ export function validateLevelData(input: unknown): LevelData {
           `Invalid level data: guard at index ${i} has invalid honestyTrait (must be 'truth-teller' or 'liar')`,
         );
       }
+    }
+
+    if (guard['spriteAssetPath'] !== undefined && typeof guard['spriteAssetPath'] !== 'string') {
+      throw new Error(
+        `Invalid level data: guard at index ${i} has invalid spriteAssetPath (must be a string when provided)`,
+      );
     }
   }
 
@@ -114,6 +127,12 @@ export function validateLevelData(input: unknown): LevelData {
       ) {
         throw new Error(
           `Invalid level data: npc at index ${i} must have id, displayName, x, y, and npcType`,
+        );
+      }
+
+      if (npc['spriteAssetPath'] !== undefined && typeof npc['spriteAssetPath'] !== 'string') {
+        throw new Error(
+          `Invalid level data: npc at index ${i} has invalid spriteAssetPath (must be a string when provided)`,
         );
       }
     }
@@ -175,6 +194,9 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       id: 'player',
       displayName: 'Player',
       position: { x: levelData.player.x, y: levelData.player.y },
+      ...(levelData.player.spriteAssetPath !== undefined
+        ? { spriteAssetPath: levelData.player.spriteAssetPath }
+        : {}),
     },
     npcs: (levelData.npcs ?? []).map((n) => ({
       id: n.id,
@@ -182,6 +204,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       position: { x: n.x, y: n.y },
       npcType: n.npcType,
       dialogueContextKey: `npc_${n.npcType.toLowerCase()}`,
+      ...(n.spriteAssetPath !== undefined ? { spriteAssetPath: n.spriteAssetPath } : {}),
     })),
     guards: levelData.guards.map((g) => ({
       id: g.id,
@@ -189,6 +212,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       position: { x: g.x, y: g.y },
       guardState: g.guardState,
       honestyTrait: g.honestyTrait,
+      ...(g.spriteAssetPath !== undefined ? { spriteAssetPath: g.spriteAssetPath } : {}),
     })),
     doors: levelData.doors.map((d) => ({
       id: d.id,

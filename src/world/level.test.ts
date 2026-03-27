@@ -25,6 +25,15 @@ describe('deserializeLevel', () => {
     });
   });
 
+  it('maps optional player spriteAssetPath when configured', () => {
+    const state = deserializeLevel({
+      ...minimalLevel,
+      player: { x: 2, y: 3, spriteAssetPath: '/assets/medieval_player_town_guard.svg' },
+    });
+
+    expect(state.player.spriteAssetPath).toBe('/assets/medieval_player_town_guard.svg');
+  });
+
   it('sets grid dimensions from level width/height and preserves a fixed tileSize', () => {
     const state = deserializeLevel(minimalLevel);
 
@@ -64,6 +73,24 @@ describe('deserializeLevel', () => {
       { id: 'guard-1', displayName: 'North Guard', position: { x: 5, y: 7 }, guardState: 'patrolling' },
       { id: 'guard-2', displayName: 'South Guard', position: { x: 10, y: 15 }, guardState: 'idle' },
     ]);
+  });
+
+  it('maps optional guard spriteAssetPath when configured', () => {
+    const state = deserializeLevel({
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'North Guard',
+          x: 5,
+          y: 7,
+          guardState: 'patrolling',
+          spriteAssetPath: '/assets/medieval_guard_spear.svg',
+        },
+      ],
+    });
+
+    expect(state.guards[0].spriteAssetPath).toBe('/assets/medieval_guard_spear.svg');
   });
 
   it('maps door flat fields to nested Door with correct position and doorState', () => {
@@ -175,6 +202,11 @@ describe('validateLevelData', () => {
   it('throws when player is missing x or y', () => {
     const bad = { ...minimalLevel, player: { x: 1 } };
     expect(() => validateLevelData(bad)).toThrowError('player must have numeric x and y');
+  });
+
+  it('throws when player spriteAssetPath is not a string', () => {
+    const bad = { ...minimalLevel, player: { x: 2, y: 3, spriteAssetPath: 42 } };
+    expect(() => validateLevelData(bad)).toThrowError('player spriteAssetPath must be a string');
   });
 
   it('throws when guards is not an array', () => {
@@ -292,6 +324,16 @@ describe('honestyTrait field', () => {
     };
 
     expect(() => validateLevelData(bad)).toThrowError('invalid honestyTrait');
+  });
+
+  it('rejects guards with non-string spriteAssetPath', () => {
+    const bad = {
+      ...minimalLevel,
+      guards: [{ id: 'guard-1', displayName: 'Bad', x: 5, y: 7, guardState: 'idle', spriteAssetPath: 42 }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid spriteAssetPath');
   });
 });
 
@@ -538,6 +580,38 @@ describe('npcs field', () => {
     const state = deserializeLevel(validated);
 
     expect(state.npcs[0].npcType).toBe('gate_guardian');
+  });
+
+  it('maps optional npc spriteAssetPath when configured', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [
+        {
+          id: 'npc-1',
+          displayName: 'Villager',
+          x: 5,
+          y: 5,
+          npcType: 'villager',
+          spriteAssetPath: '/assets/medieval_npc_villager.svg',
+        },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.npcs[0].spriteAssetPath).toBe('/assets/medieval_npc_villager.svg');
+  });
+
+  it('rejects NPC with non-string spriteAssetPath', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 'archivist', spriteAssetPath: 123 }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid spriteAssetPath');
   });
 });
 
