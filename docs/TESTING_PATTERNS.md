@@ -30,6 +30,11 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   - conversational open path is synchronous
   - conversational player-message path is asynchronous
   - deterministic door/object paths stay synchronous
+- **Prompt-profile checks (NPC):**
+  - same `npcType` resolves to same profile contract
+  - different `npcType` values resolve to distinct profiles
+  - unknown/missing `npcType` falls back to deterministic default profile
+  - serialized prompt context is deterministic for identical snapshots
 - **Example:** Verify that a player interaction is routed by dispatcher kind and the correct result handler callback fires in order
 
 ### Input Layer Tests
@@ -43,9 +48,9 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   ```
 
 ### LLM Layer Tests
-- **What to test:** Context serialization, response parsing, API stubs
+- **What to test:** Context serialization, response parsing, API fallbacks
 - **Type:** Unit tests
-- **Pattern:** Mock external API, assert prompt construction and response handling
+- **Pattern:** Mock external API, assert request construction and deterministic fallback handling
 - **Caveat:** Real API integration testing is separate
 
 ## Integration Tests

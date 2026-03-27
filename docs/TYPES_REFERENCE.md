@@ -4,6 +4,7 @@ This document tracks the core serializable types used by the runtime.
 
 Source of truth:
 - `src/world/types.ts`
+- `src/interaction/npcPromptContext.ts`
 - `src/interaction/objectInteraction.ts`
 - `src/interaction/adjacencyResolver.ts`
 
@@ -21,8 +22,8 @@ Source of truth:
 - `id: string`
 - `displayName: string`
 - `position: GridPosition`
-- `npcType: string` — Categorizes the NPC's role (e.g., `'archive_keeper'`, `'scholar'`). This field is set at level definition time.
-- `dialogueContextKey: string` — Deterministically derived from `npcType` via `npc_${npcType.toLowerCase()}`. Used for LLM prompt context routing.
+- `npcType: string` - Categorizes the NPC's role (for prompt profile resolution)
+- `dialogueContextKey: string` - Deterministically derived from `npcType` via `npc_${npcType.toLowerCase()}`
 
 ### Guard
 Extends `Interactable`:
@@ -69,6 +70,41 @@ Stores conversation history by actor id. The current conversational actors are g
 - `actorConversationHistoryByActorId: ActorConversationHistoryByActorId`
 - `levelOutcome: 'win' | 'lose' | null`
 
+## NPC Prompt Context Types
+
+Defined in `src/interaction/npcPromptContext.ts`.
+
+### NpcPromptProfile
+- `personaContract: string`
+- `knowledgePolicy?: string`
+- `responseStyleConstraints?: string`
+
+### ResolvedNpcPromptProfile
+Extends `NpcPromptProfile` with:
+- `profileKey: string` - Registry key used; `default` when fallback is applied
+- `requestedNpcType: string` - Normalized incoming type (`trim().toLowerCase()`, or `default` for missing/empty)
+
+### NPC_PROMPT_PROFILE_REGISTRY
+`Record<string, NpcPromptProfile>` keyed by normalized `npcType` values.
+
+Current built-in keys:
+- `archive_keeper`
+- `engineer`
+- `scholar`
+
+### DEFAULT_NPC_PROMPT_PROFILE
+Deterministic fallback profile used when a normalized `npcType` has no registry match.
+
+## Prompt Context Shape
+
+`buildNpcPromptContext(npc, player)` returns a serialized JSON object with:
+- `actor: { id, npcType }`
+- `npcProfile: ResolvedNpcPromptProfile`
+- `npcInstance: { displayName, position: { x, y }, dialogueContextKey }`
+- `player: { id, displayName }`
+
+This separates shared type-level prompt policy (`npcProfile`) from per-instance world facts (`npcInstance`).
+
 ## Level File Shape
 
 ### LevelData
@@ -84,7 +120,7 @@ Required fields:
 - `doors: Array<{ id, displayName, x, y, doorState, outcome }>`
 
 Optional fields:
-- `npcs: Array<{ id, displayName, x, y, npcType }>` — Level-defined NPCs. Each NPC has a `npcType` that categorizes its role (e.g., `'archive_keeper'`). During deserialization, `dialogueContextKey` is automatically derived as `npc_${npcType.toLowerCase()}`.
+- `npcs: Array<{ id, displayName, x, y, npcType }>`
 - `interactiveObjects: Array<...>` with the same object fields as `InteractiveObject`, but `x/y` instead of `position`
 
 Example NPC entry:

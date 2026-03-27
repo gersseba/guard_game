@@ -1,43 +1,61 @@
 # LLM Layer
 
-The LLM layer provides the integration boundary for large language model calls. It defines stubs, manages context generation, and serializes game state for prompt construction.
+The LLM layer provides the API boundary for model calls and deterministic fallback behavior when API execution fails.
 
 ## Responsibilities
-- Provide `LlmClient` interface with clear method signatures
-- Serialize world state and interaction context to JSON
-- Build prompts with relevant game context (actor persona, player state, conversation thread)
-- Return structured LLM responses (dialog text, suggested actions)
-- Maintain clean separation: LLM reasoning happens outside core game loop
-- Support optional LLM integration (game functions without LLM)
+- Provide `LlmClient` with a single `complete(request)` method
+- Accept structured request payloads from interaction services
+- Invoke external chat-completion APIs when configured
+- Return normalized text responses to the interaction layer
+- Return deterministic fallback text when configuration or network calls fail
 
-## Core Concepts
+## Core Interface
+
+Defined in `src/llm/client.ts`.
 
 ### LlmClient
-Interface that defines how the game communicates with LLM systems. Implemented as stubs initially; can be extended with real API calls.
+- Method: `complete(request: LlmRequest): Promise<LlmResponse>`
+- Response shape: `{ text: string }`
 
-### Context Serialization
-Convert world state and interaction data to JSON suitable for LLM prompts. All data must be clear and semantic.
+### LlmRequest
+Current request payload fields:
+- `actorId: string`
+- `context: string`
+- `playerMessage: string`
+- `conversationHistory: ConversationMessage[]`
 
-### Response Parsing
-Parse LLM output into structured `InteractionResponse` objects.
+The interaction layer is responsible for building `context` and maintaining conversation history.
 
-## LLM Integration Pattern
+## NPC Prompt Context Flow
 
-LLM calls are initiated by the interaction layer:
-1. Interaction layer builds `InteractionRequest` (target actor, player state, conversation thread)
-2. Interaction layer calls `llmClient.generateResponse(request)`
-3. LLM client serializes context and formats prompt
-4. LLM client calls external API (stubbed initially)
-5. LLM client parses and returns `InteractionResponse`
-6. Interaction layer applies response (dialog, state changes)
+For NPC conversational turns:
+1. `createNpcInteractionService()` in `src/interaction/npcInteraction.ts` builds context with `buildNpcPromptContext(npc, player)`.
+2. The service passes actor id, context, player message, and history into `llmClient.complete(...)`.
+3. The LLM response text is appended to actor-scoped history.
+
+`buildNpcPromptContext()` includes both:
+- shared profile information (`npcProfile`) resolved from `npcType`
+- per-instance NPC data (`npcInstance`) from world state
+
+## Deterministic Fallbacks
+
+`src/llm/client.ts` exports deterministic fallback constants:
+- `MISSING_API_KEY_FALLBACK_TEXT`
+- `REQUEST_FAILURE_FALLBACK_TEXT`
+
+When API key configuration is missing or request execution fails, `complete()` returns fallback text rather than throwing. This keeps interaction flows stable and serializable.
+
+NPC interaction also guards its call site by mapping thrown completion errors to `REQUEST_FAILURE_FALLBACK_TEXT` before appending the assistant turn.
 
 ## Constraints and Guidelines
 
-- LLM layer does NOT modify world state directly. It returns responses; the interaction layer applies them.
-- LLM calls are asynchronous. The game loop must continue while LLM calls are pending.
-- All game state in prompts must be JSON-serializable.
-- LLM layer stubs allow the game to function without real LLM integration.
+- LLM layer does not mutate world state directly
+- LLM calls are asynchronous; world updates occur in interaction services when promises resolve
+- Prompt context remains JSON-serializable
+- Deterministic fallback behavior is required for predictable tests and runtime behavior
 
----
+## Tests
 
-*Detailed context generation patterns and API client implementation will be documented as LLM features are integrated.*
+- `src/llm/client.test.ts`: API request mapping and fallback behavior
+- `src/interaction/npcInteraction.test.ts`: NPC LLM request payload and conversation history updates
+- `src/interaction/npcPromptContext.test.ts`: prompt profile resolution and deterministic context serialization
