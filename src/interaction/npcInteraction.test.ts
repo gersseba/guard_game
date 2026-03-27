@@ -4,6 +4,7 @@ import { createNpcInteractionService } from './npcInteraction';
 import { renderActorConversationThread } from './actorConversationThread';
 import { createInitialWorldState } from '../world/state';
 import { GUARD_PERSONA_CONTRACT } from './guardPromptContext';
+import { resolveNpcPromptProfile } from './npcPromptContext';
 import type { ConversationMessage } from '../world/types';
 
 describe('createNpcInteractionService', () => {
@@ -36,6 +37,23 @@ describe('createNpcInteractionService', () => {
       throw new Error('Expected NPC LLM prompt to be provided.');
     }
     expect(calledPrompt.context).not.toContain(GUARD_PERSONA_CONTRACT);
+    const parsedContext = JSON.parse(calledPrompt.context) as {
+      actor: { id: string; npcType: string };
+      npcProfile: { profileKey: string; personaContract: string };
+      npcInstance: { displayName: string; dialogueContextKey: string };
+      player: { id: string; displayName: string };
+    };
+    expect(parsedContext.actor).toEqual({ id: npc.id, npcType: npc.npcType });
+    expect(parsedContext.npcProfile).toEqual(resolveNpcPromptProfile(npc.npcType));
+    expect(parsedContext.npcInstance).toEqual({
+      displayName: npc.displayName,
+      position: npc.position,
+      dialogueContextKey: npc.dialogueContextKey,
+    });
+    expect(parsedContext.player).toEqual({
+      id: worldState.player.id,
+      displayName: worldState.player.displayName,
+    });
     expect(result.responseText).toBe('Archivist: The archives are west of here.');
     expect(result.updatedWorldState.actorConversationHistoryByActorId[npc.id]).toEqual([
       { role: 'player', text: 'Where are the archives?' },

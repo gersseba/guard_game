@@ -1,5 +1,6 @@
 import { REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
 import type { ConversationMessage, Npc, Player, WorldState } from '../world/types';
+import { buildNpcPromptContext } from './npcPromptContext';
 
 export interface NpcInteractionRequest {
   npc: Npc;
@@ -18,15 +19,6 @@ export interface NpcInteractionService {
   handleNpcInteraction(request: NpcInteractionRequest): Promise<NpcInteractionResult>;
 }
 
-const buildPromptContext = (request: NpcInteractionRequest): string => {
-  return [
-    `npc:${request.npc.id}`,
-    `npcName:${request.npc.displayName}`,
-    `dialogueContext:${request.npc.dialogueContextKey}`,
-    `player:${request.player.displayName}`,
-  ].join('|');
-};
-
 export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractionService => ({
   handleNpcInteraction: async (request: NpcInteractionRequest): Promise<NpcInteractionResult> => {
     const previousHistory =
@@ -40,7 +32,7 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
     const assistantText = await llmClient
       .complete({
         actorId: request.npc.id,
-        context: buildPromptContext(request),
+        context: buildNpcPromptContext(request.npc, request.player),
         playerMessage: request.playerMessage,
         conversationHistory: historyWithPlayerMessage,
       })
