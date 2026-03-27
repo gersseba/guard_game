@@ -2,6 +2,7 @@ import type { LlmClient } from '../llm/client';
 import type { WorldState, ConversationMessage } from '../world/types';
 import type { AdjacentTarget } from './adjacencyResolver';
 import { handleDoorInteraction } from './doorInteraction';
+import { resolveGuardFacingFromApproach } from './guardFacing';
 import { createGuardInteractionService } from './guardInteraction';
 import { createNpcInteractionService } from './npcInteraction';
 import { handleInteractiveObjectInteraction } from './objectInteraction';
@@ -172,11 +173,23 @@ const createGuardHandler = (llmClient: LlmClient): ConditionalInteractionHandler
 
     // If no player message, just return initial state response (not conversational).
     if (!playerMessage) {
+      const guardFacingDirection =
+        resolveGuardFacingFromApproach(worldState.player.position, target.target.position) ??
+        target.target.facingDirection ??
+        'front';
+      const updatedWorldState: WorldState = {
+        ...worldState,
+        guards: worldState.guards.map((guard) =>
+          guard.id === target.target.id ? { ...guard, facingDirection: guardFacingDirection } : guard,
+        ),
+      };
+
       return {
         kind: 'guard',
         targetId: target.target.id,
         displayName: target.target.displayName,
         responseText: target.target.displayName, // Initial greeting in chat modal
+        updatedWorldState,
         isConversational: false,
       };
     }
@@ -356,8 +369,12 @@ const createConversationalResultHandler = (): ResultHandler => {
       throw new Error('Conversational result handler called with non-conversational result');
     }
 
-    const worldState = config.getCurrentWorldState();
-    const history = config.getConversationHistory(worldState, result.targetId);
+    const worldStateForConversation = result.updatedWorldState ?? config.getCurrentWorldState();
+    if (result.updatedWorldState) {
+      config.onWorldStateUpdated(result.updatedWorldState);
+    }
+
+    const history = config.getConversationHistory(worldStateForConversation, result.targetId);
 
     config.onConversationStarted(
       result.targetId,

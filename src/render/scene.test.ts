@@ -224,6 +224,31 @@ describe('render entity circle helpers', () => {
     expect(modes.npcsById['npc-1']).toBe('sprite');
   });
 
+  it('selects guard directional sprite from guard facing token', () => {
+    const worldState: WorldState = {
+      ...createWorldState(),
+      guards: [
+        {
+          ...createWorldState().guards[0],
+          facingDirection: 'right',
+          spriteSet: {
+            default: '/assets/medieval_guard_front.svg',
+            right: '/assets/medieval_guard_right.svg',
+          },
+        },
+      ],
+    };
+
+    const spriteStatuses = new Map([
+      ['/assets/medieval_guard_front.svg', 'failed' as const],
+      ['/assets/medieval_guard_right.svg', 'loaded' as const],
+    ]);
+
+    const modes = buildCharacterRenderModes(worldState, spriteStatuses);
+
+    expect(modes.guardsById['guard-1']).toBe('sprite');
+  });
+
   it('defaults player sprite direction selection to front when no directional input has occurred', () => {
     const worldState: WorldState = {
       ...createWorldState(),
