@@ -7,6 +7,7 @@ The render layer translates `WorldState` into visual state and DOM-only runtime 
 - Render grid, boundary band, character sprites (when available), and marker fallbacks
 - Keep viewport/camera centered around player with clamped world bounds
 - Map world entities to deterministic visuals by type and optional asset metadata
+- Consume world-owned player-facing direction when choosing player directional sprites
 - Manage DOM-only render utilities for runtime layout, chat UI, viewport pause presentation, and level-outcome presentation
 
 Implementation entry points:
@@ -23,7 +24,7 @@ Implementation entry points:
 `createPixiRenderPort()` returns a render port with `render(worldState)`.
 
 Per render pass:
-1. Resolve character asset paths from `spriteSet` and legacy `spriteAssetPath` metadata.
+1. Resolve character asset paths from `spriteSet`, legacy `spriteAssetPath`, and world-provided player facing direction.
 2. Request sprite loads for player, guards, and NPCs using resolved character asset paths.
 3. Resolve character render mode (`sprite` or `marker`) from sprite load status.
 4. Ensure canvas size from tile-grid viewport config.
@@ -37,7 +38,7 @@ Per render pass:
 
 `scene.ts` resolves directional assets through `resolveSpriteAssetPathForDirection(spriteSet, requestedDirection)` with deterministic fallback order.
 
-Current requested direction is fixed to `front`, and fallback order is:
+For player rendering, the requested direction is read from `worldState.player.facingDirection` and defaults to `front` when missing. Fallback order is:
 - `front`
 - `default`
 - `away`
@@ -45,6 +46,8 @@ Current requested direction is fixed to `front`, and fallback order is:
 - `right`
 
 If no `spriteSet` key resolves, renderer falls back to legacy `spriteAssetPath`, then to marker circles if loading fails or no path exists.
+
+World owns direction intent; render owns visual resolution and fallback behavior.
 
 This keeps rendering deterministic even with partially configured sprite sets.
 
@@ -97,12 +100,13 @@ Character and object entities can carry sprite metadata in world state:
 - `spriteSet` for optional directional/default usage
 
 Current character contract:
-- `player.spriteAssetPath?: string`, `player.spriteSet?: SpriteSet`
+- `player.spriteAssetPath?: string`, `player.spriteSet?: SpriteSet`, `player.facingDirection?: SpriteDirection`
 - `guard.spriteAssetPath?: string`, `guard.spriteSet?: SpriteSet`
 - `npc.spriteAssetPath?: string`, `npc.spriteSet?: SpriteSet`
 
 Current renderer behavior:
 - attempts to load resolved character sprite assets via Pixi asset loading
+- resolves player sprite direction from world-facing state, defaulting to `front` when absent
 - renders characters as sprites only when the resolved asset has loaded
 - falls back to deterministic marker circles when metadata is missing, loading is in progress, or loading failed
 - keeps door and interactive-object rendering marker-based
@@ -126,7 +130,7 @@ Source and verification:
 
 ## Tests
 
-- `src/render/scene.test.ts`: color mapping, marker specs, sprite-mode behavior, and deterministic directional fallback order
+- `src/render/scene.test.ts`: color mapping, marker specs, sprite-mode behavior, player directional sprite selection from world-facing state, and deterministic directional fallback order
 - `src/render/runtimeLayout.test.ts`: viewport/layout behavior
 - `src/render/viewportOverlay.test.ts`: overlay visibility, `inert` toggling, focus blocking, and pointer blocking
 - `src/render/chatModal.test.ts`: close button and Escape exit behavior, modal visibility, and focus cleanup

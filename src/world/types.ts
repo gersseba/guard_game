@@ -21,6 +21,7 @@ export interface Player {
   id: string;
   displayName: string;
   position: GridPosition;
+  facingDirection?: SpriteDirection;
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
 }

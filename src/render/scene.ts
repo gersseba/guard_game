@@ -40,7 +40,7 @@ export interface EntityCircleSpec {
   color: number;
 }
 
-const RENDER_DIRECTION: SpriteDirection = 'front';
+const DEFAULT_RENDER_DIRECTION: SpriteDirection = 'front';
 
 const DIRECTION_FALLBACK_ORDER: Record<SpriteDirection, Array<keyof SpriteSet>> = {
   front: ['front', 'default', 'away', 'left', 'right'],
@@ -69,8 +69,9 @@ export const resolveSpriteAssetPathForDirection = (
 
 const resolveCharacterSpriteAssetPath = (
   entity: { spriteAssetPath?: string; spriteSet?: SpriteSet },
+  requestedDirection: SpriteDirection = DEFAULT_RENDER_DIRECTION,
 ): string | undefined => {
-  const directionalSpritePath = resolveSpriteAssetPathForDirection(entity.spriteSet, RENDER_DIRECTION);
+  const directionalSpritePath = resolveSpriteAssetPathForDirection(entity.spriteSet, requestedDirection);
   return directionalSpritePath ?? entity.spriteAssetPath;
 };
 
@@ -104,7 +105,10 @@ export const buildCharacterRenderModes = (
   }
 
   return {
-    player: getCharacterRenderMode(resolveCharacterSpriteAssetPath(worldState.player), spriteLoadStatusByPath),
+    player: getCharacterRenderMode(
+      resolveCharacterSpriteAssetPath(worldState.player, worldState.player.facingDirection ?? DEFAULT_RENDER_DIRECTION),
+      spriteLoadStatusByPath,
+    ),
     guardsById,
     npcsById,
   };
@@ -200,7 +204,10 @@ export const buildEntityCircleSpecs = (worldState: WorldState): EntityCircleSpec
 
 const requestCharacterSpriteLoads = (context: RenderContext, worldState: WorldState): void => {
   const characterSpritePaths = new Set<string>();
-  const playerSpritePath = resolveCharacterSpriteAssetPath(worldState.player);
+  const playerSpritePath = resolveCharacterSpriteAssetPath(
+    worldState.player,
+    worldState.player.facingDirection ?? DEFAULT_RENDER_DIRECTION,
+  );
   if (playerSpritePath !== undefined) {
     characterSpritePaths.add(playerSpritePath);
   }
@@ -271,7 +278,10 @@ const syncCharacterSprites = (
     centerY: y * tileSize + tileSize / 2,
   });
 
-  const playerSpritePath = resolveCharacterSpriteAssetPath(worldState.player);
+  const playerSpritePath = resolveCharacterSpriteAssetPath(
+    worldState.player,
+    worldState.player.facingDirection ?? DEFAULT_RENDER_DIRECTION,
+  );
   if (characterRenderModes.player === 'sprite' && playerSpritePath !== undefined) {
     const center = toCenter(worldState.player.position.x, worldState.player.position.y);
     upsert('player', playerSpritePath, center.centerX, center.centerY);

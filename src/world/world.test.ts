@@ -13,7 +13,50 @@ describe('createWorld', () => {
     ]);
 
     expect(world.getState().player.position).toEqual({ x: 1, y: 2 });
+    expect(world.getState().player.facingDirection).toBe('left');
     expect(world.getState().tick).toBe(1);
+  });
+
+  it('maps directional movement input to facing direction deterministically', () => {
+    const world = createWorld();
+
+    world.applyCommands([{ type: 'move', dx: -1, dy: 0 }]);
+    expect(world.getState().player.facingDirection).toBe('left');
+
+    world.applyCommands([{ type: 'move', dx: 1, dy: 0 }]);
+    expect(world.getState().player.facingDirection).toBe('right');
+
+    world.applyCommands([{ type: 'move', dx: 0, dy: -1 }]);
+    expect(world.getState().player.facingDirection).toBe('away');
+
+    world.applyCommands([{ type: 'move', dx: 0, dy: 1 }]);
+    expect(world.getState().player.facingDirection).toBe('front');
+  });
+
+  it('updates facing direction from movement intent even when movement is blocked', () => {
+    const world = createWorld();
+
+    world.resetToState({
+      ...world.getState(),
+      player: {
+        ...world.getState().player,
+        position: { x: 2, y: 2 },
+      },
+      npcs: [
+        {
+          id: 'npc-blocker',
+          displayName: 'Npc blocker',
+          npcType: 'blocker',
+          dialogueContextKey: 'npc-blocker',
+          position: { x: 2, y: 1 },
+        },
+      ],
+    });
+
+    world.applyCommands([{ type: 'move', dx: 0, dy: -1 }]);
+
+    expect(world.getState().player.position).toEqual({ x: 2, y: 2 });
+    expect(world.getState().player.facingDirection).toBe('away');
   });
 
   it('keeps player position unchanged when movement goes out of bounds', () => {

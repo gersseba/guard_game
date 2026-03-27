@@ -22,6 +22,7 @@ describe('deserializeLevel', () => {
       id: 'player',
       displayName: 'Player',
       position: { x: 2, y: 3 },
+      facingDirection: 'front',
     });
   });
 

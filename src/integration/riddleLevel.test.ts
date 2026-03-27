@@ -17,6 +17,7 @@ describe('riddle level integration pipeline', () => {
 
     expect(worldState).toBeDefined();
     expect(worldState.player.position).toEqual({ x: 10, y: 15 });
+    expect(worldState.player.facingDirection).toBe('front');
 
     expect(worldState.guards).toHaveLength(2);
     expect(worldState.guards.find((guard) => guard.id === 'guard-truth')?.position).toEqual({ x: 8, y: 10 });
