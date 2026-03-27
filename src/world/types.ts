@@ -3,11 +3,26 @@ export interface GridPosition {
   y: number;
 }
 
+export type SpriteDirection = 'front' | 'away' | 'left' | 'right';
+
+/**
+ * Serializable sprite configuration for entities with optional directional variants.
+ * `default` provides a deterministic base asset when a directional key is missing.
+ */
+export interface SpriteSet {
+  default?: string;
+  front?: string;
+  away?: string;
+  left?: string;
+  right?: string;
+}
+
 export interface Player {
   id: string;
   displayName: string;
   position: GridPosition;
   spriteAssetPath?: string;
+  spriteSet?: SpriteSet;
 }
 
 export interface Npc {
@@ -17,6 +32,7 @@ export interface Npc {
   npcType: string;
   dialogueContextKey: string;
   spriteAssetPath?: string;
+  spriteSet?: SpriteSet;
 }
 
 export interface ConversationMessage {
@@ -38,12 +54,15 @@ export interface Guard extends Interactable {
   guardState: 'idle' | 'patrolling' | 'alert';
   honestyTrait?: 'truth-teller' | 'liar';
   spriteAssetPath?: string;
+  spriteSet?: SpriteSet;
 }
 
 /** A door that the player can pass through or be blocked by. */
 export interface Door extends Interactable {
   doorState: 'open' | 'closed' | 'locked';
   outcome?: 'safe' | 'danger';
+  spriteAssetPath?: string;
+  spriteSet?: SpriteSet;
 }
 
 export interface InteractiveObject extends Interactable {
@@ -54,6 +73,7 @@ export interface InteractiveObject extends Interactable {
   usedMessage?: string;
   firstUseOutcome?: 'win' | 'lose';
   spriteAssetPath?: string;
+  spriteSet?: SpriteSet;
 }
 
 export interface WorldGrid {
@@ -68,7 +88,7 @@ export interface LevelData {
   name: string;
   width: number;
   height: number;
-  player: { x: number; y: number; spriteAssetPath?: string };
+  player: { x: number; y: number; spriteAssetPath?: string; spriteSet?: SpriteSet };
   guards: Array<{
     id: string;
     displayName: string;
@@ -77,6 +97,7 @@ export interface LevelData {
     guardState: 'patrolling' | 'alert' | 'idle';
     honestyTrait?: 'truth-teller' | 'liar';
     spriteAssetPath?: string;
+    spriteSet?: SpriteSet;
   }>;
   doors: Array<{
     id: string;
@@ -85,6 +106,8 @@ export interface LevelData {
     y: number;
     doorState: 'open' | 'closed' | 'locked';
     outcome: 'safe' | 'danger';
+    spriteAssetPath?: string;
+    spriteSet?: SpriteSet;
   }>;
   npcs?: Array<{
     id: string;
@@ -93,6 +116,7 @@ export interface LevelData {
     y: number;
     npcType: string;
     spriteAssetPath?: string;
+    spriteSet?: SpriteSet;
   }>;
   interactiveObjects?: Array<{
     id: string;
@@ -106,6 +130,7 @@ export interface LevelData {
     usedMessage?: string;
     firstUseOutcome?: 'win' | 'lose';
     spriteAssetPath?: string;
+    spriteSet?: SpriteSet;
   }>;
 }
 

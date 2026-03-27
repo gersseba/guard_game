@@ -23,8 +23,32 @@ describe('riddle level integration pipeline', () => {
     expect(worldState.guards.find((guard) => guard.id === 'guard-liar')?.position).toEqual({ x: 12, y: 10 });
 
     expect(worldState.doors).toHaveLength(2);
-    expect(worldState.doors.find((door) => door.id === 'door-safe')?.position).toEqual({ x: 5, y: 5 });
-    expect(worldState.doors.find((door) => door.id === 'door-danger')?.position).toEqual({ x: 15, y: 5 });
+    expect(worldState.doors.find((door) => door.id === 'door-safe')?.position).toEqual({ x: 7, y: 8 });
+    expect(worldState.doors.find((door) => door.id === 'door-danger')?.position).toEqual({ x: 13, y: 8 });
+  });
+
+  it('wires medieval sprite sets for player, guards, and doors', () => {
+    const worldState = createRiddleState();
+
+    expect(worldState.player.spriteSet).toEqual({
+      default: '/assets/medieval_player_farmer_front.svg',
+      front: '/assets/medieval_player_farmer_front.svg',
+      away: '/assets/medieval_player_farmer_away.svg',
+      left: '/assets/medieval_player_farmer_left.svg',
+      right: '/assets/medieval_player_farmer_right.svg',
+    });
+
+    expect(worldState.guards[0].spriteSet).toEqual({
+      default: '/assets/medieval_guard_shield_spear_front.svg',
+      front: '/assets/medieval_guard_shield_spear_front.svg',
+      away: '/assets/medieval_guard_shield_spear_away.svg',
+      left: '/assets/medieval_guard_shield_spear_left.svg',
+      right: '/assets/medieval_guard_shield_spear_right.svg',
+    });
+
+    expect(worldState.doors[0].spriteSet).toEqual({
+      default: '/assets/medieval_door_wooden_closed.svg',
+    });
   });
 
   it('has guards with correct honestyTrait values', () => {
@@ -59,7 +83,7 @@ describe('riddle level integration pipeline', () => {
 
   it('resolves adjacent safe door and returns win outcome', () => {
     const worldState = createRiddleState();
-    worldState.player.position = { x: 4, y: 5 };
+    worldState.player.position = { x: 6, y: 8 };
 
     const adjacent = resolveAdjacentTarget(worldState);
 
@@ -82,7 +106,7 @@ describe('riddle level integration pipeline', () => {
 
   it('resolves adjacent danger door and returns lose outcome', () => {
     const worldState = createRiddleState();
-    worldState.player.position = { x: 14, y: 5 };
+    worldState.player.position = { x: 12, y: 8 };
 
     const adjacent = resolveAdjacentTarget(worldState);
 

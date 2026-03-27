@@ -3,6 +3,34 @@ import { validateSpatialLayout } from './spatialRules';
 
 const DEFAULT_TILE_SIZE = 48;
 
+const SPRITE_SET_KEYS = ['default', 'front', 'away', 'left', 'right'] as const;
+
+const validateSpriteSet = (
+  value: unknown,
+  contextLabel: string,
+): void => {
+  if (typeof value !== 'object' || value === null) {
+    throw new Error(`Invalid level data: ${contextLabel} spriteSet must be an object when provided`);
+  }
+
+  const raw = value as Record<string, unknown>;
+  let hasAnyPath = false;
+  for (const key of SPRITE_SET_KEYS) {
+    const path = raw[key];
+    if (path === undefined) {
+      continue;
+    }
+    if (typeof path !== 'string') {
+      throw new Error(`Invalid level data: ${contextLabel} spriteSet.${key} must be a string when provided`);
+    }
+    hasAnyPath = true;
+  }
+
+  if (!hasAnyPath) {
+    throw new Error(`Invalid level data: ${contextLabel} spriteSet must provide at least one sprite path`);
+  }
+};
+
 /**
  * Validates that an unknown value conforms to the LevelData schema.
  * Throws a descriptive Error if any required field is missing or has an unexpected type/value.
@@ -47,6 +75,10 @@ export function validateLevelData(input: unknown): LevelData {
     throw new Error('Invalid level data: player spriteAssetPath must be a string when provided');
   }
 
+  if ((player as Record<string, unknown>)['spriteSet'] !== undefined) {
+    validateSpriteSet((player as Record<string, unknown>)['spriteSet'], 'player');
+  }
+
   if (!Array.isArray(raw['guards'])) {
     throw new Error('Invalid level data: guards must be an array');
   }
@@ -80,6 +112,10 @@ export function validateLevelData(input: unknown): LevelData {
         `Invalid level data: guard at index ${i} has invalid spriteAssetPath (must be a string when provided)`,
       );
     }
+
+    if (guard['spriteSet'] !== undefined) {
+      validateSpriteSet(guard['spriteSet'], `guard at index ${i}`);
+    }
   }
 
   if (!Array.isArray(raw['doors'])) {
@@ -106,6 +142,16 @@ export function validateLevelData(input: unknown): LevelData {
       throw new Error(
         `Invalid level data: door at index ${i} has invalid outcome (must be 'safe' or 'danger')`,
       );
+    }
+
+    if (door['spriteAssetPath'] !== undefined && typeof door['spriteAssetPath'] !== 'string') {
+      throw new Error(
+        `Invalid level data: door at index ${i} has invalid spriteAssetPath (must be a string when provided)`,
+      );
+    }
+
+    if (door['spriteSet'] !== undefined) {
+      validateSpriteSet(door['spriteSet'], `door at index ${i}`);
     }
   }
 
@@ -134,6 +180,10 @@ export function validateLevelData(input: unknown): LevelData {
         throw new Error(
           `Invalid level data: npc at index ${i} has invalid spriteAssetPath (must be a string when provided)`,
         );
+      }
+
+      if (npc['spriteSet'] !== undefined) {
+        validateSpriteSet(npc['spriteSet'], `npc at index ${i}`);
       }
     }
   }
@@ -172,6 +222,19 @@ export function validateLevelData(input: unknown): LevelData {
           `Invalid level data: interactiveObject at index ${i} has invalid firstUseOutcome (must be 'win' or 'lose')`,
         );
       }
+
+      if (
+        interactiveObject['spriteAssetPath'] !== undefined &&
+        typeof interactiveObject['spriteAssetPath'] !== 'string'
+      ) {
+        throw new Error(
+          `Invalid level data: interactiveObject at index ${i} has invalid spriteAssetPath (must be a string when provided)`,
+        );
+      }
+
+      if (interactiveObject['spriteSet'] !== undefined) {
+        validateSpriteSet(interactiveObject['spriteSet'], `interactiveObject at index ${i}`);
+      }
     }
   }
 
@@ -197,6 +260,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       ...(levelData.player.spriteAssetPath !== undefined
         ? { spriteAssetPath: levelData.player.spriteAssetPath }
         : {}),
+      ...(levelData.player.spriteSet !== undefined ? { spriteSet: levelData.player.spriteSet } : {}),
     },
     npcs: (levelData.npcs ?? []).map((n) => ({
       id: n.id,
@@ -205,6 +269,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       npcType: n.npcType,
       dialogueContextKey: `npc_${n.npcType.toLowerCase()}`,
       ...(n.spriteAssetPath !== undefined ? { spriteAssetPath: n.spriteAssetPath } : {}),
+      ...(n.spriteSet !== undefined ? { spriteSet: n.spriteSet } : {}),
     })),
     guards: levelData.guards.map((g) => ({
       id: g.id,
@@ -213,6 +278,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       guardState: g.guardState,
       honestyTrait: g.honestyTrait,
       ...(g.spriteAssetPath !== undefined ? { spriteAssetPath: g.spriteAssetPath } : {}),
+      ...(g.spriteSet !== undefined ? { spriteSet: g.spriteSet } : {}),
     })),
     doors: levelData.doors.map((d) => ({
       id: d.id,
@@ -220,6 +286,8 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       position: { x: d.x, y: d.y },
       doorState: d.doorState,
       outcome: d.outcome,
+      ...(d.spriteAssetPath !== undefined ? { spriteAssetPath: d.spriteAssetPath } : {}),
+      ...(d.spriteSet !== undefined ? { spriteSet: d.spriteSet } : {}),
     })),
     interactiveObjects: (levelData.interactiveObjects ?? []).map((o) => ({
       id: o.id,
@@ -232,6 +300,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       usedMessage: o.usedMessage,
       firstUseOutcome: o.firstUseOutcome,
       spriteAssetPath: o.spriteAssetPath,
+      spriteSet: o.spriteSet,
     })),
     actorConversationHistoryByActorId: {},
     levelOutcome: null,
