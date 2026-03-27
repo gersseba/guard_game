@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Medieval Guard Shield Spear Left</title>
+  <desc id="desc">A left-facing guard with shield arm forward and spear held behind.</desc>
+  <ellipse cx="32" cy="57" rx="15" ry="4" fill="#1f1a15" opacity="0.35"/>
+  <path d="M36 16c0 4-3 7-7 7-4 0-7-3-7-7s3-7 7-7c4 0 7 3 7 7z" fill="#caa27f" stroke="#2d1f14" stroke-width="2"/>
+  <circle cx="29" cy="16" r="1" fill="#2d1f14"/>
+  <path d="M23 26c2-6 6-9 10-9 4 0 8 3 10 9v7H23z" fill="#5f646b" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M22 33h21l-4 16H25z" fill="#6f3b31" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="20" y="33" width="5" height="13" rx="2" fill="#5f646b" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="39" y="35" width="5" height="12" rx="2" fill="#5f646b" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="25" y="49" width="5" height="9" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="34" y="49" width="5" height="9" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M42 10h3v44h-3z" fill="#91633c" stroke="#2d1f14" stroke-width="1.5"/>
+  <path d="M43.5 7l3.5 5h-7z" fill="#aeb4bb" stroke="#2d1f14" stroke-width="1.5"/>
+  <path d="M14 33l7-4 7 4v10c0 5-3 9-7 11-4-2-7-6-7-11z" fill="#4f5358" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M21 35v15" stroke="#aeb4bb" stroke-width="1.5"/>
+</svg>
