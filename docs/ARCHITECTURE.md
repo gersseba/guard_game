@@ -6,12 +6,13 @@ Guard Game enforces strict layer separation to support deterministic world updat
 
 ```
 /src
-  /world          - Deterministic world model (state, command application, ticks)
-  /render         - PixiJS rendering port (grid, sprites, camera, viewport)
-  /interaction    - Interaction dispatch + result routing across target kinds
-  /input          - Input command buffering and keyboard mapping
-  /llm            - LLM client boundary and context generation stubs
-  main.ts         - Runtime bootstrap and frame/tick loop
+  /world               - Deterministic world model (state, command application, ticks)
+  /render              - PixiJS rendering port (grid, sprites, camera, viewport)
+  /interaction         - Interaction dispatch + result routing across target kinds
+  /input               - Input command buffering and keyboard mapping
+  /llm                 - LLM client boundary and context generation stubs
+  runtimeController.ts - Runtime orchestration: simulation pause/resume and conversation gating
+  main.ts              - Runtime bootstrap and frame/tick loop
 ```
 
 ## Design Principles
@@ -47,8 +48,8 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 
 ### Frame Loop
 1. **Input Phase:** Keyboard input is captured and mapped to `WorldCommand` values, enqueued into `CommandBuffer`.
-2. **Tick Phase** (fixed 100ms): Buffered commands are drained and applied to world state via `world.applyCommands(commands)`.
-3. **Interaction Dispatch:** If an `interact` command was issued, `runInteractionIfRequested()` resolves one adjacent target and calls `interactionDispatcher.dispatch(...)`.
+2. **Tick Phase** (fixed 100ms): `runtimeController.stepSimulation()` is called. It drains the command buffer, gates commands based on current pause state and level outcome, then applies the resolved command set to world state via `world.applyCommands(commands)`. If the runtime is paused (a guard or NPC conversation is open), buffered commands are discarded and no world update or interaction dispatch occurs for that tick.
+3. **Interaction Dispatch:** If an `interact` command was issued and the runtime is not paused, `runInteractionIfRequested()` resolves one adjacent target and calls `interactionDispatcher.dispatch(...)`.
 4. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into main-loop side effects.
 5. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port.
 6. **Debug Phase:** Current JSON world state is serialized and printed to the debug panel.
@@ -57,6 +58,8 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 [Keyboard Input]
        |
 [Command Buffer]
+       |
+[RuntimeController.stepSimulation()] <- gates on pause state & level outcome
        |
 [World.applyCommands()] <- deterministic state update
        |
@@ -68,6 +71,8 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
        |
 [Debug Panel] <- serializes and displays JSON state
 ```
+
+> **Pause state is external to `WorldState`.** `RuntimeController` owns the pause flag and the active `RuntimeConversationSession`. This state is transient, non-serializable, and intentionally excluded from LLM context and replay.
 
 ## Layer Contracts
 

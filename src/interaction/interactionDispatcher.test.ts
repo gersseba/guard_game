@@ -408,6 +408,31 @@ describe('InteractionDispatcher', () => {
   });
 
   describe('result dispatcher timing parity', () => {
+    it('door and interactive object results never trigger conversation start callbacks', () => {
+      const onConversationStarted = vi.fn();
+      const dispatcher = createResultDispatcher({
+        onConversationStarted,
+        onLevelOutcomeChanged: vi.fn(),
+        onWorldStateUpdated: vi.fn(),
+        getCurrentWorldState: () => createTestWorldState(),
+        getConversationHistory: () => [],
+      });
+
+      dispatcher.dispatch({
+        kind: 'door',
+        targetId: 'door-1',
+        isConversational: false,
+        levelOutcome: null,
+      });
+      dispatcher.dispatch({
+        kind: 'interactiveObject',
+        targetId: 'object-1',
+        isConversational: false,
+      });
+
+      expect(onConversationStarted).not.toHaveBeenCalled();
+    });
+
     it('applies door level outcome callback synchronously', () => {
       const callbackOrder: string[] = [];
       const dispatcher = createResultDispatcher({
