@@ -3,76 +3,43 @@ import { createInitialWorldState } from '../world/state';
 import {
   buildGuardPromptContext,
   buildGuardWorldContextPayload,
-  buildGuardPersonaContract,
   GUARD_PERSONA_CONTRACT,
-  TRUTH_TELLER_PERSONA_CONTRACT,
-  LIAR_PERSONA_CONTRACT,
 } from './guardPromptContext';
 
 describe('buildGuardWorldContextPayload', () => {
-  it('includes player, guard, npc, and interactive object positions including doors', () => {
+  it('includes only player, guards, and doors with truth/safe booleans', () => {
     const worldState = createInitialWorldState();
     worldState.player.position = { x: 2, y: 3 };
     worldState.guards = [
       {
         id: 'guard-2',
         displayName: 'South Guard',
-        position: { x: 4, y: 5 },
+        position: { x: 4, y: 8 },
         guardState: 'patrolling',
+        honestyTrait: 'liar',
       },
       {
         id: 'guard-1',
         displayName: 'North Guard',
         position: { x: 1, y: 0 },
         guardState: 'idle',
-      },
-    ];
-    worldState.npcs = [
-      {
-        id: 'npc-2',
-        displayName: 'Engineer',
-        position: { x: 8, y: 1 },
-        npcType: 'engineer',
-        dialogueContextKey: 'engineer_intro',
-      },
-      {
-        id: 'npc-1',
-        displayName: 'Archivist',
-        position: { x: 3, y: 9 },
-        npcType: 'archive_keeper',
-        dialogueContextKey: 'archive_keeper_intro',
+        honestyTrait: 'truth-teller',
       },
     ];
     worldState.doors = [
       {
         id: 'door-2',
         displayName: 'South Door',
-        position: { x: 7, y: 7 },
+        position: { x: 4, y: 7 },
         doorState: 'closed',
+        outcome: 'danger',
       },
       {
         id: 'door-1',
         displayName: 'North Door',
         position: { x: 5, y: 6 },
         doorState: 'open',
-      },
-    ];
-    worldState.interactiveObjects = [
-      {
-        id: 'obj-2',
-        displayName: 'Terminal',
-        position: { x: 10, y: 2 },
-        objectType: 'supply-crate',
-        interactionType: 'inspect',
-        state: 'idle',
-      },
-      {
-        id: 'obj-1',
-        displayName: 'Lever',
-        position: { x: 6, y: 3 },
-        objectType: 'supply-crate',
-        interactionType: 'use',
-        state: 'used',
+        outcome: 'safe',
       },
     ];
 
@@ -83,18 +50,32 @@ describe('buildGuardWorldContextPayload', () => {
       position: { x: 2, y: 3 },
     });
     expect(payload.guards).toEqual([
-      { id: 'guard-1', position: { x: 1, y: 0 } },
-      { id: 'guard-2', position: { x: 4, y: 5 } },
+      {
+        id: 'guard-1',
+        displayName: 'North Guard',
+        position: { x: 1, y: 0 },
+        truth: true,
+      },
+      {
+        id: 'guard-2',
+        displayName: 'South Guard',
+        position: { x: 4, y: 8 },
+        truth: false,
+      },
     ]);
-    expect(payload.npcs).toEqual([
-      { id: 'npc-1', position: { x: 3, y: 9 } },
-      { id: 'npc-2', position: { x: 8, y: 1 } },
-    ]);
-    expect(payload.interactiveObjects).toEqual([
-      { id: 'door-1', kind: 'door', position: { x: 5, y: 6 } },
-      { id: 'door-2', kind: 'door', position: { x: 7, y: 7 } },
-      { id: 'obj-1', kind: 'object', position: { x: 6, y: 3 } },
-      { id: 'obj-2', kind: 'object', position: { x: 10, y: 2 } },
+    expect(payload.doors).toEqual([
+      {
+        id: 'door-1',
+        displayName: 'North Door',
+        position: { x: 5, y: 6 },
+        safe: true,
+      },
+      {
+        id: 'door-2',
+        displayName: 'South Door',
+        position: { x: 4, y: 7 },
+        safe: false,
+      },
     ]);
   });
 
@@ -132,50 +113,30 @@ describe('buildGuardWorldContextPayload', () => {
 
     const promptContext = buildGuardPromptContext(worldState.guards[0], worldState);
     const parsed = JSON.parse(promptContext) as {
+      guard: {
+        id: string;
+        displayName: string;
+        position: { x: number; y: number };
+        truth: boolean;
+      };
       guardPersonaContract: string;
-      worldContext: ReturnType<typeof buildGuardWorldContextPayload>;
+      world: ReturnType<typeof buildGuardWorldContextPayload>;
     };
     const roundTrip = JSON.parse(JSON.stringify(parsed)) as typeof parsed;
 
     expect(parsed.guardPersonaContract).toBe(GUARD_PERSONA_CONTRACT);
-    expect(roundTrip.worldContext).toEqual(parsed.worldContext);
+    expect(parsed.guard).toEqual({
+      id: 'guard-1',
+      displayName: 'Guard',
+      position: { x: 2, y: 2 },
+      truth: true,
+    });
+    expect(roundTrip.world).toEqual(parsed.world);
   });
 });
 
-describe('buildGuardPersonaContract', () => {
-  it('returns TRUTH_TELLER_PERSONA_CONTRACT when honestyTrait is truth-teller', () => {
-    const guard = {
-      id: 'g1',
-      displayName: 'Honest Guard',
-      position: { x: 0, y: 0 },
-      guardState: 'idle' as const,
-      honestyTrait: 'truth-teller' as const,
-    };
-    expect(buildGuardPersonaContract(guard)).toBe(TRUTH_TELLER_PERSONA_CONTRACT);
-  });
-
-  it('returns LIAR_PERSONA_CONTRACT when honestyTrait is liar', () => {
-    const guard = {
-      id: 'g2',
-      displayName: 'Liar Guard',
-      position: { x: 0, y: 0 },
-      guardState: 'idle' as const,
-      honestyTrait: 'liar' as const,
-    };
-    expect(buildGuardPersonaContract(guard)).toBe(LIAR_PERSONA_CONTRACT);
-  });
-
-  it('falls back to GUARD_PERSONA_CONTRACT when honestyTrait is absent', () => {
-    const guard = {
-      id: 'g3',
-      displayName: 'Generic Guard',
-      position: { x: 0, y: 0 },
-      guardState: 'idle' as const,
-    };
-    expect(buildGuardPersonaContract(guard)).toBe(GUARD_PERSONA_CONTRACT);
-  });
-
-  it('embeds the correct persona contract in the serialized prompt context', () => {
+describe('guard truth encoding', () => {
+  it('embeds truth boolean in guard and world entries', () => {
     const worldState = createInitialWorldState();
 
     const truthTeller = {
@@ -192,19 +153,32 @@ describe('buildGuardPersonaContract', () => {
       guardState: 'idle' as const,
       honestyTrait: 'liar' as const,
     };
-    const generic = {
-      id: 'g-generic',
-      displayName: 'Generic Guard',
-      position: { x: 3, y: 3 },
-      guardState: 'idle' as const,
+    worldState.guards = [liar, truthTeller];
+
+    const parsedTruth = JSON.parse(buildGuardPromptContext(truthTeller, worldState)) as {
+      guard: { truth: boolean };
+      world: { guards: Array<{ id: string; truth: boolean }> };
+    };
+    const parsedLiar = JSON.parse(buildGuardPromptContext(liar, worldState)) as {
+      guard: { truth: boolean };
+      world: { guards: Array<{ id: string; truth: boolean }> };
     };
 
-    const parsedTruth = JSON.parse(buildGuardPromptContext(truthTeller, worldState)) as { guardPersonaContract: string };
-    const parsedLiar = JSON.parse(buildGuardPromptContext(liar, worldState)) as { guardPersonaContract: string };
-    const parsedGeneric = JSON.parse(buildGuardPromptContext(generic, worldState)) as { guardPersonaContract: string };
-
-    expect(parsedTruth.guardPersonaContract).toBe(TRUTH_TELLER_PERSONA_CONTRACT);
-    expect(parsedLiar.guardPersonaContract).toBe(LIAR_PERSONA_CONTRACT);
-    expect(parsedGeneric.guardPersonaContract).toBe(GUARD_PERSONA_CONTRACT);
+    expect(parsedTruth.guard.truth).toBe(true);
+    expect(parsedLiar.guard.truth).toBe(false);
+    expect(parsedTruth.world.guards).toEqual([
+      {
+        id: 'g-liar',
+        displayName: 'Liar Guard',
+        position: { x: 2, y: 2 },
+        truth: false,
+      },
+      {
+        id: 'g-truth',
+        displayName: 'Truth Guard',
+        position: { x: 1, y: 1 },
+        truth: true,
+      },
+    ]);
   });
 });

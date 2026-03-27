@@ -35,6 +35,7 @@ export function createChatModal(
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-label', 'Conversation');
   overlay.hidden = true;
+  overlay.style.display = 'none';
 
   const modal = document.createElement('div');
   modal.className = 'chat-modal';
@@ -117,6 +118,7 @@ export function createChatModal(
   function closePanel(): void {
     open = false;
     overlay.hidden = true;
+    overlay.style.display = 'none';
     document.removeEventListener('keydown', escapeListener);
     callbacks.onClose();
     releaseModalFocus();
@@ -139,6 +141,11 @@ export function createChatModal(
 
   closeBtn.addEventListener('click', closePanel);
   sendBtn.addEventListener('click', submitMessage);
+  overlay.addEventListener('click', (event: MouseEvent) => {
+    if (event.target === overlay) {
+      closePanel();
+    }
+  });
 
   input.addEventListener('keydown', (event: KeyboardEvent) => {
     if (event.key === 'Enter') {
@@ -171,6 +178,7 @@ export function createChatModal(
       }
 
       overlay.hidden = false;
+      overlay.style.display = 'flex';
       document.addEventListener('keydown', escapeListener);
       input.disabled = false;
       sendBtn.disabled = false;

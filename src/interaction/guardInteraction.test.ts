@@ -80,23 +80,32 @@ describe('createGuardInteractionService', () => {
       throw new Error('Expected guard LLM prompt to be provided.');
     }
     const parsedContext = JSON.parse(calledPrompt.context) as {
+      guard: { id: string; displayName: string; position: { x: number; y: number }; truth: boolean };
       guardPersonaContract: string;
-      worldContext: {
+      world: {
         player: { id: string; position: { x: number; y: number } };
-        guards: Array<{ id: string; position: { x: number; y: number } }>;
-        npcs: Array<{ id: string; position: { x: number; y: number } }>;
-        interactiveObjects: Array<{ id: string; kind: 'door' | 'object'; position: { x: number; y: number } }>;
+        guards: Array<{ id: string; displayName: string; position: { x: number; y: number }; truth: boolean }>;
+        doors: Array<{ id: string; displayName: string; position: { x: number; y: number }; safe: boolean }>;
       };
     };
 
     expect(parsedContext.guardPersonaContract).toBe(GUARD_PERSONA_CONTRACT);
-    expect(parsedContext.worldContext.player.position).toEqual(worldState.player.position);
-    expect(parsedContext.worldContext.guards).toEqual([
-      { id: 'guard-1', position: worldState.guards[0].position },
+    expect(parsedContext.guard).toEqual({
+      id: 'guard-1',
+      displayName: 'Guard',
+      position: worldState.guards[0].position,
+      truth: true,
+    });
+    expect(parsedContext.world.player.position).toEqual(worldState.player.position);
+    expect(parsedContext.world.guards).toEqual([
+      {
+        id: 'guard-1',
+        displayName: 'Guard',
+        position: worldState.guards[0].position,
+        truth: true,
+      },
     ]);
-    expect(parsedContext.worldContext.npcs).toEqual([
-      { id: 'npc-1', position: worldState.npcs[0].position },
-    ]);
+    expect(parsedContext.world.doors).toEqual([]);
   });
 
   it('preserves deterministic missing-api-key fallback text from llm boundary', async () => {

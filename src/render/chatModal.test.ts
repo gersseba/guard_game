@@ -22,6 +22,15 @@ describe('createChatModal', () => {
     document.body.appendChild(container);
   });
 
+  it('is hidden by default before open is called', () => {
+    createChatModal(container, makeCallbacks());
+
+    const overlay = container.querySelector<HTMLDivElement>('.chat-modal-overlay');
+    expect(overlay).not.toBeNull();
+    expect(overlay?.hidden).toBe(true);
+    expect(overlay?.style.display).toBe('none');
+  });
+
   describe('close button', () => {
     it('calls the onClose callback when the close button is clicked', () => {
       const { callbacks } = openModal(container);
@@ -101,6 +110,18 @@ describe('createChatModal', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 
       expect(callbacks.onClose).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('backdrop click', () => {
+    it('closes the modal when the backdrop is clicked', () => {
+      const { callbacks, handle } = openModal(container);
+
+      const overlay = container.querySelector<HTMLDivElement>('.chat-modal-overlay');
+      overlay?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      expect(callbacks.onClose).toHaveBeenCalledOnce();
+      expect(handle.isOpen()).toBe(false);
     });
   });
 });

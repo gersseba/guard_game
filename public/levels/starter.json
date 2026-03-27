@@ -30,7 +30,7 @@
     {
       "id": "door-1",
       "displayName": "West Door",
-      "x": 2,
+      "x": 4,
       "y": 10,
       "doorState": "closed",
       "outcome": "safe"
@@ -39,7 +39,7 @@
       "id": "door-2",
       "displayName": "North Door",
       "x": 10,
-      "y": 2,
+      "y": 4,
       "doorState": "closed",
       "outcome": "danger"
     }

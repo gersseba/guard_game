@@ -26,16 +26,16 @@
     {
       "id": "door-safe",
       "displayName": "Left Door",
-      "x": 5,
-      "y": 5,
+      "x": 7,
+      "y": 8,
       "doorState": "closed",
       "outcome": "safe"
     },
     {
       "id": "door-danger",
       "displayName": "Right Door",
-      "x": 15,
-      "y": 5,
+      "x": 13,
+      "y": 8,
       "doorState": "closed",
       "outcome": "danger"
     }

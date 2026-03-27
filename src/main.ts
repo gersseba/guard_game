@@ -52,6 +52,8 @@ const chatModal = createChatModal(chatModalHostElement, {
   onSend(playerMessage: string): void {
     const currentInteraction = runtimeController.getCurrentInteraction();
     if (!currentInteraction) {
+      chatModal.close();
+      viewportPauseOverlay.hide();
       return; // Safety check.
     }
 
@@ -127,6 +129,7 @@ const resultDispatcher = createResultDispatcher({
 
 const LEVELS_BASE_URL = '/levels';
 const MANIFEST_URL = `${LEVELS_BASE_URL}/manifest.json`;
+const DEFAULT_LEVEL_ID = 'riddle';
 
 /** Tracks which level id is currently active so reset can reload the same level. */
 let activeLevelId: string | null = null;
@@ -213,15 +216,23 @@ const startRuntime = async (): Promise<void> => {
   // Load manifest and populate the level selector. Fail gracefully when absent.
   fetchLevelManifest(MANIFEST_URL)
     .then((levels) => {
-      levelUi.populateLevels(levels);
-      if (levels.length > 0) {
-        const first = levels[0];
-        activeLevelId = first.id;
-        levelUi.setSelectedLevel(first.id);
-        return fetchAndLoadLevel(`${LEVELS_BASE_URL}/${first.id}.json`).then((newState) => {
+      const defaultLevel =
+        levels.find((level) => level.id === DEFAULT_LEVEL_ID) ?? levels[0];
+
+      if (defaultLevel) {
+        const orderedLevels = [
+          defaultLevel,
+          ...levels.filter((level) => level.id !== defaultLevel.id),
+        ];
+        levelUi.populateLevels(orderedLevels);
+        activeLevelId = defaultLevel.id;
+        levelUi.setSelectedLevel(defaultLevel.id);
+        return fetchAndLoadLevel(`${LEVELS_BASE_URL}/${defaultLevel.id}.json`).then((newState) => {
           world.resetToState(newState);
         });
       }
+
+      levelUi.populateLevels(levels);
     })
     .catch((err: unknown) => {
       console.error('Failed to load level manifest:', err);

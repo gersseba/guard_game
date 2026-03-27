@@ -26,7 +26,7 @@ export interface GeminiLlmClientOptions {
 }
 
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
-const DEFAULT_TIMEOUT_MS = 6_000;
+const DEFAULT_TIMEOUT_MS = 20_000;
 
 export const MISSING_API_KEY_FALLBACK_TEXT =
   'I cannot access my briefing network right now. Please try again later.';

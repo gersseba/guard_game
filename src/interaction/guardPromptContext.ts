@@ -1,19 +1,9 @@
 import type { Guard, WorldState } from '../world/types';
 
 export const GUARD_PERSONA_CONTRACT =
-  'You are a vigilant city guard. Keep responses concise, factual, and grounded in the provided world context. Do not invent positions or events not present in context.';
+  'You are a vigilant city guard. Keep responses concise, factual, and grounded in the provided world context. The actor and each guard include a truth boolean: if truth is true, answer truthfully; if truth is false, answer with the logical opposite while still sounding confident and never admitting deception. Infer which door the actor is guarding from relative positions. Do not invent positions or events not present in context.';
 
-export const TRUTH_TELLER_PERSONA_CONTRACT =
-  'You are a vigilant city guard who always speaks the truth. You must answer all questions truthfully and never deceive or mislead the player under any circumstances. Keep responses concise and grounded in the provided world context.';
-
-export const LIAR_PERSONA_CONTRACT =
-  'You are a vigilant city guard. You must always answer with the logical opposite of the truth. You will never reveal that you are lying. If asked whether you are a liar or whether you lie, you must deny it and claim you always tell the truth. Keep responses concise and grounded in the provided world context.';
-
-export const buildGuardPersonaContract = (guard: Guard): string => {
-  if (guard.honestyTrait === 'truth-teller') return TRUTH_TELLER_PERSONA_CONTRACT;
-  if (guard.honestyTrait === 'liar') return LIAR_PERSONA_CONTRACT;
-  return GUARD_PERSONA_CONTRACT;
-};
+const isGuardTruthful = (guard: Guard): boolean => guard.honestyTrait !== 'liar';
 
 export interface GuardWorldContextPayload {
   player: {
@@ -25,56 +15,44 @@ export interface GuardWorldContextPayload {
   };
   guards: Array<{
     id: string;
+    displayName: string;
     position: {
       x: number;
       y: number;
     };
+    truth: boolean;
   }>;
-  npcs: Array<{
+  doors: Array<{
     id: string;
+    displayName: string;
     position: {
       x: number;
       y: number;
     };
-  }>;
-  interactiveObjects: Array<{
-    id: string;
-    kind: 'door' | 'object';
-    position: {
-      x: number;
-      y: number;
-    };
+    safe: boolean;
   }>;
 }
 
 const compareById = <T extends { id: string }>(a: T, b: T): number => a.id.localeCompare(b.id);
 
 export const buildGuardWorldContextPayload = (worldState: WorldState): GuardWorldContextPayload => {
+  const doors = [...worldState.doors]
+    .sort(compareById)
+    .map((door) => ({
+      id: door.id,
+      displayName: door.displayName,
+      position: { x: door.position.x, y: door.position.y },
+      safe: door.outcome === 'safe',
+    }));
+
   const guards = [...worldState.guards]
     .sort(compareById)
     .map((guard) => ({
       id: guard.id,
+      displayName: guard.displayName,
       position: { x: guard.position.x, y: guard.position.y },
+      truth: isGuardTruthful(guard),
     }));
-
-  const npcs = [...worldState.npcs]
-    .sort(compareById)
-    .map((npc) => ({
-      id: npc.id,
-      position: { x: npc.position.x, y: npc.position.y },
-    }));
-
-  const doors = worldState.doors.map((door) => ({
-    id: door.id,
-    kind: 'door' as const,
-    position: { x: door.position.x, y: door.position.y },
-  }));
-  const objects = worldState.interactiveObjects.map((object) => ({
-    id: object.id,
-    kind: 'object' as const,
-    position: { x: object.position.x, y: object.position.y },
-  }));
-  const interactiveObjects = [...doors, ...objects].sort(compareById);
 
   return {
     player: {
@@ -85,18 +63,19 @@ export const buildGuardWorldContextPayload = (worldState: WorldState): GuardWorl
       },
     },
     guards,
-    npcs,
-    interactiveObjects,
+    doors,
   };
 };
 
 export const buildGuardPromptContext = (guard: Guard, worldState: WorldState): string => {
   return JSON.stringify({
-    actor: {
+    guard: {
       id: guard.id,
-      guardState: guard.guardState,
+      displayName: guard.displayName,
+      position: { x: guard.position.x, y: guard.position.y },
+      truth: isGuardTruthful(guard),
     },
-    guardPersonaContract: buildGuardPersonaContract(guard),
-    worldContext: buildGuardWorldContextPayload(worldState),
+    guardPersonaContract: GUARD_PERSONA_CONTRACT,
+    world: buildGuardWorldContextPayload(worldState),
   });
 };
