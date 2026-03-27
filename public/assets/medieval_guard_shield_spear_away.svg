@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
-  <title id="title">Medieval Guard Shield Spear Back</title>
-  <desc id="desc">A back-facing guard with shield and spear.</desc>
+  <title id="title">Medieval Guard Shield Spear Away</title>
+  <desc id="desc">An away-facing guard with shield and spear.</desc>
   <ellipse cx="32" cy="57" rx="15" ry="4" fill="#1f1a15" opacity="0.35"/>
   <rect x="26" y="12" width="12" height="10" rx="2" fill="#8f6a49" stroke="#2d1f14" stroke-width="2"/>
   <path d="M23 25c1-6 5-10 9-10s8 4 9 10v7H23z" fill="#5f646b" stroke="#2d1f14" stroke-width="2"/>
