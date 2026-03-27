@@ -27,7 +27,7 @@ Update type interfaces in `src/world/types.ts` (for example `InteractiveObject` 
 
 Prefer explicit unions over free-form strings when the allowed values are known.
 
-### 2. Update level JSON schema enforcement
+### 2. Update level JSON schema enforcement (if level-authored)
 If fields originate in level JSON, update `validateLevelData()` in `src/world/level.ts`.
 
 Typical checks:
@@ -35,8 +35,12 @@ Typical checks:
 - allowed enum literals
 - cross-field validity when needed
 
+If fields are runtime-derived (for example from command intent), keep them out of level JSON schema and initialize them deterministically in world state creation/deserialization paths.
+
 ### 3. Update deserialization mapping
 Map every validated field in `deserializeLevel()` so runtime state exactly reflects level data.
+
+For runtime-derived fields that are not authored in level JSON, initialize deterministic defaults in deserialization (for example `player.facingDirection: 'front'`).
 
 ### 4. Update deterministic handlers
 If the new field changes interaction behavior, update deterministic handlers (for example in `src/interaction/objectInteraction.ts`) to produce immutable next state.
@@ -82,11 +86,28 @@ Boundary reminder:
 - world layer validates serializable shape only
 - sprite loading success/failure and fallback rendering remain render-layer responsibilities
 
+## Example: Player Facing Direction (Ticket #92)
+
+Added optional world field:
+- `Player.facingDirection?: SpriteDirection`
+
+Why optional:
+- preserves backward compatibility with existing serialized snapshots
+- render can still default to `front` if the field is absent
+
+Required follow-up updates:
+- type update in `src/world/types.ts`
+- deterministic default in world initialization (`src/world/state.ts`) and level deserialization (`src/world/level.ts`)
+- deterministic command-intent mapping in `src/world/world.ts` (`dx/dy` -> `left/right/away/front`)
+- blocked movement still updates facing direction from intent
+- render consumption of world-facing token in `src/render/scene.ts`
+- regression tests in `src/world/world.test.ts`, `src/world/level.test.ts`, `src/render/scene.test.ts`, and `src/integration/riddleLevel.test.ts`
+
 ## Checklist
 
 - [ ] Type changes are explicit and serializable
-- [ ] Validation updated for incoming level JSON
-- [ ] Deserializer maps all new fields
+- [ ] Validation updated for incoming level JSON (if level-authored)
+- [ ] Deserializer maps all new fields or initializes deterministic defaults for runtime-derived fields
 - [ ] Deterministic logic updated immutably
 - [ ] Fixtures/tests updated across impacted layers
 - [ ] Relevant docs updated (`WORLD_LAYER.md`, `RENDER_LAYER.md`, `TYPES_REFERENCE.md`, and pattern docs)

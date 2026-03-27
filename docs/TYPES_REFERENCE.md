@@ -32,6 +32,7 @@ Serializable optional directional sprite metadata:
 - `id: string`
 - `displayName: string`
 - `position: GridPosition`
+- `facingDirection?: SpriteDirection` - world-owned orientation token derived from latest directional movement intent
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
 

@@ -19,6 +19,10 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   - `spriteSet` is accepted for player/guards/doors (and optional entities sharing the same schema)
   - invalid `spriteSet` shapes throw descriptive errors (non-object, non-string directional values, empty object)
   - deserialized world state keeps sprite metadata JSON-serializable via round-trip assertion
+  - player-facing direction defaults to `front` on level load
+- **Movement intent regression checks (`src/world/world.test.ts`):**
+  - directional movement intents deterministically map to `player.facingDirection` (`left`, `right`, `away`, `front`)
+  - facing direction still updates from directional intent when movement is blocked
 
 ### Render Layer Tests
 - **What to test:** Sprite positioning, sprite lifecycle, viewport math, deterministic asset fallback, and DOM render utility behavior
@@ -28,6 +32,7 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
 - **Directional fallback regression checks (`src/render/scene.test.ts`):**
   - `resolveSpriteAssetPathForDirection` honors deterministic fallback order for missing keys
   - mixed contracts (`spriteSet` and legacy `spriteAssetPath`) still resolve to stable render behavior
+  - player sprite selection uses world-owned `player.facingDirection` and defaults to `front` when not present
   - marker fallback still applies when resolved sprite path is unavailable or failed to load
 - **Paused-world UI regression checks:**
   - pause overlay starts hidden and becomes visible only after `show()`
@@ -88,7 +93,7 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
 ## Integration Tests
 
 When features cross layer boundaries, write integration tests:
-- **Player movement + rendering:** World updates position, render layer reflects it
+- **Player movement + rendering:** World updates position and facing direction, render layer reflects the selected sprite orientation
 - **Input + world:** Keyboard input flows through buffer and updates world state
 - **Interaction + result routing:** Interact command resolves target, dispatcher returns result, result dispatcher applies side effect
 - **NPC interaction + LLM:** Player message triggers LLM call and updates conversation thread

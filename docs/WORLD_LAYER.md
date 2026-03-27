@@ -7,6 +7,7 @@ The world layer owns deterministic, JSON-serializable state and validation/deser
 - Validate flat level JSON payloads (`LevelData`)
 - Deserialize level data into runtime world state
 - Preserve determinism for interaction and movement outcomes
+- Derive player-facing direction from movement intent as deterministic world data
 - Keep world state independent from rendering and LLM infrastructure
 
 ## Current Deterministic State Model
@@ -25,6 +26,18 @@ The world layer owns deterministic, JSON-serializable state and validation/deser
 All fields are serializable primitives, arrays, or plain objects.
 
 `actorConversationHistoryByActorId` stores chat history keyed by actor id. It remains JSON-serializable and actor-neutral even though the current conversational actors are guards and NPCs.
+
+### Player Facing Direction State
+
+`player.facingDirection` is a serializable directional token (`front | away | left | right`) owned by the world layer.
+
+Deterministic rules:
+- New runtime state initializes `player.facingDirection` to `front` (`createInitialWorldState()` in `src/world/state.ts`)
+- Level deserialization initializes loaded player state to `front` (`deserializeLevel()` in `src/world/level.ts`)
+- Move commands map input intent to facing direction in world update logic (`src/world/world.ts`)
+- Facing direction updates even when movement is blocked, so intent is still represented in world state
+
+Render consumes this token but does not author it.
 
 ## Level JSON Validation
 
@@ -65,7 +78,10 @@ Deserialization now passes through both optional sprite forms:
 - `spriteAssetPath`
 - `spriteSet`
 
-The world layer does not resolve directional variants. It preserves serializable metadata only; render chooses final visual assets.
+It also initializes player-facing state for loaded levels:
+- `player.facingDirection: 'front'`
+
+The world layer does not resolve directional variants. It preserves serializable metadata and deterministic orientation tokens only; render chooses final visual assets.
 
 ### NPC Deserialization
 NPCs from level JSON are transformed to runtime `Npc` objects with deterministically derived `dialogueContextKey`:
@@ -127,11 +143,14 @@ References:
 
 Conversational interactions write immutable updates into `actorConversationHistoryByActorId`, keyed by the interacting actor id. Object interactions return immutable state updates (for `interactiveObjects` and optional `levelOutcome`) and are then committed through world reset in `src/main.ts`.
 
+Movement commands also update immutable player-facing state in `src/world/world.ts`, coupling orientation to input intent while preserving deterministic world transitions.
+
 ## Testing Strategy
 
-- `src/world/level.test.ts`: schema validation + deserialization coverage for `spriteAssetPath` and `spriteSet`
+- `src/world/level.test.ts`: schema validation + deserialization coverage for `spriteAssetPath` and `spriteSet`, including player default `facingDirection` on load
+- `src/world/world.test.ts`: deterministic movement mapping from command intent to `player.facingDirection`, including blocked movement intent
 - `src/integration/starterLevel.test.ts`: starter level pipeline and sprite metadata assertions
-- `src/integration/riddleLevel.test.ts`: riddle-level sprite-set wiring assertions for player/guards/doors
-- `src/world/spatialRules.test.ts` and `src/world/world.test.ts`: occupancy and world invariants with interactive objects
+- `src/integration/riddleLevel.test.ts`: riddle-level sprite-set wiring assertions for player/guards/doors and player default `facingDirection`
+- `src/world/spatialRules.test.ts`: occupancy invariants
 
 Determinism rule remains unchanged: identical starting state + identical command/interaction sequence => identical resulting state.
