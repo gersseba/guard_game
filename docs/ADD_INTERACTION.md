@@ -1,13 +1,13 @@
 # Add an Interaction
 
-This pattern covers both interaction flows currently in the game:
+This pattern covers interaction flows currently in the game:
 - conversational interactions (guard/NPC via chat and optional LLM)
-- deterministic interactive-object interactions (object-type dispatcher)
+- deterministic interactions (doors and interactive objects)
 
 ## Choose the Interaction Kind
 
 1. Use conversational flow when the target should open chat history and possibly call the LLM boundary.
-2. Use deterministic object flow when the interaction should be fully local and replayable from state.
+2. Use deterministic flow when the interaction should be fully local and replayable from state.
 
 ## Pattern A: Add or Extend Conversational Interactions
 
@@ -19,41 +19,65 @@ This pattern covers both interaction flows currently in the game:
 - Guard path: `src/interaction/guardInteraction.ts`
 - NPC path: `src/interaction/npcInteraction.ts`
 
-### 3. Route in main interaction loop
-- Ensure `runInteractionIfRequested()` in `src/main.ts` handles the target kind and opens chat with existing history.
+### 3. Register interaction handler
+In `src/interaction/interactionDispatcher.ts`:
+- implement or extend the kind-specific handler
+- register it in the interaction registry
+- preserve timing parity:
+  - no `playerMessage` -> synchronous chat-open result
+  - with `playerMessage` -> asynchronous conversational result
 
-### 4. Test
+### 4. Register result handler behavior
+In `src/interaction/interactionDispatcher.ts` result registry:
+- map conversational result kind to `onConversationStarted(...)`
+- rely on `getConversationHistory(...)` for modal preload consistency
+
+### 5. Keep main loop generic
+`src/main.ts` should not branch by target kind for interaction logic.
+- `runInteractionIfRequested()` dispatches once and forwards result to `resultDispatcher`
+- chat submit path resolves target by id and reuses dispatcher with `playerMessage`
+
+### 6. Test
 - Unit tests in `src/interaction/*Interaction.test.ts`
+- Dispatcher parity tests in `src/interaction/interactionDispatcher.test.ts`
 - Integration coverage in `src/integration/*.test.ts`
 
-## Pattern B: Add a New Interactive Object Type
+## Pattern B: Add a New Deterministic Interaction Kind
 
 ### 1. Extend world types
 In `src/world/types.ts`:
-- add new `objectType` union member on `InteractiveObject`
-- add any new optional per-instance fields required by the behavior
+- add/extend the required model fields
+- keep JSON-serializable shape
 
 ### 2. Validate and deserialize level data
 In `src/world/level.ts`:
-- update `validateLevelData()` for the new type and any new constrained fields
+- update `validateLevelData()` for new fields and constraints
 - map new fields in `deserializeLevel()`
 
-### 3. Add object-type handler
-In `src/interaction/objectInteraction.ts`:
-- implement a handler function for the new object type
-- register it in `OBJECT_TYPE_HANDLERS`
-- keep handler deterministic and immutable (return new world state)
+### 3. Implement interaction behavior
+Use or create an interaction module in `src/interaction/` that:
+- accepts plain serializable inputs
+- returns immutable updated state/results
+- avoids render/UI concerns
 
-### 4. Ensure adjacency resolution includes target kind
-`src/interaction/adjacencyResolver.ts` must include `interactiveObject` candidates and preserve deterministic priority ordering.
+### 4. Register handler in interaction dispatcher
+In `src/interaction/interactionDispatcher.ts`:
+- add handler to interaction registry
+- return normalized `InteractionHandlerResult`
 
-### 5. Wire runtime routing
-`src/main.ts` should route `adjacentTarget.kind === 'interactiveObject'` to `handleInteractiveObjectInteraction()` and commit returned state.
+### 5. Register side-effect mapping in result dispatcher
+In `src/interaction/interactionDispatcher.ts`:
+- add result handler for the new kind
+- route through existing callbacks (`onWorldStateUpdated`, `onLevelOutcomeChanged`, etc.) or add callback extension points if required
 
-### 6. Add tests
-- unit tests: `src/interaction/objectInteraction.test.ts`
-- resolver tests: `src/interaction/adjacencyResolver.test.ts`
-- integration tests: `src/integration/starterLevel.test.ts`
+### 6. Ensure adjacency resolution includes target kind
+`src/interaction/adjacencyResolver.ts` must include the kind and preserve deterministic priority ordering.
+
+### 7. Add tests
+- unit tests for interaction logic
+- resolver tests for deterministic target selection
+- dispatcher tests for sync/async behavior expectations
+- integration tests for end-to-end behavior
 
 ## Supply-Crate Example (Current Implementation)
 
@@ -70,10 +94,12 @@ Reference implementation:
 
 ## Checklist
 
-- [ ] Target kind chosen (chat vs deterministic object)
+- [ ] Target kind chosen (conversational vs deterministic)
 - [ ] Types updated in `src/world/types.ts`
 - [ ] Level validation/deserialization updated in `src/world/level.ts`
-- [ ] Runtime routing updated in `src/main.ts`
-- [ ] Deterministic tests added/updated
+- [ ] Interaction handler registered in dispatcher
+- [ ] Result handler mapping registered
+- [ ] Runtime routing in `src/main.ts` remains generic (no new kind branch)
+- [ ] Deterministic and parity tests added/updated
 - [ ] Integration test verifies end-to-end interaction behavior
 - [ ] State remains JSON-serializable
