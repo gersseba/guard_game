@@ -94,6 +94,111 @@ describe('InteractionDispatcher', () => {
       expect(result.isConversational).toBe(false); // Initial interaction
     });
 
+    it('sets guard facing on interaction start from player approach direction', () => {
+      const dispatcher = createInteractionDispatcher({ llmClient });
+
+      const westGuard = createTestGuard('guard-west');
+      const eastGuard = createTestGuard('guard-east');
+      const northGuard = createTestGuard('guard-north');
+      const southGuard = createTestGuard('guard-south');
+
+      const fromWestState = createTestWorldState({
+        player: { id: 'player', displayName: 'Player', position: { x: 0, y: 0 } },
+        guards: [{ ...westGuard, position: { x: 1, y: 0 } }],
+      });
+      const fromEastState = createTestWorldState({
+        player: { id: 'player', displayName: 'Player', position: { x: 2, y: 0 } },
+        guards: [{ ...eastGuard, position: { x: 1, y: 0 } }],
+      });
+      const fromNorthState = createTestWorldState({
+        player: { id: 'player', displayName: 'Player', position: { x: 1, y: -1 } },
+        guards: [{ ...northGuard, position: { x: 1, y: 0 } }],
+      });
+      const fromSouthState = createTestWorldState({
+        player: { id: 'player', displayName: 'Player', position: { x: 1, y: 1 } },
+        guards: [{ ...southGuard, position: { x: 1, y: 0 } }],
+      });
+
+      const westResult = dispatcher.dispatch(
+        { kind: 'guard' as const, target: fromWestState.guards[0] },
+        fromWestState,
+      );
+      const eastResult = dispatcher.dispatch(
+        { kind: 'guard' as const, target: fromEastState.guards[0] },
+        fromEastState,
+      );
+      const northResult = dispatcher.dispatch(
+        { kind: 'guard' as const, target: fromNorthState.guards[0] },
+        fromNorthState,
+      );
+      const southResult = dispatcher.dispatch(
+        { kind: 'guard' as const, target: fromSouthState.guards[0] },
+        fromSouthState,
+      );
+
+      expect(isPromiseLike(westResult)).toBe(false);
+      expect(isPromiseLike(eastResult)).toBe(false);
+      expect(isPromiseLike(northResult)).toBe(false);
+      expect(isPromiseLike(southResult)).toBe(false);
+      if (
+        isPromiseLike(westResult) ||
+        isPromiseLike(eastResult) ||
+        isPromiseLike(northResult) ||
+        isPromiseLike(southResult)
+      ) {
+        throw new Error('Expected guard interaction start to remain synchronous.');
+      }
+
+      expect(westResult.updatedWorldState?.guards[0]?.facingDirection).toBe('left');
+      expect(eastResult.updatedWorldState?.guards[0]?.facingDirection).toBe('right');
+      expect(northResult.updatedWorldState?.guards[0]?.facingDirection).toBe('away');
+      expect(southResult.updatedWorldState?.guards[0]?.facingDirection).toBe('front');
+    });
+
+    it('keeps guard facing stable during an active interaction turn', async () => {
+      const complete = llmClient.complete as ReturnType<typeof vi.fn>;
+      complete.mockResolvedValue({ text: 'At your service.' });
+
+      const dispatcher = createInteractionDispatcher({ llmClient });
+      const guard = { ...createTestGuard('guard-1'), position: { x: 1, y: 0 } };
+      const initialState = createTestWorldState({
+        player: { id: 'player', displayName: 'Player', position: { x: 0, y: 0 } },
+        guards: [guard],
+        actorConversationHistoryByActorId: { 'guard-1': [] },
+      });
+
+      const openResult = dispatcher.dispatch({ kind: 'guard', target: guard }, initialState);
+      if (isPromiseLike(openResult)) {
+        throw new Error('Expected interaction start to be synchronous.');
+      }
+
+      const openUpdatedState = openResult.updatedWorldState;
+      expect(openUpdatedState?.guards[0]?.facingDirection).toBe('left');
+      if (!openUpdatedState) {
+        throw new Error('Expected interaction start to provide updated world state.');
+      }
+
+      const movedPlayerState = {
+        ...openUpdatedState,
+        player: {
+          ...openUpdatedState.player,
+          position: { x: 1, y: 1 },
+        },
+      };
+
+      const conversationalResult = dispatcher.dispatch(
+        { kind: 'guard', target: movedPlayerState.guards[0] },
+        movedPlayerState,
+        'hello',
+      );
+      if (!isPromiseLike(conversationalResult)) {
+        throw new Error('Expected conversational guard interaction to be async.');
+      }
+
+      const resolved = await conversationalResult;
+      expect(resolved.updatedWorldState?.guards[0]?.facingDirection).toBe('left');
+    });
+
     it('dispatches door interactions', async () => {
       const dispatcher = createInteractionDispatcher({ llmClient });
       const door = createTestDoor('door-1');

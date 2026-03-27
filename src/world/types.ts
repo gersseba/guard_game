@@ -54,6 +54,7 @@ export interface Interactable {
 export interface Guard extends Interactable {
   guardState: 'idle' | 'patrolling' | 'alert';
   honestyTrait?: 'truth-teller' | 'liar';
+  facingDirection?: SpriteDirection;
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
 }

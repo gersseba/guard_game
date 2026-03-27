@@ -94,7 +94,7 @@ export const buildCharacterRenderModes = (
   const guardsById: Record<string, CharacterRenderMode> = {};
   for (const guard of worldState.guards) {
     guardsById[guard.id] = getCharacterRenderMode(
-      resolveCharacterSpriteAssetPath(guard),
+      resolveCharacterSpriteAssetPath(guard, guard.facingDirection ?? DEFAULT_RENDER_DIRECTION),
       spriteLoadStatusByPath,
     );
   }
@@ -212,7 +212,10 @@ const requestCharacterSpriteLoads = (context: RenderContext, worldState: WorldSt
     characterSpritePaths.add(playerSpritePath);
   }
   for (const guard of worldState.guards) {
-    const spritePath = resolveCharacterSpriteAssetPath(guard);
+    const spritePath = resolveCharacterSpriteAssetPath(
+      guard,
+      guard.facingDirection ?? DEFAULT_RENDER_DIRECTION,
+    );
     if (spritePath !== undefined) {
       characterSpritePaths.add(spritePath);
     }
@@ -288,7 +291,10 @@ const syncCharacterSprites = (
   }
 
   for (const guard of worldState.guards) {
-    const spritePath = resolveCharacterSpriteAssetPath(guard);
+    const spritePath = resolveCharacterSpriteAssetPath(
+      guard,
+      guard.facingDirection ?? DEFAULT_RENDER_DIRECTION,
+    );
     if (characterRenderModes.guardsById[guard.id] !== 'sprite' || spritePath === undefined) {
       continue;
     }
