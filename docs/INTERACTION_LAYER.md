@@ -64,21 +64,22 @@ The runtime bridge and tests use the shared actor-neutral helper in `src/interac
 
 ## Conversation Pause Lifecycle
 
-When the result dispatcher opens a guard or NPC conversation (`onConversationStarted`), it calls `runtimeController.openConversation(actorId)`, which:
-1. Sets the runtime to paused state.
-2. Records the target actor id as the active `RuntimeConversationSession`.
-3. Clears any buffered commands so pre-conversation inputs do not bleed into the first resumed tick.
+When the result dispatcher opens a guard or NPC conversation (`onConversationStarted` in [src/main.ts](../src/main.ts)), the runtime bridge performs three side effects in order:
+1. `runtimeController.openConversation(actorId)` sets the runtime to paused state, records the active `RuntimeConversationSession`, and clears buffered commands.
+2. `viewportPauseOverlay.show()` reveals the grey viewport overlay and makes `#viewport` inert.
+3. `chatModal.open(targetId, displayName, conversationHistory)` opens the conversation UI and focuses the input.
 
 While paused, `runtimeController.stepSimulation()` drains and discards buffered commands each tick without updating world state or dispatching interactions.
 
-When the chat modal closes (`onClose`), it calls `runtimeController.closeConversation()`, which:
-1. Clears the active conversation session.
-2. Clears buffered commands accumulated during the conversation.
-3. Resumes normal simulation on the next tick.
+When the chat modal closes, both exit controls follow the same path:
+1. The close button or Escape key triggers `closePanel()` in [src/render/chatModal.ts](../src/render/chatModal.ts).
+2. `closePanel()` hides the modal, removes the Escape listener, invokes `onClose`, and then restores focus to `document.body` if focus was still inside the modal.
+3. `onClose` in [src/main.ts](../src/main.ts) calls `runtimeController.closeConversation()` and `viewportPauseOverlay.hide()`.
+4. `runtimeController.closeConversation()` clears the active conversation session, clears buffered commands accumulated during the conversation, and resumes simulation on the next tick.
 
-Door and interactive object results never trigger `onConversationStarted`, so they never cause a pause. This is enforced by the result dispatcher and verified in `src/interaction/interactionDispatcher.test.ts` under the `result dispatcher timing parity` suite.
+Door and interactive object results never trigger `onConversationStarted`, so they never cause a pause and never show the viewport overlay. This is enforced by the result dispatcher and verified in `src/interaction/interactionDispatcher.test.ts` under the `result dispatcher timing parity` suite.
 
-Pause state is kept outside `WorldState`. It is transient runtime orchestration state managed by `RuntimeController` and must not be serialized or included in LLM context.
+Gameplay pause state is kept outside `WorldState`. UI pause presentation is also transient render-layer DOM state. Neither belongs in serialized world state or LLM context.
 
 ## NPC Prompt Profile Context
 

@@ -103,10 +103,19 @@ body {
   margin: 0 auto;
   overflow: hidden;
   background: rgba(5, 10, 18, 0.75);
+  position: relative;
 }
 
 .guard-game-viewport canvas {
   display: block;
+}
+
+.viewport-pause-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(30, 30, 30, 0.55);
+  pointer-events: all;
 }
 
 .guard-game-world-state {
