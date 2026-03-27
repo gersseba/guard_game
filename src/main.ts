@@ -2,10 +2,11 @@ import './style.css';
 import { createCommandBuffer } from './input/commands';
 import { bindKeyboardCommands } from './input/keyboard';
 import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
-import { createGuardInteractionService } from './interaction/guardInteraction';
-import { createNpcInteractionService } from './interaction/npcInteraction';
-import { handleDoorInteraction } from './interaction/doorInteraction';
-import { handleInteractiveObjectInteraction } from './interaction/objectInteraction';
+import {
+  createInteractionDispatcher,
+  createResultDispatcher,
+  isPromiseLike,
+} from './interaction/interactionDispatcher';
 import { getNpcConversationHistory } from './interaction/npcThread';
 import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
@@ -13,7 +14,7 @@ import { createLevelUi } from './render/levelUi';
 import { createChatModal } from './render/chatModal';
 import { createOutcomeOverlay } from './render/outcomeOverlay';
 import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
-import type { WorldCommand, WorldState } from './world/types';
+import type { WorldCommand, WorldState, ConversationMessage } from './world/types';
 import { createWorld } from './world/world';
 import { fetchAndLoadLevel, fetchLevelManifest } from './world/levelLoader';
 
@@ -38,13 +39,11 @@ if (!viewportElement || !levelControlsElement || !worldStateElement || !chatModa
 const world = createWorld();
 const commandBuffer = createCommandBuffer();
 const llmClient = createGeminiLlmClient();
-const guardInteractionService = createGuardInteractionService(llmClient);
-const npcInteractionService = createNpcInteractionService(llmClient);
+const interactionDispatcher = createInteractionDispatcher({ llmClient });
 const outcomeOverlay = createOutcomeOverlay(outcomeOverlayHostElement);
 
 /** Tracks the current interaction in progress (for chat modal message handling). */
 interface CurrentInteraction {
-  kind: 'npc' | 'guard';
   actorId: string;
 }
 
@@ -64,60 +63,35 @@ const chatModal = createChatModal(chatModalHostElement, {
     chatModal.setLoading(true);
     chatModal.appendMessage('player', playerMessage);
 
-    if (interaction.kind === 'npc') {
-      const npc = currentWorldState.npcs.find((n) => n.id === interaction.actorId);
-      if (!npc) {
+    void (async () => {
+      const target = interactionDispatcher.resolveConversationalTarget(
+        currentWorldState,
+        interaction.actorId,
+      );
+      if (!target) {
         chatModal.setLoading(false);
         return;
       }
 
-      void (async () => {
-        const result = await npcInteractionService.handleNpcInteraction({
-          npc,
-          player: currentWorldState.player,
-          worldState: currentWorldState,
-          playerMessage,
-        });
+      const result = await interactionDispatcher.dispatch(target, currentWorldState, playerMessage);
 
-        // Extract the AI response text from the updated history.
-        const history = getNpcConversationHistory(result.updatedWorldState, interaction.actorId);
-        const lastMessage = history[history.length - 1];
-        if (lastMessage?.role === 'assistant') {
-          chatModal.appendMessage('assistant', lastMessage.text);
-        }
-
-        // Update world state with the new interaction history.
-        world.resetToState(result.updatedWorldState);
-        chatModal.setLoading(false);
-      })();
-    } else if (interaction.kind === 'guard') {
-      const guard = currentWorldState.guards.find((g) => g.id === interaction.actorId);
-      if (!guard) {
-        chatModal.setLoading(false);
-        return;
+      // Extract the AI response from the updated history.
+      const history = getNpcConversationHistory(
+        result.updatedWorldState ?? currentWorldState,
+        interaction.actorId,
+      );
+      const lastMessage = history[history.length - 1];
+      if (lastMessage?.role === 'assistant') {
+        chatModal.appendMessage('assistant', lastMessage.text);
       }
 
-      void (async () => {
-        const result = await guardInteractionService.handleGuardInteraction({
-          guard,
-          player: currentWorldState.player,
-          worldState: currentWorldState,
-          playerMessage,
-        });
-
-        // Extract the AI response from the updated history.
-        const history =
-          result.updatedWorldState.npcConversationHistoryByNpcId[interaction.actorId] ?? [];
-        const lastMessage = history[history.length - 1];
-        if (lastMessage?.role === 'assistant') {
-          chatModal.appendMessage('assistant', lastMessage.text);
-        }
-
-        // Update world state with the new interaction history.
+      // Update world state with the new interaction history if updated.
+      if (result.updatedWorldState) {
         world.resetToState(result.updatedWorldState);
-        chatModal.setLoading(false);
-      })();
-    }
+      }
+
+      chatModal.setLoading(false);
+    })();
   },
 
   onClose(): void {
@@ -129,16 +103,41 @@ bindKeyboardCommands(window, commandBuffer, {
   isModalOpen: () => chatModal.isOpen(),
 });
 
+// Create result dispatcher with config that bridges interaction results to main loop state
+const resultDispatcher = createResultDispatcher({
+  onConversationStarted: (
+    targetId: string,
+    displayName: string,
+    conversationHistory: ConversationMessage[],
+  ) => {
+    currentInteraction = {
+      actorId: targetId,
+    };
+    chatModal.open(targetId, displayName, conversationHistory);
+  },
+  onLevelOutcomeChanged: (levelOutcome: 'win' | 'lose') => {
+    const currentWorldState = world.getState();
+    const updatedState = { ...currentWorldState, levelOutcome };
+    world.resetToState(updatedState);
+  },
+  onWorldStateUpdated: (worldState: WorldState) => {
+    world.resetToState(worldState);
+  },
+  getCurrentWorldState: () => world.getState(),
+  getConversationHistory: (worldState: WorldState, targetId: string) =>
+    getNpcConversationHistory(worldState, targetId),
+});
+
 const LEVELS_BASE_URL = '/levels';
 const MANIFEST_URL = `${LEVELS_BASE_URL}/manifest.json`;
 
 /** Tracks which level id is currently active so reset can reload the same level. */
 let activeLevelId: string | null = null;
 
-const runInteractionIfRequested = async (
+const runInteractionIfRequested = (
   worldState: WorldState,
   commands: WorldCommand[],
-): Promise<void> => {
+): void => {
   // Block all interactions if level outcome is already set
   if (worldState.levelOutcome) {
     return;
@@ -155,49 +154,16 @@ const runInteractionIfRequested = async (
     return;
   }
 
-  if (adjacentTarget.kind === 'guard') {
-    currentInteraction = {
-      kind: 'guard',
-      actorId: adjacentTarget.target.id,
-    };
-    const history = worldState.npcConversationHistoryByNpcId[adjacentTarget.target.id] ?? [];
-    chatModal.open(adjacentTarget.target.id, adjacentTarget.target.displayName, history);
-    return;
-  }
-
-  if (adjacentTarget.kind === 'door') {
-    // Handle door interaction and check for level outcome
-    const doorResult = handleDoorInteraction({
-      door: adjacentTarget.target,
-      player: worldState.player,
+  // Dispatch interaction via unified dispatcher
+  const dispatchResult = interactionDispatcher.dispatch(adjacentTarget, worldState);
+  if (isPromiseLike(dispatchResult)) {
+    void dispatchResult.then((resolvedResult) => {
+      resultDispatcher.dispatch(resolvedResult);
     });
-
-    // If door has an outcome, update worldState and trigger modal feedback
-    if (doorResult.levelOutcome) {
-      const updatedState = { ...worldState, levelOutcome: doorResult.levelOutcome };
-      world.resetToState(updatedState);
-    }
     return;
   }
 
-  if (adjacentTarget.kind === 'interactiveObject') {
-    const objectResult = handleInteractiveObjectInteraction({
-      interactiveObject: adjacentTarget.target,
-      player: worldState.player,
-      worldState,
-    });
-
-    world.resetToState(objectResult.updatedWorldState);
-    return;
-  }
-
-  // adjacentTarget.kind === 'npc'
-  currentInteraction = {
-    kind: 'npc',
-    actorId: adjacentTarget.target.id,
-  };
-  const history = getNpcConversationHistory(worldState, adjacentTarget.target.id);
-  chatModal.open(adjacentTarget.target.id, adjacentTarget.target.displayName, history);
+  resultDispatcher.dispatch(dispatchResult);
 };
 
 const fixedTickDurationMs = 100;
@@ -273,7 +239,7 @@ const startRuntime = async (): Promise<void> => {
 
       world.applyCommands(commandsToApply);
       const worldState = world.getState();
-      void runInteractionIfRequested(worldState, commandsToApply);
+      runInteractionIfRequested(worldState, commandsToApply);
       accumulatedTime -= fixedTickDurationMs;
     }
 

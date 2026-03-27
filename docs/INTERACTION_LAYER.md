@@ -1,15 +1,17 @@
 # Interaction Layer
 
-The interaction layer resolves player-triggered interactions and routes them to the correct handler type.
+The interaction layer resolves player-triggered interactions and routes them through a two-stage dispatcher architecture:
+- interaction dispatch (target kind -> handler)
+- result dispatch (result kind -> side-effect callback)
 
-It now supports both conversational interactions (guards/NPCs) and deterministic object interactions (interactive objects such as supply crates).
+It supports both conversational interactions (guards/NPCs) and deterministic interactions (doors/interactive objects).
 
 ## Responsibilities
 - Resolve one adjacent interaction target deterministically
-- Route target kinds to the correct interaction handler
+- Route target kinds to registered interaction handlers
 - Keep deterministic interactions local and synchronous
-- Keep LLM-backed chat interactions behind the LLM boundary
-- Return immutable world-state updates for world reset/apply
+- Keep LLM-backed conversational turns behind the LLM boundary
+- Route normalized results through result handlers to main-loop side effects
 
 ## Target Resolution
 
@@ -23,14 +25,49 @@ Tie-break inside the same kind is lexical target id order.
 
 This behavior is covered by `src/interaction/adjacencyResolver.test.ts`.
 
-## Routing Contract
+## Dispatcher Architecture
 
-Interaction routing is handled in `runInteractionIfRequested()` in `src/main.ts`.
+### Interaction Dispatcher
+`createInteractionDispatcher()` in `src/interaction/interactionDispatcher.ts` owns a registry keyed by `AdjacentTarget['kind']`.
 
-- `guard`: opens chat modal using guard history
-- `door`: executes `handleDoorInteraction()` and applies level outcome if present
-- `interactiveObject`: executes `handleInteractiveObjectInteraction()` and resets world to returned immutable state
-- `npc`: opens chat modal using NPC conversation history
+Registered handlers:
+- `guard` -> conditional handler (sync chat-open, async player-message)
+- `npc` -> conditional handler (sync chat-open, async player-message)
+- `door` -> sync deterministic handler
+- `interactiveObject` -> sync deterministic handler
+
+Dispatcher contract:
+- Input: `target`, `worldState`, optional `playerMessage`
+- Output: `InteractionHandlerResult | Promise<InteractionHandlerResult>`
+
+### Result Dispatcher
+`createResultDispatcher()` in `src/interaction/interactionDispatcher.ts` owns a second registry keyed by `InteractionHandlerResult['kind']`.
+
+Registered result handlers:
+- `guard`/`npc` -> open chat modal with latest conversation history
+- `door` -> apply level outcome callback if present
+- `interactiveObject` -> apply immutable world-state reset callback if present
+
+Result dispatcher keeps main-loop side effects centralized and testable.
+
+## Main Loop Routing Pattern
+
+`runInteractionIfRequested()` in `src/main.ts` now uses one routing path:
+1. Resolve adjacent target.
+2. Call `interactionDispatcher.dispatch(...)`.
+3. If promise-like, resolve asynchronously then call `resultDispatcher.dispatch(...)`.
+4. If sync result, call `resultDispatcher.dispatch(...)` immediately.
+
+This removes target-kind branching from `main.ts` and preserves behavior parity from pre-refactor logic.
+
+## Behavior Parity Expectations
+
+The following timing guarantees are intentional and must remain stable:
+- **Sync chat-open path:** opening a guard/NPC conversation without a player message stays synchronous so modal opening order remains deterministic.
+- **Async player-message path:** sending a player message in chat stays asynchronous for LLM-backed turns; UI loading + response append happen after promise resolution.
+- **Sync deterministic path:** doors and interactive objects remain synchronous and do not depend on LLM I/O.
+
+Related tests live in `src/interaction/interactionDispatcher.test.ts` under dispatch routing and result dispatcher timing parity cases.
 
 ## Interactive Object Type Handling
 
@@ -43,12 +80,13 @@ This allows multiple objects to share one behavior implementation while retainin
 
 ## LLM Boundary
 
-Only conversational flows route to the LLM layer (guard/NPC chat services). Object and door interactions are deterministic and do not call the LLM client.
+Only conversational player-message flows route to the LLM layer (guard/NPC chat services). Chat-open flows and deterministic door/object interactions do not call the LLM client.
 
 See `src/interaction/guardInteraction.ts`, `src/interaction/npcInteraction.ts`, and `src/llm/client.ts`.
 
 ## Tests
 
+- `src/interaction/interactionDispatcher.test.ts`: dispatch routing by kind, sync/async behavior parity, result dispatcher timing parity
 - `src/interaction/objectInteraction.test.ts`: object-type dispatcher behavior, first-use outcomes, repeat interactions
 - `src/integration/starterLevel.test.ts`: end-to-end adjacent object resolution and state updates
 - `src/interaction/adjacencyResolver.test.ts`: deterministic target resolution with interactive objects
