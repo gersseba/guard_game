@@ -13,6 +13,7 @@ import { handleInteractiveObjectInteraction } from './objectInteraction';
 export interface InteractionHandlerResult {
   kind: AdjacentTarget['kind'];
   targetId: string;
+  displayName?: string; // For UI display when result is handled
   responseText?: string;
   updatedWorldState?: WorldState;
   levelOutcome?: 'win' | 'lose' | null;
@@ -88,6 +89,7 @@ const createDoorHandler = (): SyncInteractionHandler => {
     return {
       kind: 'door',
       targetId: result.doorId,
+      displayName: target.target.displayName,
       responseText: result.responseText,
       levelOutcome: result.levelOutcome ?? null,
       isConversational: false,
@@ -113,6 +115,7 @@ const createObjectHandler = (): SyncInteractionHandler => {
     return {
       kind: 'interactiveObject',
       targetId: result.objectId,
+      displayName: target.target.displayName,
       responseText: result.responseText,
       updatedWorldState: result.updatedWorldState,
       isConversational: false,
@@ -136,6 +139,7 @@ const createGuardHandler = (llmClient: LlmClient): AsyncInteractionHandler => {
       return {
         kind: 'guard',
         targetId: target.target.id,
+        displayName: target.target.displayName,
         responseText: target.target.displayName, // Initial greeting in chat modal
         isConversational: false,
       };
@@ -151,6 +155,7 @@ const createGuardHandler = (llmClient: LlmClient): AsyncInteractionHandler => {
     return {
       kind: 'guard',
       targetId: result.guardId,
+      displayName: target.target.displayName,
       responseText: result.responseText,
       updatedWorldState: result.updatedWorldState,
       isConversational: true,
@@ -174,6 +179,7 @@ const createNpcHandler = (llmClient: LlmClient): AsyncInteractionHandler => {
       return {
         kind: 'npc',
         targetId: target.target.id,
+        displayName: target.target.displayName,
         responseText: target.target.displayName, // Initial greeting in chat modal
         isConversational: false,
       };
@@ -189,6 +195,7 @@ const createNpcHandler = (llmClient: LlmClient): AsyncInteractionHandler => {
     return {
       kind: 'npc',
       targetId: result.npcId,
+      displayName: target.target.displayName,
       responseText: result.responseText,
       updatedWorldState: result.updatedWorldState,
       isConversational: true,
@@ -221,6 +228,128 @@ export const createInteractionDispatcher = (config: DispatcherConfig): Interacti
 
       // Call handler (works for both sync and async)
       return Promise.resolve(handler(target, worldState, playerMessage));
+    },
+  };
+};
+
+/**
+ * Result handler for a specific interaction result kind.
+ * Handles side effects based on result type.
+ */
+export type ResultHandler = (
+  result: InteractionHandlerResult,
+  config: ResultHandlerConfig,
+) => void;
+
+/**
+ * Registry of result handlers keyed by result kind.
+ */
+export type ResultHandlerRegistry = Partial<
+  Record<InteractionHandlerResult['kind'], ResultHandler>
+>;
+
+/**
+ * Configuration for result handler.
+ * Provides access to main loop state and callbacks for side effects.
+ */
+export interface ResultHandlerConfig {
+  // Callbacks for side effects
+  onConversationStarted: (
+    targetId: string,
+    displayName: string,
+    conversationHistory: unknown[],
+  ) => void;
+  onLevelOutcomeChanged: (levelOutcome: 'win' | 'lose') => void;
+  onWorldStateUpdated: (worldState: WorldState) => void;
+  // Accessor for current world state
+  getCurrentWorldState: () => WorldState;
+  // Accessor for getting conversation history
+  getConversationHistory: (worldState: WorldState, targetId: string) => unknown[];
+}
+
+/**
+ * Result dispatcher.
+ * Routes interaction results to appropriate result handlers based on kind.
+ */
+export interface ResultDispatcher {
+  dispatch(result: InteractionHandlerResult): void;
+}
+
+/**
+ * Creates a result handler for conversational interactions (guard, npc).
+ */
+const createConversationalResultHandler = (): ResultHandler => {
+  return (result: InteractionHandlerResult, config: ResultHandlerConfig) => {
+    if (result.kind !== 'guard' && result.kind !== 'npc') {
+      throw new Error('Conversational result handler called with non-conversational result');
+    }
+
+    const worldState = config.getCurrentWorldState();
+    const history = config.getConversationHistory(worldState, result.targetId);
+
+    config.onConversationStarted(
+      result.targetId,
+      result.displayName || `${result.kind}-${result.targetId}`,
+      history,
+    );
+  };
+};
+
+/**
+ * Creates a result handler for door interactions.
+ */
+const createDoorResultHandler = (): ResultHandler => {
+  return (result: InteractionHandlerResult, config: ResultHandlerConfig) => {
+    if (result.kind !== 'door') {
+      throw new Error('Door result handler called with non-door result');
+    }
+
+    // Apply level outcome if present
+    if (result.levelOutcome) {
+      const currentWorldState = config.getCurrentWorldState();
+      const updatedState = { ...currentWorldState, levelOutcome: result.levelOutcome };
+      config.onWorldStateUpdated(updatedState);
+    }
+  };
+};
+
+/**
+ * Creates a result handler for interactive object interactions.
+ */
+const createObjectResultHandler = (): ResultHandler => {
+  return (result: InteractionHandlerResult, config: ResultHandlerConfig) => {
+    if (result.kind !== 'interactiveObject') {
+      throw new Error('Object result handler called with non-object result');
+    }
+
+    // Apply world state update if present
+    if (result.updatedWorldState) {
+      config.onWorldStateUpdated(result.updatedWorldState);
+    }
+  };
+};
+
+/**
+ * Creates and returns a result dispatcher with registered result handlers.
+ * Routes interaction results to appropriate handlers based on kind.
+ */
+export const createResultDispatcher = (config: ResultHandlerConfig): ResultDispatcher => {
+  const registry: ResultHandlerRegistry = {
+    guard: createConversationalResultHandler(),
+    npc: createConversationalResultHandler(),
+    door: createDoorResultHandler(),
+    interactiveObject: createObjectResultHandler(),
+  };
+
+  return {
+    dispatch(result: InteractionHandlerResult): void {
+      const handler = registry[result.kind];
+
+      if (!handler) {
+        throw new Error(`No result handler registered for kind: ${result.kind}`);
+      }
+
+      handler(result, config);
     },
   };
 };

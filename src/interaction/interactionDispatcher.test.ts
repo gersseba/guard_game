@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { LlmClient } from '../llm/client';
-import type { Guard, Npc, Door, InteractiveObject, Player, WorldState } from '../world/types';
-import { createInteractionDispatcher, type InteractionHandlerResult } from './interactionDispatcher';
+import type { Guard, Npc, Door, InteractiveObject, WorldState } from '../world/types';
+import { createInteractionDispatcher } from './interactionDispatcher';
 
 /**
  * Test suite for interaction dispatcher.
@@ -15,10 +15,13 @@ const createMockLlmClient = (): LlmClient => ({
 
 // Utility to create minimal test world state
 const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => ({
+  tick: 0,
+  grid: { width: 10, height: 10, tileSize: 32 },
   player: {
+    id: 'player',
     displayName: 'Player',
     position: { x: 0, y: 0 },
-  } as Player,
+  },
   guards: [],
   doors: [],
   npcs: [],
@@ -41,10 +44,12 @@ const createTestNpc = (id: string): Npc => ({
   displayName: 'Test NPC',
   position: { x: 1, y: 0 },
   dialogueContextKey: 'test',
+  npcType: 'scholar',
 });
 
 const createTestDoor = (id: string): Door => ({
   id,
+  displayName: 'Test Door',
   position: { x: 1, y: 0 },
   doorState: 'open',
 });
@@ -287,7 +292,7 @@ describe('InteractionDispatcher', () => {
   describe('error handling', () => {
     it('throws error for unknown handler kind', async () => {
       const dispatcher = createInteractionDispatcher({ llmClient });
-      const fakeTarget = { kind: 'unknown' as any, target: {} };
+      const fakeTarget = { kind: 'unknown' as const, target: createTestDoor('fake-1') } as any;
       const worldState = createTestWorldState();
 
       await expect(dispatcher.dispatch(fakeTarget, worldState)).rejects.toThrow(
