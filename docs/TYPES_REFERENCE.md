@@ -1,111 +1,129 @@
 # Type Reference
 
-This document is a living data dictionary of key types used throughout Guard Game.
+This document tracks the core serializable types used by the runtime.
 
-## World State
+Source of truth:
+- `src/world/types.ts`
+- `src/interaction/objectInteraction.ts`
+- `src/interaction/adjacencyResolver.ts`
+
+## World Types
+
+### GridPosition
+`{ x: number; y: number }`
+
+### Player
+- `id: string`
+- `displayName: string`
+- `position: GridPosition`
+
+### Npc
+- `id: string`
+- `displayName: string`
+- `position: GridPosition`
+- `dialogueContextKey: string`
+
+### Guard
+Extends `Interactable`:
+- `guardState: 'idle' | 'patrolling' | 'alert'`
+- `honestyTrait?: 'truth-teller' | 'liar'`
+
+### Door
+Extends `Interactable`:
+- `doorState: 'open' | 'closed' | 'locked'`
+- `outcome?: 'safe' | 'danger'`
+
+### InteractiveObject
+Extends `Interactable`:
+- `objectType: 'supply-crate'`
+- `interactionType: 'inspect' | 'use' | 'talk'`
+- `state: 'idle' | 'used'`
+- `idleMessage?: string`
+- `usedMessage?: string`
+- `firstUseOutcome?: 'win' | 'lose'`
+- `spriteAssetPath?: string`
+
+### WorldGrid
+- `width: number`
+- `height: number`
+- `tileSize: number`
+
+### ConversationMessage
+- `role: 'player' | 'assistant'`
+- `text: string`
+
+### NpcConversationHistoryByNpcId
+`Record<string, ConversationMessage[]>`
 
 ### WorldState
-The complete game state snapshot at any tick. Must be JSON-serializable.
+- `tick: number`
+- `grid: WorldGrid`
+- `player: Player`
+- `npcs: Npc[]`
+- `guards: Guard[]`
+- `doors: Door[]`
+- `interactiveObjects: InteractiveObject[]`
+- `npcConversationHistoryByNpcId: NpcConversationHistoryByNpcId`
+- `levelOutcome: 'win' | 'lose' | null`
 
-**Fields:**
-- `tick: number` — Current game tick (100ms intervals)
-- `player: Player` — Player entity (position, orientation, inventory)
-- `npcs: Npc[]` — All NPCs in the current level
-- `interactiveObjects: InteractiveObject[]` — Doors, items, etc.
-- `levelId: string` — Current level identifier
+## Level File Shape
 
-**Example:**
+### LevelData
+Flat JSON level definition used by files in `public/levels/*.json`.
+
+Required fields:
+- `version: 1`
+- `name: string`
+- `width: number`
+- `height: number`
+- `player: { x: number; y: number }`
+- `guards: ...`
+- `doors: ...`
+
+Optional fields:
+- `interactiveObjects: Array<...>` with the same object fields as `InteractiveObject`, but `x/y` instead of `position`
+
+Example object entry:
+
 ```json
 {
-  "tick": 42,
-  "player": { "id": "player_0", "position": [5, 5], "orientation": 0 },
-  "npcs": [
-    { "id": "guard_1", "position": [7, 5], "behavior": "patrol", "seenPlayer": false }
-  ],
-  "interactiveObjects": [
-    { "id": "door_1", "position": [10, 5], "type": "door", "locked": true }
-  ],
-  "levelId": "starter"
+  "id": "crate-supplies",
+  "displayName": "Supply Crate",
+  "x": 11,
+  "y": 10,
+  "objectType": "supply-crate",
+  "interactionType": "inspect",
+  "state": "idle",
+  "idleMessage": "You crack open the crate and find emergency supplies.",
+  "usedMessage": "The supply crate is already open and empty.",
+  "spriteAssetPath": "/assets/medieval_supply_crate_inspect.svg"
 }
 ```
 
-### Player
-Represents the player character.
+## Interaction Types
 
-**Fields:**
-- `id: string` — Unique identifier
-- `position: [number, number]` — [x, y] grid coordinates
-- `orientation: number` — Direction in degrees (0 = East, 90 = North, etc.)
-- `inventory: string[]` — List of held item IDs
+### AdjacentTarget
+Defined in `src/interaction/adjacencyResolver.ts`:
+- `{ kind: 'guard'; target: Guard }`
+- `{ kind: 'door'; target: Door }`
+- `{ kind: 'npc'; target: Npc }`
+- `{ kind: 'interactiveObject'; target: InteractiveObject }`
 
-### Npc
-Represents a non-player character.
+### InteractiveObjectInteractionRequest
+Defined in `src/interaction/objectInteraction.ts`:
+- `interactiveObject: InteractiveObject`
+- `player: Player`
+- `worldState: WorldState`
 
-**Fields:**
-- `id: string` — Unique identifier
-- `position: [number, number]` — [x, y] grid coordinates
-- `behavior: string` — Current behavior mode (e.g., "patrol", "idle", "alerted")
-- `thread: NpcThread` — Conversation context and history
-- `metadata: Record<string, unknown>` — Extensible NPC-specific data
-
-### InteractiveObject
-Represents an interactable entity in the world.
-
-**Fields:**
-- `id: string` — Unique identifier
-- `position: [number, number]` — [x, y] grid coordinates
-- `type: string` — Object type (e.g., "door", "item", "trigger")
-- `state: Record<string, unknown>` — State data (e.g., `{ locked: true }`)
+### InteractiveObjectInteractionResult
+Defined in `src/interaction/objectInteraction.ts`:
+- `objectId: string`
+- `responseText: string`
+- `updatedWorldState: WorldState`
 
 ## Commands
 
 ### WorldCommand
-Base type for all player and system actions.
-
-**Variants:**
-- `MoveForward`
-- `MoveBackward`
-- `TurnLeft` (rotate counterclockwise)
-- `TurnRight` (rotate clockwise)
-- `Interact` (initiate interaction with adjacent NPC)
-- `Wait` (no-op; advance tick)
-
-## Interaction
-
-### InteractionRequest
-Context for an NPC interaction.
-
-**Fields:**
-- `player: Player` — Current player state
-- `npc: Npc` — Target NPC
-- `direction: number` — Player's facing direction at time of interaction
-- `thread: NpcThread` — Existing conversation thread (or new empty thread)
-
-### InteractionResponse
-Result of an NPC interaction.
-
-**Fields:**
-- `text: string` — Dialog text to display
-- `thread: NpcThread` — Updated conversation thread
-- `stateChanges?: Record<string, unknown>` — Optional world state modifications
-- `npcBehaviorSuggestion?: string` — Optional suggested NPC behavior change
-
-### NpcThread
-Stores conversation history and context for an NPC.
-
-**Fields:**
-- `npcId: string` — ID of the NPC in this thread
-- `messages: ThreadMessage[]` — Conversation history
-- `context: Record<string, unknown>` — Conversation-specific metadata
-
-### ThreadMessage
-A single message in an NPC conversation thread.
-
-**Fields:**
-- `speaker: "player" | "npc"` — Who said it
-- `text: string` — Message content
-- `tick: number` — When it was said (for temporal awareness)
-
----
-
-All types are defined in `src/world/types.ts` and `src/interaction/npcThread.ts`. Keep this reference in sync with actual type definitions during development.
+Defined in `src/world/types.ts`:
+- `{ type: 'move'; dx: number; dy: number }`
+- `{ type: 'interact' }`

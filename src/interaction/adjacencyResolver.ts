@@ -1,9 +1,10 @@
-import type { Door, Guard, Npc, Player, WorldState } from '../world/types';
+import type { Door, Guard, InteractiveObject, Npc, Player, WorldState } from '../world/types';
 
 export type AdjacentTarget =
   | { kind: 'guard'; target: Guard }
   | { kind: 'door'; target: Door }
-  | { kind: 'npc'; target: Npc };
+  | { kind: 'npc'; target: Npc }
+  | { kind: 'interactiveObject'; target: InteractiveObject };
 
 const isOrthogonallyAdjacent = (player: Player, position: { x: number; y: number }): boolean => {
   const deltaX = Math.abs(position.x - player.position.x);
@@ -15,6 +16,7 @@ const kindPriority: Record<AdjacentTarget['kind'], number> = {
   guard: 0,
   door: 1,
   npc: 2,
+  interactiveObject: 3,
 };
 
 const sortCandidatesDeterministically = (a: AdjacentTarget, b: AdjacentTarget): number => {
@@ -30,12 +32,12 @@ const sortCandidatesDeterministically = (a: AdjacentTarget, b: AdjacentTarget): 
  * Resolves the adjacent interactable target for the player.
  * Returns null when no orthogonally adjacent target exists (silent no-op).
  * Uses a deterministic tie-break when multiple adjacent targets exist:
- * kind priority (guard, door, npc), then lexical target id.
+ * kind priority (guard, door, npc, interactiveObject), then lexical target id.
  */
 export const resolveAdjacentTarget = (
   worldState: WorldState,
 ): AdjacentTarget | null => {
-  const { player, guards, doors, npcs } = worldState;
+  const { player, guards, doors, npcs, interactiveObjects } = worldState;
 
   const candidates: AdjacentTarget[] = [
     ...guards
@@ -47,6 +49,9 @@ export const resolveAdjacentTarget = (
     ...npcs
       .filter((n) => isOrthogonallyAdjacent(player, n.position))
       .map((n): AdjacentTarget => ({ kind: 'npc', target: n })),
+    ...interactiveObjects
+      .filter((o) => isOrthogonallyAdjacent(player, o.position))
+      .map((o): AdjacentTarget => ({ kind: 'interactiveObject', target: o })),
   ];
 
   if (candidates.length === 0) {

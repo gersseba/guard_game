@@ -8,9 +8,9 @@ This directory contains architecture guides, layer-specific documentation, and d
 
 ## Layer Guides
 Deep dives into each architectural layer and its responsibilities:
-- [World Layer](WORLD_LAYER.md) — Deterministic world model, commands, state updates, and tick mechanics
-- [Render Layer](RENDER_LAYER.md) — PixiJS rendering, viewport management, and sprite lifecycle
-- [Interaction Layer](INTERACTION_LAYER.md) — NPC interaction flow, prompt context generation, and LLM boundary
+- [World Layer](WORLD_LAYER.md) — Deterministic world model, commands, state updates, level schema, and serialization boundaries
+- [Render Layer](RENDER_LAYER.md) — PixiJS rendering, viewport management, entity markers, and asset metadata usage
+- [Interaction Layer](INTERACTION_LAYER.md) — Deterministic target resolution, routing, object interactions, and LLM chat boundary
 - [Input Layer](INPUT_LAYER.md) — Command buffering, keyboard input mapping, and command creation
 - [LLM Layer](LLM_LAYER.md) — LLM client boundary, API stubs, and context serialization
 
@@ -18,7 +18,7 @@ Deep dives into each architectural layer and its responsibilities:
 Recipes and walkthroughs for common extension tasks:
 - [Add a Command](ADD_COMMAND.md) — How to add a new player action
 - [Add an NPC](ADD_NPC.md) — How to introduce a new NPC with behavior
-- [Add an Interaction](ADD_INTERACTION.md) — How to add NPC interaction logic and LLM prompts
+- [Add an Interaction](ADD_INTERACTION.md) — How to add conversational and deterministic object interaction flows
 - [Extend World State](EXTEND_STATE.md) — How to expand world state while preserving JSON serializability
 
 ## Testing & Debugging

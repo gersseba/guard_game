@@ -1,39 +1,63 @@
 # World Layer
 
-The world layer maintains the deterministic game state and applies commands to advance the game. All game logic lives here.
+The world layer owns deterministic, JSON-serializable state and validation/deserialization of level files.
 
 ## Responsibilities
-- Maintain `WorldState` (current player position, NPC positions, interactive objects, tick count, etc.)
-- Apply `WorldCommand` values to update state
-- Emit interaction events when commands trigger NPC interactions
-- Preserve determinism: given the same command sequence, produce identical state
-- Keep state JSON-serializable for LLM context generation
+- Define and maintain `WorldState` as the source of truth
+- Validate flat level JSON payloads (`LevelData`)
+- Deserialize level data into runtime world state
+- Preserve determinism for interaction and movement outcomes
+- Keep world state independent from rendering and LLM infrastructure
 
-## Core Concepts
+## Current Deterministic State Model
 
-### WorldState
-The complete snapshot of game state at any tick. Must be JSON-serializable.
+`WorldState` in `src/world/types.ts` includes:
+- `tick`
+- `grid`
+- `player`
+- `npcs`
+- `guards`
+- `doors`
+- `interactiveObjects`
+- `npcConversationHistoryByNpcId`
+- `levelOutcome`
 
-### WorldCommand
-Represents a player action or system event. Examples: `move_forward`, `move_backward`, `turn_left`, `turn_right`, `interact`.
+All fields are serializable primitives, arrays, or plain objects.
 
-### Tick
-Fixed-rate world update. Current interval: 100ms. Each tick applies buffered commands and advances the game clock.
+## Level JSON Validation
 
-### Determinism Guarantee
-Running `world.applyCommands([cmd1, cmd2])` on state `S` always produces the same resulting state, regardless of when it runs or the render state.
+`validateLevelData()` in `src/world/level.ts` validates:
+- Required level metadata (`version`, `name`, dimensions)
+- `player`, `guards`, and `doors`
+- Optional `interactiveObjects`
 
-## Extension Pattern: Add a new WorldCommand
+For `interactiveObjects`, validation enforces:
+- required identity/position fields
+- `objectType` currently restricted to `supply-crate`
+- `interactionType` in `inspect | use | talk`
+- `state` in `idle | used`
+- optional `firstUseOutcome` in `win | lose`
 
-See [Add a Command](ADD_COMMAND.md) for the full pattern.
+## Deserialization
+
+`deserializeLevel()` in `src/world/level.ts` maps level JSON into runtime entities and applies `validateSpatialLayout()` before returning state.
+
+Interactive object instance fields now deserialize directly:
+- `idleMessage`
+- `usedMessage`
+- `firstUseOutcome`
+- `spriteAssetPath`
+
+This enables shared behavior per object type while preserving instance-specific text, outcomes, and asset metadata.
+
+## Interaction State Updates
+
+Object interactions return immutable state updates (for `interactiveObjects` and optional `levelOutcome`) and are then committed through world reset in `src/main.ts`.
 
 ## Testing Strategy
 
-- Unit tests for `applyCommands()` with known command sequences
-- State snapshots: start state → commands → expected end state
-- No time-based or random events in tests; all state is deterministic
-- See [Testing Patterns](TESTING_PATTERNS.md) for layer testing strategy
+- `src/world/level.test.ts`: schema validation + deserialization coverage
+- `src/integration/starterLevel.test.ts`: full level pipeline including interactive object behavior
+- `src/world/spatialRules.test.ts` and `src/world/world.test.ts`: occupancy and world invariants with interactive objects
 
----
-
-*See [System Architecture](ARCHITECTURE.md) for layer contract details.*
+Determinism rule remains unchanged: identical starting state + identical command/interaction sequence => identical resulting state.

@@ -1,208 +1,79 @@
 # Add an Interaction
 
-This pattern describes how to add new NPC interaction logic and LLM prompt generation.
+This pattern covers both interaction flows currently in the game:
+- conversational interactions (guard/NPC via chat and optional LLM)
+- deterministic interactive-object interactions (object-type dispatcher)
 
-## Overview
+## Choose the Interaction Kind
 
-Interactions are triggered when the player uses the `Interact` command near an NPC. The interaction layer orchestrates the exchange, calls the LLM boundary if needed, and formats the response.
+1. Use conversational flow when the target should open chat history and possibly call the LLM boundary.
+2. Use deterministic object flow when the interaction should be fully local and replayable from state.
 
-## Steps
+## Pattern A: Add or Extend Conversational Interactions
 
-### 1. Define Prompt Context
-Create a function to build the prompt context for your NPC in `src/interaction/guardPromptContext.ts` (or similar):
+### 1. Extend prompt/context builder
+- Add context fields in `src/interaction/guardPromptContext.ts` (or equivalent NPC context module).
+- Keep payload JSON-serializable.
 
-```typescript
-export interface GuardPromptContext {
-  player: {
-    name: string;
-    position: [number, number];
-    inventory: string[];
-  };
-  npc: {
-    name: string;
-    personality: string;
-    position: [number, number];
-    behavior: string;
-  };
-  conversationHistory: ThreadMessage[];
-  levelContext: {
-    levelId: string;
-    objective: string;
-    guards: number;
-  };
-}
+### 2. Update interaction service
+- Guard path: `src/interaction/guardInteraction.ts`
+- NPC path: `src/interaction/npcInteraction.ts`
 
-export function buildGuardPromptContext(
-  player: Player,
-  npc: Npc,
-  thread: NpcThread,
-  levelContext: unknown
-): GuardPromptContext {
-  return {
-    player: {
-      name: 'Player',
-      position: player.position,
-      inventory: player.inventory,
-    },
-    npc: {
-      name: npc.metadata?.name || 'Guard',
-      personality: npc.metadata?.personality || '',
-      position: npc.position,
-      behavior: npc.behavior,
-    },
-    conversationHistory: thread.messages,
-    levelContext: levelContext as any, // Type as needed
-  };
-}
-```
+### 3. Route in main interaction loop
+- Ensure `runInteractionIfRequested()` in `src/main.ts` handles the target kind and opens chat with existing history.
 
-### 2. Define Interaction Handler
-Create or extend an interaction handler in `src/interaction/npcInteraction.ts`:
+### 4. Test
+- Unit tests in `src/interaction/*Interaction.test.ts`
+- Integration coverage in `src/integration/*.test.ts`
 
-```typescript
-export async function resolveGuardInteraction(
-  player: Player,
-  npc: Npc,
-  direction: number,
-  levelContext: unknown
-): Promise<InteractionResponse> {
-  // Build prompt context
-  const context = buildGuardPromptContext(player, npc, npc.thread, levelContext);
-  
-  // Optional: Log context for debugging
-  console.log('Prompt context:', JSON.stringify(context, null, 2));
-  
-  // Call LLM client with context
-  const llmResponse = await llmClient.generateGuardResponse(context);
-  
-  // Update conversation thread
-  const newThread = {
-    ...npc.thread,
-    messages: [
-      ...npc.thread.messages,
-      { speaker: 'player' as const, text: 'Hello.', tick: getCurrentTick() },
-      { speaker: 'npc' as const, text: llmResponse.text, tick: getCurrentTick() },
-    ],
-  };
-  
-  return {
-    text: llmResponse.text,
-    thread: newThread,
-    npcBehaviorSuggestion: llmResponse.suggestedBehavior,
-    stateChanges: llmResponse.stateChanges, // Optional world mutations
-  };
-}
-```
+## Pattern B: Add a New Interactive Object Type
 
-### 3. Wire Handler into Interaction Layer
-In `src/interaction/npcInteraction.ts`, register your handler in the dispatch:
+### 1. Extend world types
+In `src/world/types.ts`:
+- add new `objectType` union member on `InteractiveObject`
+- add any new optional per-instance fields required by the behavior
 
-```typescript
-export async function resolveNpcInteraction(
-  player: Player,
-  npc: Npc,
-  direction: number,
-  levelContext: unknown
-): Promise<InteractionResponse> {
-  // Check adjacency first
-  const adjacencyOk = checkAdjacency(player, npc);
-  if (!adjacencyOk) {
-    return { text: 'Cannot reach that NPC.', thread: npc.thread };
-  }
-  
-  // Route to handler by NPC role
-  if (npc.metadata?.role === 'guard') {
-    return resolveGuardInteraction(player, npc, direction, levelContext);
-  } else if (npc.metadata?.role === 'prisoner') {
-    return resolvePrisonerInteraction(player, npc, direction, levelContext);
-  }
-  
-  // Fallback
-  return { text: 'Hello.', thread: npc.thread };
-}
-```
+### 2. Validate and deserialize level data
+In `src/world/level.ts`:
+- update `validateLevelData()` for the new type and any new constrained fields
+- map new fields in `deserializeLevel()`
 
-### 4. Add LLM Client Method
-Define the LLM client method in `src/llm/client.ts`:
+### 3. Add object-type handler
+In `src/interaction/objectInteraction.ts`:
+- implement a handler function for the new object type
+- register it in `OBJECT_TYPE_HANDLERS`
+- keep handler deterministic and immutable (return new world state)
 
-```typescript
-export interface LlmClient {
-  generateGuardResponse(context: GuardPromptContext): Promise<{
-    text: string;
-    suggestedBehavior?: string;
-    stateChanges?: Record<string, unknown>;
-  }>;
-}
+### 4. Ensure adjacency resolution includes target kind
+`src/interaction/adjacencyResolver.ts` must include `interactiveObject` candidates and preserve deterministic priority ordering.
 
-export const llmClient: LlmClient = {
-  async generateGuardResponse(context: GuardPromptContext) {
-    // Stub implementation for now
-    return {
-      text: `I am a guard. I don't recognize you.`,
-      suggestedBehavior: 'patrol',
-    };
-  },
-};
-```
+### 5. Wire runtime routing
+`src/main.ts` should route `adjacentTarget.kind === 'interactiveObject'` to `handleInteractiveObjectInteraction()` and commit returned state.
 
-### 5. Write Tests
-Add tests in `src/interaction/guardInteraction.test.ts` (or similar):
+### 6. Add tests
+- unit tests: `src/interaction/objectInteraction.test.ts`
+- resolver tests: `src/interaction/adjacencyResolver.test.ts`
+- integration tests: `src/integration/starterLevel.test.ts`
 
-```typescript
-test('Guard interaction builds correct prompt context', () => {
-  const player = createPlayer({ position: [5, 5] });
-  const npc = createNpc({ id: 'guard_1', position: [6, 5] });
-  const levelContext = { levelId: 'starter', objective: 'escape' };
-  
-  const context = buildGuardPromptContext(player, npc, npc.thread, levelContext);
-  
-  expect(context.player.position).toEqual([5, 5]);
-  expect(context.npc.name).toBe('Guard');
-  expect(context.conversationHistory).toEqual([]);
-  expect(context.levelContext.objective).toBe('escape');
-});
+## Supply-Crate Example (Current Implementation)
 
-test('Guard interaction returns valid response', async () => {
-  const player = createPlayer({ position: [5, 5] });
-  const guard = createNpc({ id: 'guard_1', position: [6, 5] });
-  
-  const response = await resolveGuardInteraction(player, guard, 0, {});
-  
-  expect(response.text).toBeTruthy();
-  expect(response.thread.messages.length).toBeGreaterThan(0);
-});
+Current object type: `supply-crate`
 
-test('Conversation history persists in thread', async () => {
-  const player = createPlayer();
-  const guard = createNpc();
-  guard.thread = {
-    npcId: 'guard_1',
-    messages: [
-      { speaker: 'npc', text: 'State your business.', tick: 0 },
-      { speaker: 'player', text: 'Just passing through.', tick: 1 },
-    ],
-  };
-  
-  const response = await resolveGuardInteraction(player, guard, 0, {});
-  
-  expect(response.thread.messages.length).toBe(4); // 2 existing + 2 new
-  expect(response.thread.messages[0].text).toBe('State your business.');
-});
-```
+Behavior highlights:
+- first interaction: `state` moves `idle -> used`
+- response text comes from `idleMessage` fallback
+- repeat interaction uses `usedMessage` fallback
+- optional `firstUseOutcome` sets `levelOutcome` only on first use and only if no outcome is already set
+
+Reference implementation:
+- `src/interaction/objectInteraction.ts`
 
 ## Checklist
 
-- [ ] Prompt context type defined (e.g., `GuardPromptContext`)
-- [ ] `buildXxxPromptContext()` function implemented
-- [ ] Interaction handler defined (e.g., `resolveGuardInteraction()`)
-- [ ] Handler registered in `resolveNpcInteraction()` dispatch
-- [ ] LLM client method added to `src/llm/client.ts`
-- [ ] Conversation thread is updated with new messages
-- [ ] Unit tests written for prompt context and interaction response
-- [ ] (Optional) Integration tests verifying end-to-end player → NPC flow
-- [ ] Context is JSON-serializable
-- [ ] Tests verify deterministic behavior
-
----
-
-See [Interaction Layer](INTERACTION_LAYER.md) and [LLM Layer](LLM_LAYER.md) for architectural context.
+- [ ] Target kind chosen (chat vs deterministic object)
+- [ ] Types updated in `src/world/types.ts`
+- [ ] Level validation/deserialization updated in `src/world/level.ts`
+- [ ] Runtime routing updated in `src/main.ts`
+- [ ] Deterministic tests added/updated
+- [ ] Integration test verifies end-to-end interaction behavior
+- [ ] State remains JSON-serializable

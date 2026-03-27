@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveAdjacentTarget } from './adjacencyResolver';
-import type { Door, Guard, Npc, WorldState } from '../world/types';
+import type { Door, Guard, InteractiveObject, Npc, WorldState } from '../world/types';
 
 const baseState = (): WorldState => ({
   tick: 0,
@@ -34,6 +34,17 @@ const makeNpc = (x: number, y: number): Npc => ({
   displayName: 'Npc',
   position: { x, y },
   dialogueContextKey: 'ctx',
+});
+
+const makeInteractiveObject = (x: number, y: number): InteractiveObject => ({
+  id: `object-${x}-${y}`,
+  displayName: 'Supply Crate',
+  position: { x, y },
+  objectType: 'supply-crate',
+  interactionType: 'inspect',
+  state: 'idle',
+  idleMessage: 'The crate is sealed with iron clasps.',
+  usedMessage: 'The crate is already open and empty.',
 });
 
 describe('resolveAdjacentTarget', () => {
@@ -105,6 +116,13 @@ describe('resolveAdjacentTarget', () => {
       const result = resolveAdjacentTarget(state);
       expect(result).toEqual({ kind: 'npc', target: makeNpc(3, 4) });
     });
+
+    it('resolves an orthogonally adjacent interactive object', () => {
+      const state = baseState();
+      state.interactiveObjects = [makeInteractiveObject(3, 4)];
+      const result = resolveAdjacentTarget(state);
+      expect(result).toEqual({ kind: 'interactiveObject', target: makeInteractiveObject(3, 4) });
+    });
   });
 
   describe('multi-target deterministic tie-break', () => {
@@ -112,10 +130,21 @@ describe('resolveAdjacentTarget', () => {
       const state = baseState();
       state.guards = [makeGuard(4, 3), makeGuard(2, 3)];
       state.doors = [makeDoor(3, 2)];
+      state.interactiveObjects = [makeInteractiveObject(3, 4)];
 
       const result = resolveAdjacentTarget(state);
 
       expect(result).toEqual({ kind: 'guard', target: makeGuard(2, 3) });
+    });
+
+    it('prioritizes npc over interactive object when both are adjacent', () => {
+      const state = baseState();
+      state.npcs = [makeNpc(2, 3)];
+      state.interactiveObjects = [makeInteractiveObject(4, 3)];
+
+      const result = resolveAdjacentTarget(state);
+
+      expect(result).toEqual({ kind: 'npc', target: makeNpc(2, 3) });
     });
 
     it('returns the same target repeatedly for identical state and input sequence', () => {

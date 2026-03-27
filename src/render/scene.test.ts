@@ -44,6 +44,7 @@ const createWorldState = (): WorldState => ({
       id: 'obj-1',
       displayName: 'Console',
       position: { x: 4, y: 5 },
+      objectType: 'supply-crate',
       interactionType: 'inspect',
       state: 'idle',
     },

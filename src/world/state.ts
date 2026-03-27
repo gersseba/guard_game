@@ -24,11 +24,15 @@ export const createInitialWorldState = (): WorldState => ({
   doors: [],
   interactiveObjects: [
     {
-      id: 'obj-1',
-      displayName: 'Console',
+      id: 'crate-1',
+      displayName: 'Supply Crate',
       position: { x: 4, y: 5 },
+      objectType: 'supply-crate',
       interactionType: 'inspect',
       state: 'idle',
+      idleMessage: 'You pry open the crate and find emergency rations.',
+      usedMessage: 'The crate sits open and empty.',
+      spriteAssetPath: '/assets/medieval_supply_crate_inspect.svg',
     },
   ],
   npcConversationHistoryByNpcId: {},

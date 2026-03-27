@@ -51,6 +51,7 @@ describe('createWorld', () => {
         {
           id: 'object-blocker',
           displayName: 'Object blocker',
+          objectType: 'supply-crate',
           interactionType: 'inspect',
           state: 'idle',
           position: { x: 2, y: 3 },

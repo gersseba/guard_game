@@ -18,7 +18,7 @@ describe('spatialRules', () => {
     expect(npcBlockers.map((blocker) => blocker.label)).toEqual(['npc:npc-1']);
 
     const objectBlockers = getBlockingOccupants(worldState, { x: 4, y: 5 });
-    expect(objectBlockers.map((blocker) => blocker.label)).toEqual(['interactiveObject:obj-1']);
+    expect(objectBlockers.map((blocker) => blocker.label)).toEqual(['interactiveObject:crate-1']);
   });
 
   it('allows movement only into in-bounds unoccupied tiles', () => {

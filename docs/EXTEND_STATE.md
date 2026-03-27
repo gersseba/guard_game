@@ -1,269 +1,74 @@
 # Extend World State
 
-This pattern describes how to expand `WorldState` to include new data while preserving JSON serializability and architectural integrity.
-
-## Overview
-
-As features grow, world state must often expand. This can include:
-- New entity types (interactive objects, items, environmental data)
-- New fields on existing entities (player stats, NPC memory)
-- Level or session metadata
-
-The challenge is expanding state without breaking serialization or coupling layers.
+This pattern describes how to expand `WorldState` safely while preserving determinism and JSON serializability.
 
 ## Principles
 
-1. **Keep state JSON-serializable.** Avoid functions, circular references, or non-primitive types.
-2. **Name fields clearly.** Use semantic, LLM-friendly names; avoid abbreviations.
-3. **Immutability in world updates.** Create new objects rather than mutating existing state.
-4. **Layer isolation.** Render layer reads state but does not modify it.
+1. Keep world data JSON-serializable (plain objects, arrays, strings, numbers, booleans, null).
+2. Keep updates immutable in interaction/world logic.
+3. Keep world logic out of render and UI modules.
+4. Preserve deterministic outcomes for identical initial state and command/interaction sequences.
 
-## Steps
+## Current State Anchors
 
-### 1. Design the New State Field
+Source types:
+- `src/world/types.ts`
 
-Before coding, answer:
-- **What does this represent?** (Be specific for LLM reasoning)
-- **Is it JSON-serializable?** (No functions, no circular refs)
-- **Where does it logically belong?** (Player? Level? NPC?)
-- **How does it change?** (Commands? External events?)
+Validation/deserialization:
+- `src/world/level.ts`
 
-**Example: Adding player stamina**
-```typescript
-// Good: Clearly named, numeric, bounded
-interface Player {
-  id: string;
-  position: [number, number];
-  orientation: number;
-  inventory: string[];
-  stamina: number; // 0-100, decreases on move, recovers on wait
-}
+Runtime state commit:
+- `src/world/world.ts` and routing in `src/main.ts`
 
-// Bad: Unclear, hard to serialize, unclear semantics
-interface Player {
-  id: string;
-  position: [number, number];
-  // ...
-  state: unknown; // Too vague
-  update: () => void; // Functions not serializable
-}
-```
+## State Extension Workflow
 
-### 2. Add Type Definition
+### 1. Define or extend type fields
+Update type interfaces in `src/world/types.ts` (for example `InteractiveObject` or `WorldState`).
 
-Update `src/world/types.ts`:
+Prefer explicit unions over free-form strings when the allowed values are known.
 
-```typescript
-export interface WorldState {
-  tick: number;
-  player: Player;
-  npcs: Npc[];
-  interactiveObjects: InteractiveObject[];
-  levelId: string;
-  playerStamina?: number; // Optional if backward compat needed
-  levelStats?: {
-    guardsDefeated: number;
-    itemsCollected: number;
-    timeElapsed: number;
-  };
-}
+### 2. Update level JSON schema enforcement
+If fields originate in level JSON, update `validateLevelData()` in `src/world/level.ts`.
 
-export interface Player {
-  id: string;
-  position: [number, number];
-  orientation: number;
-  inventory: string[];
-  stamina: number; // 0-100
-}
-```
+Typical checks:
+- required/optional fields
+- allowed enum literals
+- cross-field validity when needed
 
-### 3. Update Command Handling
+### 3. Update deserialization mapping
+Map every validated field in `deserializeLevel()` so runtime state exactly reflects level data.
 
-If the new state changes in response to commands, update `src/world/world.ts`:
+### 4. Update deterministic handlers
+If the new field changes interaction behavior, update deterministic handlers (for example in `src/interaction/objectInteraction.ts`) to produce immutable next state.
 
-```typescript
-applyCommands(state: WorldState, commands: WorldCommand[]): WorldState {
-  let newState = { ...state };
-  
-  for (const cmd of commands) {
-    if (cmd.type === 'MOVE_FORWARD') {
-      const newPos = advancePosition(
-        newState.player.position,
-        newState.player.orientation,
-        1
-      );
-      
-      // Check if move is valid (stamina, obstacles, etc.)
-      const staminaCost = calculateStaminaCost('move', newState);
-      if (newState.player.stamina < staminaCost) {
-        // Silently reject or handle gracefully
-        continue;
-      }
-      
-      // Apply move and update stamina
-      newState.player = {
-        ...newState.player,
-        position: newPos,
-        stamina: newState.player.stamina - staminaCost,
-      };
-    } else if (cmd.type === 'WAIT') {
-      // Recover stamina
-      newState.player = {
-        ...newState.player,
-        stamina: Math.min(100, newState.player.stamina + 10),
-      };
-    }
-  }
-  
-  return newState;
-}
-```
+### 5. Update fixtures and tests
+Update tests that construct world fixtures and add focused tests for new behavior.
 
-### 4. Update Rendering (if needed)
+Recommended coverage:
+- world-level validation/deserialization tests (`src/world/level.test.ts`)
+- handler-level tests (`src/interaction/*.test.ts`)
+- integration tests (`src/integration/*.test.ts`)
 
-Update `src/render/scene.ts` to display new state:
+## Example: Interactive Object Expansion (Ticket #70)
 
-```typescript
-// If stamina is visual
-function renderPlayerStamina(player: Player): PIXI.Graphics {
-  const bar = new PIXI.Graphics();
-  const staminaPercent = player.stamina / 100;
-  
-  bar.beginFill(0x00ff00);
-  bar.drawRect(0, 0, staminaPercent * 64, 8);
-  
-  bar.x = player.position[0] * TILE_SIZE;
-  bar.y = player.position[1] * TILE_SIZE - 16;
-  
-  return bar;
-}
+Added fields on `InteractiveObject`:
+- `objectType`
+- `idleMessage`
+- `usedMessage`
+- `firstUseOutcome`
+- `spriteAssetPath`
 
-// In render loop
-for (const player of state.players || [state.player]) {
-  const staminaBar = renderPlayerStamina(player);
-  container.addChild(staminaBar);
-}
-```
-
-### 5. Test Serialization
-
-Write a test to verify JSON round-trip:
-
-```typescript
-test('World state is fully JSON-serializable', () => {
-  const state = createWorldState({
-    player: { stamina: 50 },
-    levelStats: { guardsDefeated: 2 },
-  });
-  
-  // Serialize and deserialize
-  const json = JSON.stringify(state);
-  const deserialized = JSON.parse(json);
-  
-  // Assert structure is preserved
-  expect(deserialized.player.stamina).toBe(50);
-  expect(deserialized.levelStats.guardsDefeated).toBe(2);
-});
-
-test('New state field behavior is deterministic', () => {
-  const initial = createWorldState({ player: { stamina: 100 } });
-  const commands = [MoveForward, MoveForward];
-  
-  const result1 = world.applyCommands(initial, commands);
-  const result2 = world.applyCommands(initial, commands);
-  
-  expect(result1.player.stamina).toBe(result2.player.stamina);
-});
-```
-
-### 6. Update Tests and Fixtures
-
-Update test utilities to initialize new fields:
-
-```typescript
-function createMockPlayer(overrides?: Partial<Player>): Player {
-  return {
-    id: 'player_test',
-    position: [5, 5],
-    orientation: 0,
-    inventory: [],
-    stamina: 100, // Add here
-    ...overrides,
-  };
-}
-
-function createWorldState(overrides?: Partial<WorldState>): WorldState {
-  return {
-    tick: 0,
-    player: createMockPlayer(),
-    npcs: [],
-    interactiveObjects: [],
-    levelId: 'test',
-    playerStamina: 100, // Initialize
-    ...overrides,
-  };
-}
-```
+Required follow-up updates:
+- type updates in `src/world/types.ts`
+- validation + mapping in `src/world/level.ts`
+- deterministic use in `src/interaction/objectInteraction.ts`
+- fixture updates in tests such as `src/world/state.ts` and `src/world/world.test.ts`
 
 ## Checklist
 
-- [ ] New field design documented (what it represents, how it changes)
-- [ ] Type definition updated in `src/world/types.ts`
-- [ ] Command handling updated in `src/world/world.ts` if state changes
-- [ ] Rendering updated in `src/render/scene.ts` if visual
-- [ ] Serialization test written
-- [ ] Determinism test written for new behaviors
-- [ ] Test fixtures and mocks updated
-- [ ] JSON serialization verified in browser console
-- [ ] Documentation updated (this reference, relevant layer guides)
-- [ ] No circular references or functions in new fields
-- [ ] Field names are semantic for LLM reasoning
-
-## Common Pitfalls
-
-**Circular references:** Avoid storing parent references or bidirectional links in world state. Use IDs instead.
-
-```typescript
-// Bad
-interface Npc {
-  id: string;
-  level: WorldState; // Circular!
-}
-
-// Good
-interface Npc {
-  id: string;
-  levelId: string; // Reference by ID
-}
-```
-
-**Functions and class instances:** World state must serialize to JSON.
-
-```typescript
-// Bad
-interface Player {
-  // ...
-  update: () => void; // Functions can't serialize
-}
-
-// Good
-// Logic goes in world.applyCommands(), not in entities
-interface Player {
-  // ...
-  stamina: number;
-}
-```
-
-**Mutable operations:** Always create new objects in updates.
-
-```typescript
-// Bad
-state.player.stamina -= 10; // Mutates existing state
-
-// Good
-state.player = { ...state.player, stamina: state.player.stamina - 10 };
-```
-
----
-
-See [World Layer](WORLD_LAYER.md) and [Type Reference](TYPES_REFERENCE.md) for context.
+- [ ] Type changes are explicit and serializable
+- [ ] Validation updated for incoming level JSON
+- [ ] Deserializer maps all new fields
+- [ ] Deterministic logic updated immutably
+- [ ] Fixtures/tests updated across impacted layers
+- [ ] Relevant docs updated (`WORLD_LAYER.md`, `TYPES_REFERENCE.md`, and pattern docs)
