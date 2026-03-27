@@ -4,6 +4,7 @@ import { createViewportOverlay } from './viewportOverlay';
 
 const makeViewport = (): HTMLDivElement => {
   const el = document.createElement('div');
+  el.tabIndex = 0;
   document.body.appendChild(el);
   return el;
 };
@@ -54,6 +55,34 @@ describe('createViewportOverlay', () => {
     handle.show();
 
     expect(viewport.hasAttribute('inert')).toBe(true);
+  });
+
+  it('prevents the paused viewport from gaining focus', () => {
+    const viewport = makeViewport();
+    const handle = createViewportOverlay(viewport);
+
+    handle.show();
+    viewport.focus();
+
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('prevents paused viewport click handlers from running', () => {
+    const viewport = makeViewport();
+    const worldButton = document.createElement('button');
+    worldButton.type = 'button';
+    viewport.appendChild(worldButton);
+
+    const handle = createViewportOverlay(viewport);
+    let clickCount = 0;
+    worldButton.addEventListener('click', () => {
+      clickCount += 1;
+    });
+
+    handle.show();
+    worldButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(clickCount).toBe(0);
   });
 
   it('hide() hides the overlay and removes inert from the viewport', () => {

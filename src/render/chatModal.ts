@@ -103,13 +103,23 @@ export function createChatModal(
     thread.scrollTop = thread.scrollHeight;
   }
 
+  function releaseModalFocus(): void {
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && overlay.contains(activeElement)) {
+      activeElement.blur();
+    }
+
+    if (document.activeElement !== document.body) {
+      document.body.focus();
+    }
+  }
+
   function closePanel(): void {
     open = false;
     overlay.hidden = true;
     document.removeEventListener('keydown', escapeListener);
     callbacks.onClose();
-    // Return focus to body so the modal element does not retain focus after close.
-    document.body.focus();
+    releaseModalFocus();
   }
 
   const escapeListener = (event: KeyboardEvent): void => {

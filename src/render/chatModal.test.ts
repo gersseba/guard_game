@@ -40,6 +40,19 @@ describe('createChatModal', () => {
 
       expect(handle.isOpen()).toBe(false);
     });
+
+    it('removes modal focus after the close button ends the conversation', () => {
+      openModal(container);
+
+      const closeBtn = container.querySelector<HTMLButtonElement>('.chat-modal-close-btn');
+      closeBtn?.focus();
+
+      expect(document.activeElement).toBe(closeBtn);
+
+      closeBtn?.click();
+
+      expect(document.activeElement).toBe(document.body);
+    });
   });
 
   describe('Escape key', () => {
@@ -57,6 +70,17 @@ describe('createChatModal', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 
       expect(handle.isOpen()).toBe(false);
+    });
+
+    it('removes modal focus after Escape ends the conversation', () => {
+      openModal(container);
+
+      const input = container.querySelector<HTMLInputElement>('.chat-modal-input');
+      expect(document.activeElement).toBe(input);
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+      expect(document.activeElement).toBe(document.body);
     });
 
     it('does not call onClose for other keys', () => {

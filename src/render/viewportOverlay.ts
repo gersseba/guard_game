@@ -21,19 +21,51 @@ export function createViewportOverlay(viewportElement: HTMLElement): ViewportOve
   overlay.hidden = true;
   viewportElement.appendChild(overlay);
 
+  let visible = false;
+
+  const blockFocus = (event: FocusEvent): void => {
+    if (!visible) {
+      return;
+    }
+
+    const target = event.target;
+    if (target instanceof HTMLElement) {
+      target.blur();
+    }
+
+    event.stopImmediatePropagation();
+  };
+
+  const blockPointerInteraction = (event: Event): void => {
+    if (!visible) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+
+  viewportElement.addEventListener('focusin', blockFocus, true);
+
+  for (const eventName of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click']) {
+    viewportElement.addEventListener(eventName, blockPointerInteraction, true);
+  }
+
   return {
     show(): void {
+      visible = true;
       overlay.hidden = false;
       viewportElement.setAttribute('inert', '');
     },
 
     hide(): void {
+      visible = false;
       overlay.hidden = true;
       viewportElement.removeAttribute('inert');
     },
 
     isVisible(): boolean {
-      return !overlay.hidden;
+      return visible;
     },
   };
 }
