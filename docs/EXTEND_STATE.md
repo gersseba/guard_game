@@ -64,6 +64,24 @@ Required follow-up updates:
 - deterministic use in `src/interaction/objectInteraction.ts`
 - fixture updates in tests such as `src/world/state.ts` and `src/world/world.test.ts`
 
+## Example: Character Sprite Metadata (Ticket #86)
+
+Added optional metadata fields:
+- `Player.spriteAssetPath?: string`
+- `Guard.spriteAssetPath?: string`
+- `Npc.spriteAssetPath?: string`
+- matching optional fields in `LevelData.player`, `LevelData.guards[*]`, and `LevelData.npcs[*]`
+
+Required follow-up updates:
+- type updates in `src/world/types.ts`
+- optional string validation in `validateLevelData()` for player/guard/NPC
+- passthrough mapping in `deserializeLevel()`
+- integration proof via `public/levels/starter.json` + `src/integration/starterLevel.test.ts`
+
+Boundary reminder:
+- world layer validates serializable shape only
+- sprite loading success/failure and fallback rendering remain render-layer responsibilities
+
 ## Checklist
 
 - [ ] Type changes are explicit and serializable
@@ -71,4 +89,4 @@ Required follow-up updates:
 - [ ] Deserializer maps all new fields
 - [ ] Deterministic logic updated immutably
 - [ ] Fixtures/tests updated across impacted layers
-- [ ] Relevant docs updated (`WORLD_LAYER.md`, `TYPES_REFERENCE.md`, and pattern docs)
+- [ ] Relevant docs updated (`WORLD_LAYER.md`, `RENDER_LAYER.md`, `TYPES_REFERENCE.md`, and pattern docs)

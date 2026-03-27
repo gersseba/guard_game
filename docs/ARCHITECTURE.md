@@ -33,6 +33,7 @@ All world state must serialize to JSON. This enables LLM systems to reason about
 - Input layer maps keyboard to commands; it does not modify world state.
 - Interaction layer orchestrates dispatch and result handling; it does not directly call render code.
 - LLM layer provides client access and context only; it is invoked only through interaction handlers.
+- Character sprite fallback decisions belong to render code; world code only stores optional `spriteAssetPath` metadata.
 
 **Implication:** Any feature can be tested by manipulating world state; rendering changes never require testing game logic.
 
@@ -51,7 +52,7 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 2. **Tick Phase** (fixed 100ms): `runtimeController.stepSimulation()` is called. It drains the command buffer, gates commands based on current pause state and level outcome, then applies the resolved command set to world state via `world.applyCommands(commands)`. If the runtime is paused (a guard or NPC conversation is open), buffered commands are discarded and no world update or interaction dispatch occurs for that tick.
 3. **Interaction Dispatch:** If an `interact` command was issued and the runtime is not paused, `runInteractionIfRequested()` resolves one adjacent target and calls `interactionDispatcher.dispatch(...)`.
 4. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into main-loop side effects. Conversational open results synchronously call `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`. Door and interactive-object results stay local to world-state reset and level-outcome callbacks.
-5. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port. Separate DOM render utilities manage the chat modal, paused-viewport overlay, and level-outcome overlay.
+5. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port. Character sprite assets are loaded and resolved to sprite/marker mode inside the render layer only. Separate DOM render utilities manage the chat modal, paused-viewport overlay, and level-outcome overlay.
 6. **Debug Phase:** Current JSON world state is serialized and printed to the debug panel.
 
 ```
@@ -86,7 +87,7 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 - **Responsibility:** Translate world state into visual representation.
 - **Input:** `WorldState` (read-only reference) plus runtime UI callbacks.
 - **Output:** PixiJS display objects, DOM overlay state, and viewport positioning.
-- **Guarantee:** No game logic; only read and draw.
+- **Guarantee:** No game logic; only read and draw. Sprite load status maps and Pixi sprite instances are transient render concerns and are never written into `WorldState`.
 
 ### Interaction Layer
 - **Responsibility:**

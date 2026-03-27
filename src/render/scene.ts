@@ -1,4 +1,4 @@
-import { Application, Container, Graphics } from 'pixi.js';
+import { Application, Assets, Container, Graphics, Sprite } from 'pixi.js';
 import type { WorldState } from '../world/types';
 
 export interface RenderPort {
@@ -15,9 +15,21 @@ interface RenderContext {
   gridGraphics: Graphics;
   entityGraphics: Graphics;
   playerGraphics: Graphics;
+  characterSpritesContainer: Container;
+  characterSpritesByEntityId: Map<string, { sprite: Sprite; spriteAssetPath: string }>;
+  spriteLoadStatusByPath: Map<string, SpriteLoadStatus>;
   rootContainer: Container;
   lastWidth: number;
   lastHeight: number;
+}
+
+export type CharacterRenderMode = 'sprite' | 'marker';
+export type SpriteLoadStatus = 'loading' | 'loaded' | 'failed';
+
+export interface CharacterRenderModes {
+  player: CharacterRenderMode;
+  guardsById: Record<string, CharacterRenderMode>;
+  npcsById: Record<string, CharacterRenderMode>;
 }
 
 export interface EntityCircleSpec {
@@ -27,6 +39,39 @@ export interface EntityCircleSpec {
   radius: number;
   color: number;
 }
+
+const getCharacterRenderMode = (
+  spriteAssetPath: string | undefined,
+  spriteLoadStatusByPath: ReadonlyMap<string, SpriteLoadStatus>,
+): CharacterRenderMode => {
+  if (spriteAssetPath === undefined) {
+    return 'marker';
+  }
+
+  const status = spriteLoadStatusByPath.get(spriteAssetPath);
+  return status === 'loaded' ? 'sprite' : 'marker';
+};
+
+export const buildCharacterRenderModes = (
+  worldState: WorldState,
+  spriteLoadStatusByPath: ReadonlyMap<string, SpriteLoadStatus>,
+): CharacterRenderModes => {
+  const guardsById: Record<string, CharacterRenderMode> = {};
+  for (const guard of worldState.guards) {
+    guardsById[guard.id] = getCharacterRenderMode(guard.spriteAssetPath, spriteLoadStatusByPath);
+  }
+
+  const npcsById: Record<string, CharacterRenderMode> = {};
+  for (const npc of worldState.npcs) {
+    npcsById[npc.id] = getCharacterRenderMode(npc.spriteAssetPath, spriteLoadStatusByPath);
+  }
+
+  return {
+    player: getCharacterRenderMode(worldState.player.spriteAssetPath, spriteLoadStatusByPath),
+    guardsById,
+    npcsById,
+  };
+};
 
 const VIEWPORT_TILE_WIDTH = 6;
 const VIEWPORT_TILE_HEIGHT = 10;
@@ -116,6 +161,107 @@ export const buildEntityCircleSpecs = (worldState: WorldState): EntityCircleSpec
   return [...npcCircles, ...guardCircles, ...doorCircles, ...objectCircles];
 };
 
+const requestCharacterSpriteLoads = (context: RenderContext, worldState: WorldState): void => {
+  const characterSpritePaths = new Set<string>();
+  if (worldState.player.spriteAssetPath !== undefined) {
+    characterSpritePaths.add(worldState.player.spriteAssetPath);
+  }
+  for (const guard of worldState.guards) {
+    if (guard.spriteAssetPath !== undefined) {
+      characterSpritePaths.add(guard.spriteAssetPath);
+    }
+  }
+  for (const npc of worldState.npcs) {
+    if (npc.spriteAssetPath !== undefined) {
+      characterSpritePaths.add(npc.spriteAssetPath);
+    }
+  }
+
+  for (const spriteAssetPath of characterSpritePaths) {
+    if (context.spriteLoadStatusByPath.has(spriteAssetPath)) {
+      continue;
+    }
+
+    context.spriteLoadStatusByPath.set(spriteAssetPath, 'loading');
+    void Assets.load(spriteAssetPath)
+      .then(() => {
+        context.spriteLoadStatusByPath.set(spriteAssetPath, 'loaded');
+      })
+      .catch(() => {
+        context.spriteLoadStatusByPath.set(spriteAssetPath, 'failed');
+      });
+  }
+};
+
+const syncCharacterSprites = (
+  context: RenderContext,
+  worldState: WorldState,
+  characterRenderModes: CharacterRenderModes,
+): void => {
+  const tileSize = worldState.grid.tileSize;
+  const spriteSize = Math.max(8, tileSize * 0.82);
+  const activeEntityIds = new Set<string>();
+
+  const upsert = (entityId: string, spriteAssetPath: string, centerX: number, centerY: number): void => {
+    activeEntityIds.add(entityId);
+
+    const existing = context.characterSpritesByEntityId.get(entityId);
+    if (existing !== undefined && existing.spriteAssetPath !== spriteAssetPath) {
+      context.characterSpritesContainer.removeChild(existing.sprite);
+      existing.sprite.destroy();
+      context.characterSpritesByEntityId.delete(entityId);
+    }
+
+    let entry = context.characterSpritesByEntityId.get(entityId);
+    if (entry === undefined) {
+      const sprite = Sprite.from(spriteAssetPath);
+      sprite.anchor.set(0.5);
+      context.characterSpritesContainer.addChild(sprite);
+      entry = { sprite, spriteAssetPath };
+      context.characterSpritesByEntityId.set(entityId, entry);
+    }
+
+    entry.sprite.width = spriteSize;
+    entry.sprite.height = spriteSize;
+    entry.sprite.position.set(centerX, centerY);
+  };
+
+  const toCenter = (x: number, y: number): { centerX: number; centerY: number } => ({
+    centerX: x * tileSize + tileSize / 2,
+    centerY: y * tileSize + tileSize / 2,
+  });
+
+  if (characterRenderModes.player === 'sprite' && worldState.player.spriteAssetPath !== undefined) {
+    const center = toCenter(worldState.player.position.x, worldState.player.position.y);
+    upsert('player', worldState.player.spriteAssetPath, center.centerX, center.centerY);
+  }
+
+  for (const guard of worldState.guards) {
+    if (characterRenderModes.guardsById[guard.id] !== 'sprite' || guard.spriteAssetPath === undefined) {
+      continue;
+    }
+    const center = toCenter(guard.position.x, guard.position.y);
+    upsert(`guard:${guard.id}`, guard.spriteAssetPath, center.centerX, center.centerY);
+  }
+
+  for (const npc of worldState.npcs) {
+    if (characterRenderModes.npcsById[npc.id] !== 'sprite' || npc.spriteAssetPath === undefined) {
+      continue;
+    }
+    const center = toCenter(npc.position.x, npc.position.y);
+    upsert(`npc:${npc.id}`, npc.spriteAssetPath, center.centerX, center.centerY);
+  }
+
+  for (const [entityId, entry] of context.characterSpritesByEntityId.entries()) {
+    if (activeEntityIds.has(entityId)) {
+      continue;
+    }
+    context.characterSpritesContainer.removeChild(entry.sprite);
+    entry.sprite.destroy();
+    context.characterSpritesByEntityId.delete(entityId);
+  }
+};
+
 const clamp = (value: number, min: number, max: number): number => {
   return Math.max(min, Math.min(max, value));
 };
@@ -199,8 +345,62 @@ const drawGrid = (context: RenderContext, worldState: WorldState): void => {
   }
 };
 
-const drawEntityMarkers = (context: RenderContext, worldState: WorldState): void => {
-  const circles = buildEntityCircleSpecs(worldState);
+const drawEntityMarkers = (
+  context: RenderContext,
+  worldState: WorldState,
+  characterRenderModes: CharacterRenderModes,
+): void => {
+  const tileSize = worldState.grid.tileSize;
+  const radius = Math.max(5, tileSize * 0.22);
+  const toCenter = (x: number, y: number): { centerX: number; centerY: number } => ({
+    centerX: x * tileSize + tileSize / 2,
+    centerY: y * tileSize + tileSize / 2,
+  });
+
+  const circles: EntityCircleSpec[] = [];
+
+  for (const npc of worldState.npcs) {
+    if (characterRenderModes.npcsById[npc.id] === 'sprite') {
+      continue;
+    }
+    circles.push({
+      typeKey: 'npc',
+      ...toCenter(npc.position.x, npc.position.y),
+      radius,
+      color: getColorForEntityType('npc'),
+    });
+  }
+
+  for (const guard of worldState.guards) {
+    if (characterRenderModes.guardsById[guard.id] === 'sprite') {
+      continue;
+    }
+    circles.push({
+      typeKey: 'guard',
+      ...toCenter(guard.position.x, guard.position.y),
+      radius,
+      color: getColorForEntityType('guard'),
+    });
+  }
+
+  for (const door of worldState.doors) {
+    circles.push({
+      typeKey: 'door',
+      ...toCenter(door.position.x, door.position.y),
+      radius,
+      color: getColorForEntityType('door'),
+    });
+  }
+
+  for (const interactiveObject of worldState.interactiveObjects) {
+    const typeKey = `interactive-object:${interactiveObject.interactionType}`;
+    circles.push({
+      typeKey,
+      ...toCenter(interactiveObject.position.x, interactiveObject.position.y),
+      radius,
+      color: getColorForEntityType(typeKey),
+    });
+  }
 
   context.entityGraphics.clear();
   for (const circle of circles) {
@@ -211,7 +411,16 @@ const drawEntityMarkers = (context: RenderContext, worldState: WorldState): void
   }
 };
 
-const drawPlayerMarker = (context: RenderContext, worldState: WorldState): void => {
+const drawPlayerMarker = (
+  context: RenderContext,
+  worldState: WorldState,
+  characterRenderModes: CharacterRenderModes,
+): void => {
+  if (characterRenderModes.player === 'sprite') {
+    context.playerGraphics.clear();
+    return;
+  }
+
   const tileSize = worldState.grid.tileSize;
   const centerX = worldState.player.position.x * tileSize + tileSize / 2;
   const centerY = worldState.player.position.y * tileSize + tileSize / 2;
@@ -239,9 +448,11 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
   const boundaryGraphics = new Graphics();
   const entityGraphics = new Graphics();
   const playerGraphics = new Graphics();
+  const characterSpritesContainer = new Container();
   const rootContainer = new Container();
   rootContainer.addChild(boundaryGraphics);
   rootContainer.addChild(gridGraphics);
+  rootContainer.addChild(characterSpritesContainer);
   rootContainer.addChild(entityGraphics);
   rootContainer.addChild(playerGraphics);
   app.stage.addChild(rootContainer);
@@ -252,6 +463,9 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
     gridGraphics,
     entityGraphics,
     playerGraphics,
+    characterSpritesContainer,
+    characterSpritesByEntityId: new Map(),
+    spriteLoadStatusByPath: new Map(),
     rootContainer,
     lastWidth: 0,
     lastHeight: 0,
@@ -259,11 +473,14 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
 
   return {
     render: (worldState: WorldState) => {
+      requestCharacterSpriteLoads(context, worldState);
+      const characterRenderModes = buildCharacterRenderModes(worldState, context.spriteLoadStatusByPath);
       ensureCanvasSize(context, worldState);
       drawBoundaryBand(context, worldState);
       drawGrid(context, worldState);
-      drawEntityMarkers(context, worldState);
-      drawPlayerMarker(context, worldState);
+      syncCharacterSprites(context, worldState, characterRenderModes);
+      drawEntityMarkers(context, worldState, characterRenderModes);
+      drawPlayerMarker(context, worldState, characterRenderModes);
       updateCamera(context, worldState);
     },
   };

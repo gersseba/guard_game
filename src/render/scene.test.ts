@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildEntityCircleSpecs, getColorForEntityType } from './scene';
+import { buildCharacterRenderModes, buildEntityCircleSpecs, getColorForEntityType } from './scene';
 import type { WorldState } from '../world/types';
 
 const createWorldState = (): WorldState => ({
@@ -144,5 +144,72 @@ describe('render entity circle helpers', () => {
         }),
       ]),
     );
+  });
+
+  it('selects sprite mode for player, guard, and npc only when the path is loaded', () => {
+    const worldState: WorldState = {
+      ...createWorldState(),
+      player: {
+        ...createWorldState().player,
+        spriteAssetPath: '/assets/medieval_player_town_guard.svg',
+      },
+      guards: [
+        {
+          ...createWorldState().guards[0],
+          spriteAssetPath: '/assets/medieval_guard_spear.svg',
+        },
+      ],
+      npcs: [
+        {
+          ...createWorldState().npcs[0],
+          spriteAssetPath: '/assets/medieval_npc_villager.svg',
+        },
+      ],
+    };
+
+    const spriteStatuses = new Map([
+      ['/assets/medieval_player_town_guard.svg', 'loaded' as const],
+      ['/assets/medieval_guard_spear.svg', 'loaded' as const],
+      ['/assets/medieval_npc_villager.svg', 'loaded' as const],
+    ]);
+
+    const modes = buildCharacterRenderModes(worldState, spriteStatuses);
+
+    expect(modes.player).toBe('sprite');
+    expect(modes.guardsById['guard-1']).toBe('sprite');
+    expect(modes.npcsById['npc-1']).toBe('sprite');
+  });
+
+  it('falls back to marker mode for player, guard, and npc when loading fails or is unresolved', () => {
+    const worldState: WorldState = {
+      ...createWorldState(),
+      player: {
+        ...createWorldState().player,
+        spriteAssetPath: '/assets/medieval_player_town_guard.svg',
+      },
+      guards: [
+        {
+          ...createWorldState().guards[0],
+          spriteAssetPath: '/assets/medieval_guard_spear.svg',
+        },
+      ],
+      npcs: [
+        {
+          ...createWorldState().npcs[0],
+          spriteAssetPath: '/assets/medieval_npc_villager.svg',
+        },
+      ],
+    };
+
+    const spriteStatuses = new Map([
+      ['/assets/medieval_player_town_guard.svg', 'failed' as const],
+      ['/assets/medieval_guard_spear.svg', 'loading' as const],
+    ]);
+
+    const modes = buildCharacterRenderModes(worldState, spriteStatuses);
+
+    expect(modes.player).toBe('marker');
+    expect(modes.guardsById['guard-1']).toBe('marker');
+    expect(modes.npcsById['npc-1']).toBe('marker');
   });
 });

@@ -3,21 +3,27 @@
   "name": "Starter",
   "width": 20,
   "height": 20,
-  "player": { "x": 10, "y": 10 },
+  "player": {
+    "x": 10,
+    "y": 10,
+    "spriteAssetPath": "/assets/medieval_player_town_guard.svg"
+  },
   "guards": [
     {
       "id": "guard-1",
       "displayName": "West Guard",
       "x": 5,
       "y": 10,
-      "guardState": "patrolling"
+      "guardState": "patrolling",
+      "spriteAssetPath": "/assets/medieval_guard_spear.svg"
     },
     {
       "id": "guard-2",
       "displayName": "North Guard",
       "x": 10,
       "y": 5,
-      "guardState": "patrolling"
+      "guardState": "patrolling",
+      "spriteAssetPath": "/assets/medieval_guard_spear.svg"
     }
   ],
   "doors": [
@@ -38,7 +44,16 @@
       "outcome": "danger"
     }
   ],
-  "npcs": [],
+  "npcs": [
+    {
+      "id": "npc-villager-1",
+      "displayName": "Village Elder",
+      "x": 15,
+      "y": 14,
+      "npcType": "villager",
+      "spriteAssetPath": "/assets/medieval_npc_villager.svg"
+    }
+  ],
   "interactiveObjects": [
     {
       "id": "crate-supplies",

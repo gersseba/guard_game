@@ -19,6 +19,7 @@ Source of truth:
 - `id: string`
 - `displayName: string`
 - `position: GridPosition`
+- `spriteAssetPath?: string`
 
 ### Npc
 - `id: string`
@@ -26,11 +27,13 @@ Source of truth:
 - `position: GridPosition`
 - `npcType: string` - Categorizes the NPC's role (for prompt profile resolution)
 - `dialogueContextKey: string` - Deterministically derived from `npcType` via `npc_${npcType.toLowerCase()}`
+- `spriteAssetPath?: string`
 
 ### Guard
 Extends `Interactable`:
 - `guardState: 'idle' | 'patrolling' | 'alert'`
 - `honestyTrait?: 'truth-teller' | 'liar'`
+- `spriteAssetPath?: string`
 
 ### Door
 Extends `Interactable`:
@@ -117,13 +120,18 @@ Required fields:
 - `name: string`
 - `width: number`
 - `height: number`
-- `player: { x: number; y: number }`
-- `guards: Array<{ id, displayName, x, y, guardState, honestyTrait? }>`
+- `player: { x: number; y: number; spriteAssetPath?: string }`
+- `guards: Array<{ id, displayName, x, y, guardState, honestyTrait?, spriteAssetPath? }>`
 - `doors: Array<{ id, displayName, x, y, doorState, outcome }>`
 
 Optional fields:
-- `npcs: Array<{ id, displayName, x, y, npcType }>`
+- `npcs: Array<{ id, displayName, x, y, npcType, spriteAssetPath? }>`
 - `interactiveObjects: Array<...>` with the same object fields as `InteractiveObject`, but `x/y` instead of `position`
+
+Shipped starter-level character sprite examples:
+- `player.spriteAssetPath: /assets/medieval_player_town_guard.svg`
+- `guards[*].spriteAssetPath: /assets/medieval_guard_spear.svg`
+- `npcs[*].spriteAssetPath: /assets/medieval_npc_villager.svg`
 
 Example NPC entry:
 
