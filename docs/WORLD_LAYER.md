@@ -29,7 +29,12 @@ All fields are serializable primitives, arrays, or plain objects.
 `validateLevelData()` in `src/world/level.ts` validates:
 - Required level metadata (`version`, `name`, dimensions)
 - `player`, `guards`, and `doors`
+- Optional `npcs` — array of level-defined NPCs with required `id`, `displayName`, `x`, `y`, and `npcType` fields
 - Optional `interactiveObjects`
+
+For `npcs`, validation enforces:
+- required identity/position fields (`id`, `displayName`, `x`, `y`)
+- required `npcType: string` — categorizes the NPC's role (e.g., `'archive_keeper'`, `'scholar'`)
 
 For `interactiveObjects`, validation enforces:
 - required identity/position fields
@@ -41,6 +46,27 @@ For `interactiveObjects`, validation enforces:
 ## Deserialization
 
 `deserializeLevel()` in `src/world/level.ts` maps level JSON into runtime entities and applies `validateSpatialLayout()` before returning state.
+
+### NPC Deserialization
+NPCs from level JSON are transformed to runtime `Npc` objects with deterministically derived `dialogueContextKey`:
+
+```typescript
+// Input from level JSON
+{ id: 'npc-1', displayName: 'Archivist', x: 8, y: 5, npcType: 'archive_keeper' }
+
+// Output at runtime
+{
+  id: 'npc-1',
+  displayName: 'Archivist',
+  position: { x: 8, y: 5 },
+  npcType: 'archive_keeper',
+  dialogueContextKey: 'npc_archive_keeper'  // deterministically derived: npc_${npcType.toLowerCase()}
+}
+```
+
+**Deserialization is deterministic:** The same `npcType` always produces the same `dialogueContextKey`, enabling consistent LLM prompt context routing and reproducible conversation flows.
+
+### Interactive Object Deserialization
 
 Interactive object instance fields now deserialize directly:
 - `idleMessage`
