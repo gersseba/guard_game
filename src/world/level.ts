@@ -96,6 +96,29 @@ export function validateLevelData(input: unknown): LevelData {
     }
   }
 
+  if (raw['npcs'] !== undefined) {
+    if (!Array.isArray(raw['npcs'])) {
+      throw new Error('Invalid level data: npcs must be an array');
+    }
+
+    for (let i = 0; i < (raw['npcs'] as unknown[]).length; i++) {
+      const npc = (raw['npcs'] as unknown[])[i] as Record<string, unknown>;
+      if (
+        typeof npc !== 'object' ||
+        npc === null ||
+        typeof npc['id'] !== 'string' ||
+        typeof npc['displayName'] !== 'string' ||
+        typeof npc['x'] !== 'number' ||
+        typeof npc['y'] !== 'number' ||
+        typeof npc['npcType'] !== 'string'
+      ) {
+        throw new Error(
+          `Invalid level data: npc at index ${i} must have id, displayName, x, y, and npcType`,
+        );
+      }
+    }
+  }
+
   if (raw['interactiveObjects'] !== undefined) {
     if (!Array.isArray(raw['interactiveObjects'])) {
       throw new Error('Invalid level data: interactiveObjects must be an array');
@@ -153,7 +176,13 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       displayName: 'Player',
       position: { x: levelData.player.x, y: levelData.player.y },
     },
-    npcs: [],
+    npcs: (levelData.npcs ?? []).map((n) => ({
+      id: n.id,
+      displayName: n.displayName,
+      position: { x: n.x, y: n.y },
+      npcType: n.npcType,
+      dialogueContextKey: `npc_${n.npcType.toLowerCase()}`,
+    })),
     guards: levelData.guards.map((g) => ({
       id: g.id,
       displayName: g.displayName,

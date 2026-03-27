@@ -33,6 +33,7 @@ const makeNpc = (x: number, y: number): Npc => ({
   id: `npc-${x}-${y}`,
   displayName: 'Npc',
   position: { x, y },
+  npcType: 'test',
   dialogueContextKey: 'ctx',
 });
 

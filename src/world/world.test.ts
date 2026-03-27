@@ -43,6 +43,7 @@ describe('createWorld', () => {
         {
           id: 'npc-blocker',
           displayName: 'Npc blocker',
+          npcType: 'blocker',
           dialogueContextKey: 'npc-blocker',
           position: { x: 3, y: 2 },
         },

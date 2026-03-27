@@ -39,5 +39,6 @@
       "doorState": "closed",
       "outcome": "danger"
     }
-  ]
+  ],
+  "npcs": []
 }

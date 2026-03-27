@@ -4,139 +4,175 @@ This pattern describes how to introduce a new NPC to Guard Game.
 
 ## Overview
 
-NPCs are agents with behavior, position, and conversation threads. They live in the world state and can interact with the player.
+NPCs are agents with a type, position, and conversation history. They are defined in level JSON files and are deterministically deserialized into runtime state. Their dialogue behavior is driven by their `npcType` and derived `dialogueContextKey`.
 
 ## Steps
 
-### 1. Define the NPC
-Add the NPC instance to `src/world/world.ts` or level definition:
+### 1. Define the NPC in a Level File
+Add the NPC to the `npcs` array in `public/levels/*.json`:
 
-```typescript
-const newNpc: Npc = {
-  id: 'guard_2',
-  position: [8, 5],
-  behavior: 'patrol', // or 'idle', 'alerted', etc.
-  thread: createEmptyNpcThread('guard_2'),
-  metadata: {
-    name: 'Guard Captain',
-    personality: 'stern, suspicious of strangers',
-    routePatrol: [[8, 5], [8, 6], [8, 7]], // Optional
-  },
-};
-
-// Add to initial world state
-initialState.npcs.push(newNpc);
+```json
+{
+  "npcs": [
+    {
+      "id": "archivist-1",
+      "displayName": "The Archivist",
+      "x": 8,
+      "y": 5,
+      "npcType": "archive_keeper"
+    }
+  ]
+}
 ```
 
-### 2. Create Rendering for the NPC
-Add sprite creation in `src/render/scene.ts`:
+**Required fields:**
+- `id`: Unique identifier for the NPC
+- `displayName`: Display name shown in the UI  
+- `x`, `y`: Grid coordinates
+- `npcType`: String categorizing the NPC's role (e.g., `archive_keeper`, `scholar`, `merchant`). This determines the `dialogueContextKey`.
+
+**Deserialization:**
+When the level loads, `deserializeLevel()` automatically maps NPC entries from level JSON into runtime `Npc` objects and derives `dialogueContextKey` from `npcType`:
 
 ```typescript
-function createNpcSprite(npc: Npc): PIXI.Sprite {
-  const sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-  sprite.tint = 0xff0000; // Example: red for guards
-  sprite.width = 32;
-  sprite.height = 32;
-  sprite.x = npc.position[0] * TILE_SIZE;
-  sprite.y = npc.position[1] * TILE_SIZE;
-  return sprite;
-}
+// Input from level JSON
+{ id: 'archivist-1', displayName: 'The Archivist', x: 8, y: 5, npcType: 'archive_keeper' }
 
-// Update render loop to draw NPCs
+// Becomes runtime Npc
+{
+  id: 'archivist-1',
+  displayName: 'The Archivist',
+  position: { x: 8, y: 5 },
+  npcType: 'archive_keeper',
+  dialogueContextKey: 'npc_archive_keeper'  // derived: `npc_${npcType.toLowerCase()}`
+}
+```
+
+### 2. Handle Rendering (if needed)
+NPCs are rendered as grid sprites in `src/render/scene.ts`. If you need custom rendering for a specific `npcType`:
+
+```typescript
+// Example: custom sprite for archive_keeper NPCs
+function getNpcSpriteColor(npc: Npc): number {
+  switch (npc.npcType) {
+    case 'archive_keeper':
+      return 0x9933ff; // purple
+    case 'scholar':
+      return 0x0099ff; // blue
+    default:
+      return 0xcccccc; // gray
+  }
+}
+```
+
+Rendering uses the NPC's `position` and `displayName`:
+
+```typescript
 for (const npc of state.npcs) {
-  const sprite = spriteCache.get(npc.id) || createNpcSprite(npc);
-  sprite.x = npc.position[0] * TILE_SIZE;
-  sprite.y = npc.position[1] * TILE_SIZE;
+  const sprite = createOrUpdateNpcSprite(npc, getNpcSpriteColor(npc));
   container.addChild(sprite);
 }
 ```
 
-### 3. Add Interaction Logic
-Define what happens when the player talks to this NPC in `src/interaction/npcInteraction.ts`:
-
-```typescript
-export async function resolveGuardInteraction(
-  player: Player,
-  npc: Npc,
-  thread: NpcThread
-): Promise<InteractionResponse> {
-  // Build prompt context
-  const context = buildGuardPromptContext(player, npc, thread);
-  
-  // Call LLM (or return hardcoded response)
-  const response = await llmClient.generateResponse(context);
-  
-  // Update thread
-  const newThread = addMessageToThread(thread, 'npc', response.text);
-  
-  return {
-    text: response.text,
-    thread: newThread,
-    npcBehaviorSuggestion: response.suggestedBehavior,
-  };
-}
-```
-
-### 4. Register the Interaction Handler
-Map NPC type to interaction handler in `src/interaction/npcInteraction.ts`:
+### 3. Define Interaction and Dialogue
+Define interaction behavior in `src/interaction/npcInteraction.ts`. Route interaction based on `npcType`:
 
 ```typescript
 export async function resolveNpcInteraction(
   player: Player,
   npc: Npc,
-  direction: number
+  direction: DirectionKey
 ): Promise<InteractionResponse> {
+  // Check adjacency
   const adjacencyResolution = resolveAdjacentNpc(player, npc, direction);
   
   if (!adjacencyResolution.canInteract) {
-    return { text: 'Cannot reach that NPC.', thread: npc.thread };
+    return { text: 'Cannot reach that NPC.' };
   }
   
-  // Route to NPC-specific handler
-  if (npc.metadata?.role === 'guard') {
-    return resolveGuardInteraction(player, npc, npc.thread);
-  } else if (npc.metadata?.role === 'prisoner') {
-    return resolvePrisonerInteraction(player, npc, npc.thread);
+  // Route to NPC type handler
+  switch (npc.npcType) {
+    case 'archive_keeper':
+      return resolveArchiveKeeperInteraction(player, npc);
+    case 'scholar':
+      return resolveScholarInteraction(player, npc);
+    default:
+      return { text: `Hello, I'm a ${npc.displayName}.` };
   }
-  
-  // Default response
-  return { text: 'Hello.', thread: npc.thread };
 }
 ```
 
-### 5. Add Tests
-Write tests in `src/integration/riddleLevel.test.ts` (or similar):
+The NPC's `dialogueContextKey` (derived from `npcType`) is used when building LLM prompt context:
 
 ```typescript
-test('Player can interact with guard NPC', async () => {
-  const level = loadLevel('starter');
-  const guard = level.state.npcs.find(n => n.id === 'guard_2');
-  
-  expect(guard).toBeDefined();
-  expect(guard.position).toEqual([8, 5]);
-});
+// In guardPromptContext.ts or similar
+function buildNpcPromptContext(npc: Npc, player: Player): string {
+  return `
+You are a ${npc.npcType}. The player's key to unlock your dialogue is: ${npc.dialogueContextKey}
+NPC name: ${npc.displayName}
+Player: ${player.displayName}
+  `;
+}
+```
 
-test('Guard interaction returns response', async () => {
-  const level = loadLevel('starter');
-  const guard = level.state.npcs.find(n => n.id === 'guard_2');
-  
-  const response = await resolveGuardInteraction(level.state.player, guard, guard.thread);
-  expect(response.text).toBeTruthy();
-  expect(response.thread.messages.length).toBeGreaterThan(0);
+
+### 4. Add Tests
+Test that the NPC loads correctly and can be interacted with:
+
+```typescript
+// In src/world/level.test.ts
+describe('NPC loading', () => {
+  it('deserializes level NPCs with correct dialogueContextKey', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [{ 
+        id: 'npc-1', 
+        displayName: 'Archivist', 
+        x: 8, 
+        y: 3, 
+        npcType: 'archive_keeper' 
+      }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const state = deserializeLevel(validateLevelData(level));
+
+    expect(state.npcs).toHaveLength(1);
+    expect(state.npcs[0].npcType).toBe('archive_keeper');
+    expect(state.npcs[0].dialogueContextKey).toBe('npc_archive_keeper');
+  });
+
+  it('derives dialogueContextKey lowercase from npcType', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [{ 
+        id: 'npc-1', 
+        displayName: 'Captain', 
+        x: 5, 
+        y: 5, 
+        npcType: 'GUARD_CAPTAIN' 
+      }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const state = deserializeLevel(validateLevelData(level));
+    expect(state.npcs[0].dialogueContextKey).toBe('npc_guard_captain');
+  });
 });
 ```
 
 ## Checklist
 
-- [ ] NPC added to level definition or initial world state in `src/world/world.ts`
-- [ ] NPC sprite creation added to `src/render/scene.ts`
-- [ ] Interaction handler defined in `src/interaction/npcInteraction.ts`
-- [ ] Handler registered in `resolveNpcInteraction()` dispatch
-- [ ] NPC metadata (name, personality, role) set correctly
-- [ ] Tests written for NPC existence, rendering, and interaction
-- [ ] Conversation thread initialized with `createEmptyNpcThread()`
-- [ ] (Optional) Behavior logic (patrol, idle) added to world.ts
+- [ ] NPC added to level JSON (`public/levels/*.json`) with `id`, `displayName`, `x`, `y`, `npcType`
+- [ ] `npcType` matches the interaction handler routing (e.g., `'archive_keeper'`)
+- [ ] Interaction handler defined in `src/interaction/npcInteraction.ts` for the `npcType`
+- [ ] Rendering (if custom) handles the `npcType` in `src/render/scene.ts`
+- [ ] Tests verify NPC loads with correct `dialogueContextKey` derived from `npcType`
+- [ ] `dialogueContextKey` is used in LLM prompt context building
+- [ ] Level passes `validateLevelData()` and `deserializeLevel()` without errors
+- [ ] NPC position does not overlap with other entities (validated by `validateSpatialLayout()`)
 
 ---
 
-See [Interaction Layer](INTERACTION_LAYER.md) and [Type Reference](TYPES_REFERENCE.md) for context.
+See [World Layer](WORLD_LAYER.md), [Type Reference](TYPES_REFERENCE.md), and [Interaction Layer](INTERACTION_LAYER.md) for more context.
+

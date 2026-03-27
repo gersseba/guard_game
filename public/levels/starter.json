@@ -38,6 +38,7 @@
       "outcome": "danger"
     }
   ],
+  "npcs": [],
   "interactiveObjects": [
     {
       "id": "crate-supplies",

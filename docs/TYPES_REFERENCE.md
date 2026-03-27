@@ -21,7 +21,8 @@ Source of truth:
 - `id: string`
 - `displayName: string`
 - `position: GridPosition`
-- `dialogueContextKey: string`
+- `npcType: string` — Categorizes the NPC's role (e.g., `'archive_keeper'`, `'scholar'`). This field is set at level definition time.
+- `dialogueContextKey: string` — Deterministically derived from `npcType` via `npc_${npcType.toLowerCase()}`. Used for LLM prompt context routing.
 
 ### Guard
 Extends `Interactable`:
@@ -77,13 +78,38 @@ Required fields:
 - `width: number`
 - `height: number`
 - `player: { x: number; y: number }`
-- `guards: ...`
-- `doors: ...`
+- `guards: Array<{ id, displayName, x, y, guardState, honestyTrait? }>`
+- `doors: Array<{ id, displayName, x, y, doorState, outcome }>`
 
 Optional fields:
+- `npcs: Array<{ id, displayName, x, y, npcType }>` — Level-defined NPCs. Each NPC has a `npcType` that categorizes its role (e.g., `'archive_keeper'`). During deserialization, `dialogueContextKey` is automatically derived as `npc_${npcType.toLowerCase()}`.
 - `interactiveObjects: Array<...>` with the same object fields as `InteractiveObject`, but `x/y` instead of `position`
 
-Example object entry:
+Example NPC entry:
+
+```json
+{
+  "id": "archivist-1",
+  "displayName": "The Archivist",
+  "x": 8,
+  "y": 5,
+  "npcType": "archive_keeper"
+}
+```
+
+When deserialized, becomes:
+
+```typescript
+{
+  id: 'archivist-1',
+  displayName: 'The Archivist',
+  position: { x: 8, y: 5 },
+  npcType: 'archive_keeper',
+  dialogueContextKey: 'npc_archive_keeper'
+}
+```
+
+Example interactive object entry:
 
 ```json
 {

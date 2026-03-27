@@ -13,6 +13,7 @@ export interface Npc {
   id: string;
   displayName: string;
   position: GridPosition;
+  npcType: string;
   dialogueContextKey: string;
 }
 
@@ -80,6 +81,13 @@ export interface LevelData {
     y: number;
     doorState: 'open' | 'closed' | 'locked';
     outcome: 'safe' | 'danger';
+  }>;
+  npcs?: Array<{
+    id: string;
+    displayName: string;
+    x: number;
+    y: number;
+    npcType: string;
   }>;
   interactiveObjects?: Array<{
     id: string;

@@ -32,12 +32,14 @@ describe('buildGuardWorldContextPayload', () => {
         id: 'npc-2',
         displayName: 'Engineer',
         position: { x: 8, y: 1 },
+        npcType: 'engineer',
         dialogueContextKey: 'engineer_intro',
       },
       {
         id: 'npc-1',
         displayName: 'Archivist',
         position: { x: 3, y: 9 },
+        npcType: 'archive_keeper',
         dialogueContextKey: 'archive_keeper_intro',
       },
     ];

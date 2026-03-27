@@ -352,3 +352,192 @@ describe('levelOutcome field', () => {
   });
 });
 
+describe('npcs field', () => {
+  it('accepts level data without npcs field (backward compatibility)', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.npcs).toEqual([]);
+  });
+
+  it('accepts level data with empty npcs array', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.npcs).toEqual([]);
+  });
+
+  it('maps NPC flat fields to nested Npc with correct position and npcType', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [
+        { id: 'npc-1', displayName: 'Archivist', x: 8, y: 3, npcType: 'archive_keeper' },
+        { id: 'npc-2', displayName: 'Scholar', x: 12, y: 5, npcType: 'scholar' },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.npcs).toHaveLength(2);
+    expect(state.npcs[0]).toEqual({
+      id: 'npc-1',
+      displayName: 'Archivist',
+      position: { x: 8, y: 3 },
+      npcType: 'archive_keeper',
+      dialogueContextKey: 'npc_archive_keeper',
+    });
+    expect(state.npcs[1]).toEqual({
+      id: 'npc-2',
+      displayName: 'Scholar',
+      position: { x: 12, y: 5 },
+      npcType: 'scholar',
+      dialogueContextKey: 'npc_scholar',
+    });
+  });
+
+  it('assigns dialogueContextKey based on npcType in lowercase', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Guard', x: 5, y: 5, npcType: 'GUARD_CAPTAIN' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.npcs[0].dialogueContextKey).toBe('npc_guard_captain');
+  });
+
+  it('throws when npcs is not an array', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: { id: 'npc-1' },
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('npcs must be an array');
+  });
+
+  it('throws when NPC is missing required field id', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ displayName: 'Npc', x: 5, y: 5, npcType: 'archivist' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'npc at index 0 must have id, displayName, x, y, and npcType',
+    );
+  });
+
+  it('throws when NPC is missing required field displayName', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', x: 5, y: 5, npcType: 'archivist' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'npc at index 0 must have id, displayName, x, y, and npcType',
+    );
+  });
+
+  it('throws when NPC is missing required field x', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', y: 5, npcType: 'archivist' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'npc at index 0 must have id, displayName, x, y, and npcType',
+    );
+  });
+
+  it('throws when NPC is missing required field y', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, npcType: 'archivist' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'npc at index 0 must have id, displayName, x, y, and npcType',
+    );
+  });
+
+  it('throws when NPC is missing required field npcType', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5 }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'npc at index 0 must have id, displayName, x, y, and npcType',
+    );
+  });
+
+  it('throws when NPC has non-string npcType', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 123 }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'npc at index 0 must have id, displayName, x, y, and npcType',
+    );
+  });
+
+  it('rejects NPC with non-numeric x coordinate', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', x: 'five', y: 5, npcType: 'archivist' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'npc at index 0 must have id, displayName, x, y, and npcType',
+    );
+  });
+
+  it('rejects NPC with non-numeric y coordinate', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 'five', npcType: 'archivist' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'npc at index 0 must have id, displayName, x, y, and npcType',
+    );
+  });
+
+  it('preserves npcType during validation and deserialization', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Guardian', x: 5, y: 5, npcType: 'gate_guardian' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.npcs[0].npcType).toBe('gate_guardian');
+  });
+});
+
