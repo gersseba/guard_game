@@ -45,7 +45,7 @@ export const createGuardInteractionService = (llmClient: LlmClient): GuardIntera
     request: GuardLlmInteractionRequest,
   ): Promise<GuardLlmInteractionResult> => {
     const previousHistory =
-      request.worldState.npcConversationHistoryByNpcId[request.guard.id] ?? [];
+      request.worldState.actorConversationHistoryByActorId[request.guard.id] ?? [];
     const playerMessageRecord: ConversationMessage = {
       role: 'player',
       text: request.playerMessage,
@@ -69,8 +69,8 @@ export const createGuardInteractionService = (llmClient: LlmClient): GuardIntera
 
     const updatedWorldState: WorldState = {
       ...request.worldState,
-      npcConversationHistoryByNpcId: {
-        ...request.worldState.npcConversationHistoryByNpcId,
+      actorConversationHistoryByActorId: {
+        ...request.worldState.actorConversationHistoryByActorId,
         [request.guard.id]: [...historyWithPlayerMessage, assistantMessageRecord],
       },
     };

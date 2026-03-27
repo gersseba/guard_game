@@ -22,7 +22,7 @@ export interface ConversationMessage {
   text: string;
 }
 
-export type NpcConversationHistoryByNpcId = Record<string, ConversationMessage[]>;
+export type ActorConversationHistoryByActorId = Record<string, ConversationMessage[]>;
 
 /** Shared base for all interactable world objects. JSON-serializable. */
 export interface Interactable {
@@ -112,7 +112,7 @@ export interface WorldState {
   guards: Guard[];
   doors: Door[];
   interactiveObjects: InteractiveObject[];
-  npcConversationHistoryByNpcId: NpcConversationHistoryByNpcId;
+  actorConversationHistoryByActorId: ActorConversationHistoryByActorId;
   levelOutcome: 'win' | 'lose' | null;
 }
 
