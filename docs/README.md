@@ -5,6 +5,7 @@ This directory contains architecture guides, layer-specific documentation, and d
 ## Fundamentals
 - [System Architecture](ARCHITECTURE.md) - Layered architecture overview, design principles, and data flow
 - [Type Reference](TYPES_REFERENCE.md) - Complete reference for key interfaces and data structures used throughout the codebase
+- [Guard Facing Direction (Ticket #93)](GUARD_FACING_DIRECTION.md) - Guard-facing world token, interaction approach-direction mapping, render consumption, and test coverage
 
 ## Layer Guides
 Deep dives into each architectural layer and its responsibilities:
