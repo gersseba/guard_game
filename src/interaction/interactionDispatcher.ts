@@ -20,6 +20,8 @@ export interface InteractionHandlerResult {
   isConversational: boolean;
 }
 
+export type InteractionDispatchResult = InteractionHandlerResult | Promise<InteractionHandlerResult>;
+
 /**
  * Sync interaction handler.
  * Used for immediate, non-async interactions (door, object).
@@ -27,6 +29,7 @@ export interface InteractionHandlerResult {
 export type SyncInteractionHandler = (
   target: AdjacentTarget,
   worldState: WorldState,
+  playerMessage?: string,
 ) => InteractionHandlerResult;
 
 /**
@@ -69,8 +72,27 @@ export interface InteractionDispatcher {
     target: AdjacentTarget,
     worldState: WorldState,
     playerMessage?: string,
-  ): Promise<InteractionHandlerResult>;
+  ): InteractionDispatchResult;
+  resolveConversationalTarget(worldState: WorldState, targetId: string): ConversationalTarget | null;
 }
+
+type ConversationalInteractionKind = 'guard' | 'npc';
+
+export type ConversationalTarget = Extract<AdjacentTarget, { kind: ConversationalInteractionKind }>;
+
+export type ConversationalTargetResolver = (
+  worldState: WorldState,
+  targetId: string,
+) => ConversationalTarget | null;
+
+export const isPromiseLike = <T>(value: T | Promise<T>): value is Promise<T> => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'then' in value &&
+    typeof (value as Promise<T>).then === 'function'
+  );
+};
 
 /**
  * Wraps door interaction logic into dispatcher handler format (sync).
@@ -214,20 +236,55 @@ export const createInteractionDispatcher = (config: DispatcherConfig): Interacti
     interactiveObject: createObjectHandler(),
   };
 
+  const conversationalTargetResolvers: ConversationalTargetResolver[] = [
+    (worldState: WorldState, targetId: string) => {
+      const guard = worldState.guards.find((candidate) => candidate.id === targetId);
+      if (!guard) {
+        return null;
+      }
+
+      return {
+        kind: 'guard',
+        target: guard,
+      };
+    },
+    (worldState: WorldState, targetId: string) => {
+      const npc = worldState.npcs.find((candidate) => candidate.id === targetId);
+      if (!npc) {
+        return null;
+      }
+
+      return {
+        kind: 'npc',
+        target: npc,
+      };
+    },
+  ];
+
   return {
-    async dispatch(
+    dispatch(
       target: AdjacentTarget,
       worldState: WorldState,
       playerMessage?: string,
-    ): Promise<InteractionHandlerResult> {
+    ): InteractionDispatchResult {
       const handler = registry[target.kind];
 
       if (!handler) {
         throw new Error(`No handler registered for kind: ${target.kind}`);
       }
 
-      // Call handler (works for both sync and async)
-      return Promise.resolve(handler(target, worldState, playerMessage));
+      return handler(target, worldState, playerMessage);
+    },
+
+    resolveConversationalTarget(worldState: WorldState, targetId: string): ConversationalTarget | null {
+      for (const resolveTarget of conversationalTargetResolvers) {
+        const target = resolveTarget(worldState, targetId);
+        if (target) {
+          return target;
+        }
+      }
+
+      return null;
     },
   };
 };
@@ -308,9 +365,7 @@ const createDoorResultHandler = (): ResultHandler => {
 
     // Apply level outcome if present
     if (result.levelOutcome) {
-      const currentWorldState = config.getCurrentWorldState();
-      const updatedState = { ...currentWorldState, levelOutcome: result.levelOutcome };
-      config.onWorldStateUpdated(updatedState);
+      config.onLevelOutcomeChanged(result.levelOutcome);
     }
   };
 };

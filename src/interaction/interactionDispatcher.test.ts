@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { LlmClient } from '../llm/client';
 import type { Guard, Npc, Door, InteractiveObject, WorldState } from '../world/types';
-import { createInteractionDispatcher } from './interactionDispatcher';
+import {
+  createInteractionDispatcher,
+  createResultDispatcher,
+  isPromiseLike,
+} from './interactionDispatcher';
 
 /**
  * Test suite for interaction dispatcher.
@@ -91,7 +95,12 @@ describe('InteractionDispatcher', () => {
       const worldState = createTestWorldState({ doors: [door] });
       const target = { kind: 'door' as const, target: door };
 
-      const result = await dispatcher.dispatch(target, worldState);
+      const result = dispatcher.dispatch(target, worldState);
+
+      expect(isPromiseLike(result)).toBe(false);
+      if (isPromiseLike(result)) {
+        throw new Error('Expected door dispatch to remain synchronous');
+      }
 
       expect(result.kind).toBe('door');
       expect(result.targetId).toBe('door-1');
@@ -117,11 +126,51 @@ describe('InteractionDispatcher', () => {
       const worldState = createTestWorldState({ interactiveObjects: [obj] });
       const target = { kind: 'interactiveObject' as const, target: obj };
 
-      const result = await dispatcher.dispatch(target, worldState);
+      const result = dispatcher.dispatch(target, worldState);
+
+      expect(isPromiseLike(result)).toBe(false);
+      if (isPromiseLike(result)) {
+        throw new Error('Expected interactive object dispatch to remain synchronous');
+      }
 
       expect(result.kind).toBe('interactiveObject');
       expect(result.targetId).toBe('obj-1');
       expect(result.isConversational).toBe(false);
+    });
+
+    it('dispatches guard interactions asynchronously', async () => {
+      const dispatcher = createInteractionDispatcher({ llmClient });
+      const guard = createTestGuard('guard-1');
+      const worldState = createTestWorldState({ guards: [guard] });
+      const target = { kind: 'guard' as const, target: guard };
+
+      const result = dispatcher.dispatch(target, worldState);
+
+      expect(isPromiseLike(result)).toBe(true);
+      if (!isPromiseLike(result)) {
+        throw new Error('Expected guard dispatch to be asynchronous');
+      }
+
+      const resolved = await result;
+      expect(resolved.kind).toBe('guard');
+      expect(resolved.targetId).toBe('guard-1');
+    });
+  });
+
+  describe('conversational target resolution', () => {
+    it('resolves guard and npc targets by actor id through dispatcher registry', () => {
+      const dispatcher = createInteractionDispatcher({ llmClient });
+      const guard = createTestGuard('guard-1');
+      const npc = createTestNpc('npc-1');
+      const worldState = createTestWorldState({ guards: [guard], npcs: [npc] });
+
+      const guardTarget = dispatcher.resolveConversationalTarget(worldState, 'guard-1');
+      const npcTarget = dispatcher.resolveConversationalTarget(worldState, 'npc-1');
+      const missingTarget = dispatcher.resolveConversationalTarget(worldState, 'missing');
+
+      expect(guardTarget).toMatchObject({ kind: 'guard', target: guard });
+      expect(npcTarget).toMatchObject({ kind: 'npc', target: npc });
+      expect(missingTarget).toBeNull();
     });
   });
 
@@ -295,7 +344,7 @@ describe('InteractionDispatcher', () => {
       const fakeTarget = { kind: 'unknown' as const, target: createTestDoor('fake-1') } as any;
       const worldState = createTestWorldState();
 
-      await expect(dispatcher.dispatch(fakeTarget, worldState)).rejects.toThrow(
+      expect(() => dispatcher.dispatch(fakeTarget, worldState)).toThrow(
         'No handler registered for kind: unknown',
       );
     });
@@ -319,6 +368,73 @@ describe('InteractionDispatcher', () => {
 
       expect(result1.targetId).toBe('door-1');
       expect(result2.targetId).toBe('door-2');
+    });
+  });
+
+  describe('result dispatcher timing parity', () => {
+    it('applies door level outcome callback synchronously', () => {
+      const callbackOrder: string[] = [];
+      const dispatcher = createResultDispatcher({
+        onConversationStarted: () => {
+          callbackOrder.push('conversation');
+        },
+        onLevelOutcomeChanged: (levelOutcome: 'win' | 'lose') => {
+          callbackOrder.push(`outcome:${levelOutcome}`);
+        },
+        onWorldStateUpdated: () => {
+          callbackOrder.push('worldStateUpdated');
+        },
+        getCurrentWorldState: () => createTestWorldState(),
+        getConversationHistory: () => [],
+      });
+
+      callbackOrder.push('before-dispatch');
+      dispatcher.dispatch({
+        kind: 'door',
+        targetId: 'door-1',
+        isConversational: false,
+        levelOutcome: 'win',
+      });
+      callbackOrder.push('after-dispatch');
+
+      expect(callbackOrder).toEqual(['before-dispatch', 'outcome:win', 'after-dispatch']);
+    });
+
+    it('applies interactive object world state update synchronously', () => {
+      const callbackOrder: string[] = [];
+      const updatedWorldState = createTestWorldState({
+        interactiveObjects: [
+          {
+            ...createTestObject('obj-1'),
+            state: 'used',
+          },
+        ],
+      });
+
+      const dispatcher = createResultDispatcher({
+        onConversationStarted: () => {
+          callbackOrder.push('conversation');
+        },
+        onLevelOutcomeChanged: () => {
+          callbackOrder.push('outcome');
+        },
+        onWorldStateUpdated: () => {
+          callbackOrder.push('worldStateUpdated');
+        },
+        getCurrentWorldState: () => createTestWorldState(),
+        getConversationHistory: () => [],
+      });
+
+      callbackOrder.push('before-dispatch');
+      dispatcher.dispatch({
+        kind: 'interactiveObject',
+        targetId: 'obj-1',
+        isConversational: false,
+        updatedWorldState,
+      });
+      callbackOrder.push('after-dispatch');
+
+      expect(callbackOrder).toEqual(['before-dispatch', 'worldStateUpdated', 'after-dispatch']);
     });
   });
 });
