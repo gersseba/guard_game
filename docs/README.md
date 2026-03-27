@@ -3,26 +3,26 @@
 This directory contains architecture guides, layer-specific documentation, and development patterns for Guard Game. New and existing developers should start here to understand system structure and find answers to common implementation questions.
 
 ## Fundamentals
-- [System Architecture](ARCHITECTURE.md) — Layered architecture overview, design principles, and data flow
-- [Type Reference](TYPES_REFERENCE.md) — Complete reference for key interfaces and data structures used throughout the codebase
+- [System Architecture](ARCHITECTURE.md) - Layered architecture overview, design principles, and data flow
+- [Type Reference](TYPES_REFERENCE.md) - Complete reference for key interfaces and data structures used throughout the codebase
 
 ## Layer Guides
 Deep dives into each architectural layer and its responsibilities:
-- [World Layer](WORLD_LAYER.md) — Deterministic world model, commands, state updates, level schema, and serialization boundaries
-- [Render Layer](RENDER_LAYER.md) — PixiJS rendering, viewport management, entity markers, and asset metadata usage
-- [Interaction Layer](INTERACTION_LAYER.md) — Deterministic target resolution, routing, object interactions, and LLM chat boundary
-- [Input Layer](INPUT_LAYER.md) — Command buffering, keyboard input mapping, and command creation
-- [LLM Layer](LLM_LAYER.md) — LLM client boundary, API stubs, and context serialization
+- [World Layer](WORLD_LAYER.md) - Deterministic world model, commands, state updates, level schema, serialization boundaries, and starter-level sprite metadata flow
+- [Render Layer](RENDER_LAYER.md) - PixiJS rendering, viewport management, character sprite fallback behavior, and asset metadata usage
+- [Interaction Layer](INTERACTION_LAYER.md) - Deterministic target resolution, routing, object interactions, and LLM chat boundary
+- [Input Layer](INPUT_LAYER.md) - Command buffering, keyboard input mapping, and command creation
+- [LLM Layer](LLM_LAYER.md) - LLM client boundary, API stubs, and context serialization
 
 ## Development Patterns
 Recipes and walkthroughs for common extension tasks:
-- [Add a Command](ADD_COMMAND.md) — How to add a new player action
-- [Add an NPC](ADD_NPC.md) — How to introduce a new NPC with behavior
-- [Add an Interaction](ADD_INTERACTION.md) — How to add conversational and deterministic object interaction flows
-- [Extend World State](EXTEND_STATE.md) — How to expand world state while preserving JSON serializability
+- [Add a Command](ADD_COMMAND.md) - How to add a new player action
+- [Add an NPC](ADD_NPC.md) - How to introduce a new NPC with behavior
+- [Add an Interaction](ADD_INTERACTION.md) - How to add conversational and deterministic object interaction flows
+- [Extend World State](EXTEND_STATE.md) - How to expand world state while preserving JSON serializability
 
 ## Testing & Debugging
-- [Testing Patterns](TESTING_PATTERNS.md) — Test architecture, layer testing strategies, determinism verification, and debug tools
+- [Testing Patterns](TESTING_PATTERNS.md) - Test architecture, layer testing strategies, determinism verification, and debug tools
 
 ## Quick Navigation
 

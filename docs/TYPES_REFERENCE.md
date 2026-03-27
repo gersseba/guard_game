@@ -120,14 +120,18 @@ Required fields:
 - `name: string`
 - `width: number`
 - `height: number`
-- `player: { x: number; y: number }`
+- `player: { x: number; y: number; spriteAssetPath?: string }`
 - `guards: Array<{ id, displayName, x, y, guardState, honestyTrait?, spriteAssetPath? }>`
 - `doors: Array<{ id, displayName, x, y, doorState, outcome }>`
 
 Optional fields:
-- `player.spriteAssetPath?: string`
 - `npcs: Array<{ id, displayName, x, y, npcType, spriteAssetPath? }>`
 - `interactiveObjects: Array<...>` with the same object fields as `InteractiveObject`, but `x/y` instead of `position`
+
+Shipped starter-level character sprite examples:
+- `player.spriteAssetPath: /assets/medieval_player_town_guard.svg`
+- `guards[*].spriteAssetPath: /assets/medieval_guard_spear.svg`
+- `npcs[*].spriteAssetPath: /assets/medieval_npc_villager.svg`
 
 Example NPC entry:
 

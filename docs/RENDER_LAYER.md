@@ -23,12 +23,14 @@ Implementation entry points:
 `createPixiRenderPort()` returns a render port with `render(worldState)`.
 
 Per render pass:
-1. Ensure canvas size from tile-grid viewport config.
-2. Update camera offset from player center and world bounds.
-3. Request sprite loads for player, guards, and NPCs with configured `spriteAssetPath`.
+1. Request sprite loads for player, guards, and NPCs with configured `spriteAssetPath`.
+2. Resolve character render mode (`sprite` or `marker`) from sprite load status.
+3. Ensure canvas size from tile-grid viewport config.
 4. Draw boundary band and grid.
 5. Draw character sprites that have loaded successfully.
 6. Draw marker circles for doors, interactive objects, and any character still in fallback mode.
+7. Draw player marker only when the player is in fallback mode.
+8. Update camera offset from player center and world bounds.
 
 ### DOM Render Utilities
 
@@ -87,7 +89,23 @@ Current renderer behavior:
 - Falls back to deterministic marker circles when path metadata is missing, loading is in progress, or loading failed.
 - Keeps door and interactive-object rendering marker-based.
 
+Render-layer boundary:
+- Sprite load status (`loading` | `loaded` | `failed`) and Pixi `Sprite` instances are transient render state only.
+- No sprite loading status is written back into `WorldState`.
+
 This preserves render-only ownership of visual decisions while keeping gameplay logic and world determinism unchanged.
+
+## Shipped Starter Level Demonstration
+
+The shipped starter level now demonstrates configured character sprite paths for all character kinds:
+- Player: `/assets/medieval_player_town_guard.svg`
+- Guards: `/assets/medieval_guard_spear.svg`
+- NPC: `/assets/medieval_npc_villager.svg`
+
+Source and verification:
+- Level data: [public/levels/starter.json](../public/levels/starter.json)
+- Integration assertions: [src/integration/starterLevel.test.ts](../src/integration/starterLevel.test.ts)
+- Render mode/fallback assertions: [src/render/scene.test.ts](../src/render/scene.test.ts)
 
 ## Tests
 
