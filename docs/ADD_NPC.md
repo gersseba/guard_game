@@ -4,7 +4,7 @@ This pattern describes how to introduce a new NPC to Guard Game.
 
 ## Overview
 
-NPCs are agents with a type, position, and conversation history. They are defined in level JSON files and are deterministically deserialized into runtime state. Their dialogue behavior is driven by their `npcType` and derived `dialogueContextKey`.
+NPCs are actors with a type and position. Their conversation thread is stored in the shared actor-scoped history map keyed by actor id, while their dialogue behavior is driven by `npcType` and the derived `dialogueContextKey`.
 
 ## Steps
 
@@ -47,6 +47,8 @@ When the level loads, `deserializeLevel()` automatically maps NPC entries from l
   dialogueContextKey: 'npc_archive_keeper'  // derived: `npc_${npcType.toLowerCase()}`
 }
 ```
+
+At runtime, the NPC's conversation history is read and written through `actorConversationHistoryByActorId[npc.id]`.
 
 ### 2. Handle Rendering (if needed)
 NPCs are rendered as grid sprites in `src/render/scene.ts`. If you need custom rendering for a specific `npcType`:
@@ -175,4 +177,3 @@ describe('NPC loading', () => {
 ---
 
 See [World Layer](WORLD_LAYER.md), [Type Reference](TYPES_REFERENCE.md), and [Interaction Layer](INTERACTION_LAYER.md) for more context.
-

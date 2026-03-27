@@ -19,10 +19,12 @@ The world layer owns deterministic, JSON-serializable state and validation/deser
 - `guards`
 - `doors`
 - `interactiveObjects`
-- `npcConversationHistoryByNpcId`
+- `actorConversationHistoryByActorId`
 - `levelOutcome`
 
 All fields are serializable primitives, arrays, or plain objects.
+
+`actorConversationHistoryByActorId` stores chat history keyed by actor id. It remains JSON-serializable and actor-neutral even though the current conversational actors are guards and NPCs.
 
 ## Level JSON Validation
 
@@ -78,7 +80,7 @@ This enables shared behavior per object type while preserving instance-specific 
 
 ## Interaction State Updates
 
-Object interactions return immutable state updates (for `interactiveObjects` and optional `levelOutcome`) and are then committed through world reset in `src/main.ts`.
+Conversational interactions write immutable updates into `actorConversationHistoryByActorId`, keyed by the interacting actor id. Object interactions return immutable state updates (for `interactiveObjects` and optional `levelOutcome`) and are then committed through world reset in `src/main.ts`.
 
 ## Testing Strategy
 

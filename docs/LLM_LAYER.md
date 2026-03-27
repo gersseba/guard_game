@@ -5,7 +5,7 @@ The LLM layer provides the integration boundary for large language model calls. 
 ## Responsibilities
 - Provide `LlmClient` interface with clear method signatures
 - Serialize world state and interaction context to JSON
-- Build prompts with relevant game context (NPC personality, player state, conversation history)
+- Build prompts with relevant game context (actor persona, player state, conversation thread)
 - Return structured LLM responses (dialog text, suggested actions)
 - Maintain clean separation: LLM reasoning happens outside core game loop
 - Support optional LLM integration (game functions without LLM)
@@ -24,7 +24,7 @@ Parse LLM output into structured `InteractionResponse` objects.
 ## LLM Integration Pattern
 
 LLM calls are initiated by the interaction layer:
-1. Interaction layer builds `InteractionRequest` (NPC, player state, thread)
+1. Interaction layer builds `InteractionRequest` (target actor, player state, conversation thread)
 2. Interaction layer calls `llmClient.generateResponse(request)`
 3. LLM client serializes context and formats prompt
 4. LLM client calls external API (stubbed initially)
