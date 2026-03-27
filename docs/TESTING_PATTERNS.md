@@ -27,6 +27,18 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   - paused viewport cannot gain focus and paused viewport click handlers do not fire
   - close button and Escape both call `onClose` and close the modal
   - closing the modal restores focus to `document.body`
+- **Level UI control checks** (`src/render/levelUi.test.ts`):
+  - controls start disabled with a single empty placeholder option before any levels are loaded
+  - empty level list passed to `populateLevels` keeps controls disabled
+  - non-empty level list enables select and reset button and populates one option per entry
+  - `onLevelSelect` fires with the selected level id on `change` event; `onReset` fires on button click
+  - `setSelectedLevel` updates the select value without triggering `onLevelSelect`
+- **Outcome overlay checks** (`src/render/outcomeOverlay.test.ts`):
+  - overlay starts with no DOM children in the container
+  - `show()` inserts one child element; `hide()` removes it
+  - `show('win')` renders "You Won!" text; `show('lose')` renders "You Lost!" text
+  - repeated `show()` calls are idempotent — does not add additional elements or change the existing element reference
+  - `hide()` is safe to call when already hidden (no error, no children remain)
 
 ### Interaction Layer Tests
 - **What to test:** Interaction orchestration, dispatcher routing, prompt context building, thread updates
@@ -53,6 +65,11 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   input.onKeyDown({ key: 'ArrowUp' });
   expect(commandBuffer.dequeue()).toBe(MoveForward);
   ```
+- **Command buffer checks** (`src/input/commands.test.ts`):
+  - `drain()` returns enqueued commands in FIFO order
+  - `drain()` returns a snapshot — mutating the returned array does not affect the buffer
+  - a second `drain()` after the first returns an empty array until new commands are enqueued
+  - `clear()` discards all pending commands without preventing future `enqueue()` operations
 
 ### LLM Layer Tests
 - **What to test:** Context serialization, response parsing, API fallbacks
