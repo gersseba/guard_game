@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Medieval Supply Crate</title>
+  <desc id="desc">A wooden crate with iron straps for inspect interactions.</desc>
+  <ellipse cx="32" cy="56" rx="20" ry="5" fill="#1f1a15" opacity="0.35"/>
+  <rect x="14" y="16" width="36" height="36" rx="4" fill="#7a4f2a"/>
+  <rect x="14" y="16" width="36" height="9" rx="4" fill="#91633c"/>
+  <rect x="14" y="28" width="36" height="4" fill="#84562f"/>
+  <rect x="14" y="36" width="36" height="4" fill="#84562f"/>
+  <rect x="14" y="44" width="36" height="4" fill="#84562f"/>
+  <rect x="20" y="16" width="4" height="36" fill="#4f5358"/>
+  <rect x="40" y="16" width="4" height="36" fill="#4f5358"/>
+  <circle cx="22" cy="22" r="1.3" fill="#aeb4bb"/>
+  <circle cx="42" cy="22" r="1.3" fill="#aeb4bb"/>
+  <circle cx="22" cy="46" r="1.3" fill="#aeb4bb"/>
+  <circle cx="42" cy="46" r="1.3" fill="#aeb4bb"/>
+  <path d="M15 52h34" stroke="#2b1f14" stroke-width="2"/>
+  <rect x="14" y="16" width="36" height="36" rx="4" fill="none" stroke="#2d1f14" stroke-width="2"/>
+</svg>

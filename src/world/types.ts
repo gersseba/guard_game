@@ -43,8 +43,13 @@ export interface Door extends Interactable {
 }
 
 export interface InteractiveObject extends Interactable {
+  objectType: 'supply-crate';
   interactionType: 'inspect' | 'use' | 'talk';
   state: 'idle' | 'used';
+  idleMessage?: string;
+  usedMessage?: string;
+  firstUseOutcome?: 'win' | 'lose';
+  spriteAssetPath?: string;
 }
 
 export interface WorldGrid {
@@ -75,6 +80,19 @@ export interface LevelData {
     y: number;
     doorState: 'open' | 'closed' | 'locked';
     outcome: 'safe' | 'danger';
+  }>;
+  interactiveObjects?: Array<{
+    id: string;
+    displayName: string;
+    x: number;
+    y: number;
+    objectType: 'supply-crate';
+    interactionType: 'inspect' | 'use' | 'talk';
+    state: 'idle' | 'used';
+    idleMessage?: string;
+    usedMessage?: string;
+    firstUseOutcome?: 'win' | 'lose';
+    spriteAssetPath?: string;
   }>;
 }
 

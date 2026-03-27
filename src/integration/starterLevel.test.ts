@@ -3,6 +3,7 @@ import starterJson from '../../public/levels/starter.json';
 import { resolveAdjacentTarget } from '../interaction/adjacencyResolver';
 import { handleDoorInteraction } from '../interaction/doorInteraction';
 import { handleGuardInteraction } from '../interaction/guardInteraction';
+import { handleInteractiveObjectInteraction } from '../interaction/objectInteraction';
 import { deserializeLevel, validateLevelData } from '../world/level';
 import type { WorldState } from '../world/types';
 
@@ -26,6 +27,12 @@ describe('starter level integration pipeline', () => {
     expect(worldState.doors).toHaveLength(2);
     expect(worldState.doors.find((door) => door.id === 'door-1')?.position).toEqual({ x: 2, y: 10 });
     expect(worldState.doors.find((door) => door.id === 'door-2')?.position).toEqual({ x: 10, y: 2 });
+
+    expect(worldState.interactiveObjects).toHaveLength(1);
+    expect(worldState.interactiveObjects.find((object) => object.id === 'crate-supplies')?.position).toEqual({
+      x: 11,
+      y: 10,
+    });
   });
 
   it('resolves adjacent guard and returns patrolling response without mutating world state', () => {
@@ -73,6 +80,42 @@ describe('starter level integration pipeline', () => {
     });
 
     expect(result.responseText).toBe('The door is closed.');
+    expect(worldState).toEqual(beforeInteraction);
+  });
+
+  it('resolves adjacent supply crate and applies shared object-type interaction with instance state updates', () => {
+    const worldState = createStarterState();
+    const beforeInteraction = structuredClone(worldState);
+
+    const adjacent = resolveAdjacentTarget(worldState);
+
+    expect(adjacent).not.toBeNull();
+    expect(adjacent?.kind).toBe('interactiveObject');
+    expect(adjacent?.target.id).toBe('crate-supplies');
+
+    if (adjacent?.kind !== 'interactiveObject') {
+      throw new Error('Expected interactiveObject target');
+    }
+
+    const firstResult = handleInteractiveObjectInteraction({
+      interactiveObject: adjacent.target,
+      player: worldState.player,
+      worldState,
+    });
+
+    expect(firstResult.responseText).toBe('You crack open the crate and find emergency supplies.');
+    expect(firstResult.updatedWorldState.interactiveObjects[0].state).toBe('used');
+    expect(firstResult.updatedWorldState.levelOutcome).toBeNull();
+
+    const secondResult = handleInteractiveObjectInteraction({
+      interactiveObject: firstResult.updatedWorldState.interactiveObjects[0],
+      player: worldState.player,
+      worldState: firstResult.updatedWorldState,
+    });
+
+    expect(secondResult.responseText).toBe('The supply crate is already open and empty.');
+    expect(secondResult.updatedWorldState.interactiveObjects[0].state).toBe('used');
+
     expect(worldState).toEqual(beforeInteraction);
   });
 

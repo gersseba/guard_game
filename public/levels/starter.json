@@ -37,5 +37,19 @@
       "doorState": "closed",
       "outcome": "danger"
     }
+  ],
+  "interactiveObjects": [
+    {
+      "id": "crate-supplies",
+      "displayName": "Supply Crate",
+      "x": 11,
+      "y": 10,
+      "objectType": "supply-crate",
+      "interactionType": "inspect",
+      "state": "idle",
+      "idleMessage": "You crack open the crate and find emergency supplies.",
+      "usedMessage": "The supply crate is already open and empty.",
+      "spriteAssetPath": "/assets/medieval_supply_crate_inspect.svg"
+    }
   ]
 }

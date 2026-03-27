@@ -5,6 +5,7 @@ import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
 import { createGuardInteractionService } from './interaction/guardInteraction';
 import { createNpcInteractionService } from './interaction/npcInteraction';
 import { handleDoorInteraction } from './interaction/doorInteraction';
+import { handleInteractiveObjectInteraction } from './interaction/objectInteraction';
 import { getNpcConversationHistory } from './interaction/npcThread';
 import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
@@ -176,6 +177,17 @@ const runInteractionIfRequested = async (
       const updatedState = { ...worldState, levelOutcome: doorResult.levelOutcome };
       world.resetToState(updatedState);
     }
+    return;
+  }
+
+  if (adjacentTarget.kind === 'interactiveObject') {
+    const objectResult = handleInteractiveObjectInteraction({
+      interactiveObject: adjacentTarget.target,
+      player: worldState.player,
+      worldState,
+    });
+
+    world.resetToState(objectResult.updatedWorldState);
     return;
   }
 

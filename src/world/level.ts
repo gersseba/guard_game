@@ -96,6 +96,43 @@ export function validateLevelData(input: unknown): LevelData {
     }
   }
 
+  if (raw['interactiveObjects'] !== undefined) {
+    if (!Array.isArray(raw['interactiveObjects'])) {
+      throw new Error('Invalid level data: interactiveObjects must be an array');
+    }
+
+    for (let i = 0; i < (raw['interactiveObjects'] as unknown[]).length; i++) {
+      const interactiveObject = (raw['interactiveObjects'] as unknown[])[i] as Record<string, unknown>;
+      if (
+        typeof interactiveObject !== 'object' ||
+        interactiveObject === null ||
+        typeof interactiveObject['id'] !== 'string' ||
+        typeof interactiveObject['displayName'] !== 'string' ||
+        typeof interactiveObject['x'] !== 'number' ||
+        typeof interactiveObject['y'] !== 'number' ||
+        interactiveObject['objectType'] !== 'supply-crate' ||
+        (interactiveObject['interactionType'] !== 'inspect' &&
+          interactiveObject['interactionType'] !== 'use' &&
+          interactiveObject['interactionType'] !== 'talk') ||
+        (interactiveObject['state'] !== 'idle' && interactiveObject['state'] !== 'used')
+      ) {
+        throw new Error(
+          `Invalid level data: interactiveObject at index ${i} must have id, displayName, x, y, objectType, interactionType, and state`,
+        );
+      }
+
+      if (
+        interactiveObject['firstUseOutcome'] !== undefined &&
+        interactiveObject['firstUseOutcome'] !== 'win' &&
+        interactiveObject['firstUseOutcome'] !== 'lose'
+      ) {
+        throw new Error(
+          `Invalid level data: interactiveObject at index ${i} has invalid firstUseOutcome (must be 'win' or 'lose')`,
+        );
+      }
+    }
+  }
+
   return raw as unknown as LevelData;
 }
 
@@ -131,7 +168,18 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       doorState: d.doorState,
       outcome: d.outcome,
     })),
-    interactiveObjects: [],
+    interactiveObjects: (levelData.interactiveObjects ?? []).map((o) => ({
+      id: o.id,
+      displayName: o.displayName,
+      position: { x: o.x, y: o.y },
+      objectType: o.objectType,
+      interactionType: o.interactionType,
+      state: o.state,
+      idleMessage: o.idleMessage,
+      usedMessage: o.usedMessage,
+      firstUseOutcome: o.firstUseOutcome,
+      spriteAssetPath: o.spriteAssetPath,
+    })),
     npcConversationHistoryByNpcId: {},
     levelOutcome: null,
   };
