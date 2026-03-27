@@ -52,7 +52,7 @@ Result dispatcher keeps main-loop side effects centralized and testable.
 
 ## Main Loop Routing Pattern
 
-`runInteractionIfRequested()` in `src/main.ts` now uses one routing path:
+`runInteractionIfRequested()` in `src/main.ts` uses one routing path:
 1. Resolve adjacent target.
 2. Call `interactionDispatcher.dispatch(...)`.
 3. If promise-like, resolve asynchronously then call `resultDispatcher.dispatch(...)`.
@@ -61,6 +61,24 @@ Result dispatcher keeps main-loop side effects centralized and testable.
 This removes target-kind branching from `main.ts` and preserves behavior parity from pre-refactor logic.
 
 The runtime bridge and tests use the shared actor-neutral helper in `src/interaction/actorConversationThread.ts` to read and render conversation history.
+
+## NPC Prompt Profile Context
+
+NPC conversational turns call `buildNpcPromptContext()` from `src/interaction/npcPromptContext.ts`.
+
+Prompt profile resolution behavior:
+- `npcType` is normalized via `trim().toLowerCase()`
+- profile lookup is performed against `NPC_PROMPT_PROFILE_REGISTRY`
+- unknown, empty, or missing `npcType` values deterministically fall back to `DEFAULT_NPC_PROMPT_PROFILE`
+- fallback responses expose `profileKey: 'default'`
+
+The serialized prompt context includes four top-level sections:
+- `actor`: stable actor identifier and raw `npcType`
+- `npcProfile`: resolved shared profile (`profileKey`, `requestedNpcType`, persona/knowledge/style constraints)
+- `npcInstance`: per-instance data (`displayName`, `position`, `dialogueContextKey`)
+- `player`: player identifier and display name
+
+This split keeps shared type-level prompt policy separate from per-instance world facts.
 
 ## Behavior Parity Expectations
 
@@ -84,11 +102,14 @@ This allows multiple objects to share one behavior implementation while retainin
 
 Only conversational player-message flows route to the LLM layer (guard/NPC chat services). Chat-open flows and deterministic door/object interactions do not call the LLM client.
 
+NPC interactions build context in the interaction layer and call `llmClient.complete(...)` from `src/llm/client.ts`.
+
 See `src/interaction/guardInteraction.ts`, `src/interaction/npcInteraction.ts`, and `src/llm/client.ts`.
 
 ## Tests
 
 - `src/interaction/interactionDispatcher.test.ts`: dispatch routing by kind, sync/async behavior parity, result dispatcher timing parity
+- `src/interaction/npcPromptContext.test.ts`: profile registry resolution, deterministic fallback, context shape determinism
 - `src/interaction/objectInteraction.test.ts`: object-type dispatcher behavior, first-use outcomes, repeat interactions
 - `src/integration/starterLevel.test.ts`: end-to-end adjacent object resolution and state updates
 - `src/interaction/adjacencyResolver.test.ts`: deterministic target resolution with interactive objects

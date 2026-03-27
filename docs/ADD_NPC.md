@@ -4,7 +4,11 @@ This pattern describes how to introduce a new NPC to Guard Game.
 
 ## Overview
 
-NPCs are actors with a type and position. Their conversation thread is stored in the shared actor-scoped history map keyed by actor id, while their dialogue behavior is driven by `npcType` and the derived `dialogueContextKey`.
+NPCs are actors with a type and position. Their conversation thread is stored in the shared actor-scoped history map keyed by actor id.
+
+For LLM prompts, NPC behavior is now driven by `npcType` through the profile registry in `src/interaction/npcPromptContext.ts`.
+- Shared prompt policy comes from the resolved profile for the normalized `npcType`
+- Per-instance details (name/position/dialogueContextKey) come from the specific NPC entry
 
 ## Steps
 
@@ -25,155 +29,85 @@ Add the NPC to the `npcs` array in `public/levels/*.json`:
 }
 ```
 
-**Required fields:**
-- `id`: Unique identifier for the NPC
-- `displayName`: Display name shown in the UI  
-- `x`, `y`: Grid coordinates
-- `npcType`: String categorizing the NPC's role (e.g., `archive_keeper`, `scholar`, `merchant`). This determines the `dialogueContextKey`.
+Required fields:
+- `id`: unique identifier for the NPC
+- `displayName`: display name shown in the UI
+- `x`, `y`: grid coordinates
+- `npcType`: string categorizing the NPC role (for prompt profile lookup)
 
-**Deserialization:**
-When the level loads, `deserializeLevel()` automatically maps NPC entries from level JSON into runtime `Npc` objects and derives `dialogueContextKey` from `npcType`:
-
-```typescript
-// Input from level JSON
-{ id: 'archivist-1', displayName: 'The Archivist', x: 8, y: 5, npcType: 'archive_keeper' }
-
-// Becomes runtime Npc
-{
-  id: 'archivist-1',
-  displayName: 'The Archivist',
-  position: { x: 8, y: 5 },
-  npcType: 'archive_keeper',
-  dialogueContextKey: 'npc_archive_keeper'  // derived: `npc_${npcType.toLowerCase()}`
-}
-```
+Deserialization behavior:
+- `deserializeLevel()` maps level JSON entries to runtime `Npc` objects
+- `dialogueContextKey` is derived as `npc_${npcType.toLowerCase()}`
 
 At runtime, the NPC's conversation history is read and written through `actorConversationHistoryByActorId[npc.id]`.
 
 ### 2. Handle Rendering (if needed)
-NPCs are rendered as grid sprites in `src/render/scene.ts`. If you need custom rendering for a specific `npcType`:
+NPCs are rendered in `src/render/scene.ts`. Custom rendering can branch on `npcType`, but this is optional and independent from prompt profile behavior.
+
+### 3. Configure Prompt Profile Behavior
+Prompt persona/policy is resolved by `resolveNpcPromptProfile(npc.npcType)` in `src/interaction/npcPromptContext.ts`.
+
+How it works:
+- `npcType` is normalized to lowercase and trimmed
+- if present in `NPC_PROMPT_PROFILE_REGISTRY`, that profile is used
+- otherwise the deterministic `DEFAULT_NPC_PROMPT_PROFILE` is used
+- fallback sets `profileKey` to `default`
+
+To introduce a new NPC type with custom prompt behavior, add a registry entry:
 
 ```typescript
-// Example: custom sprite for archive_keeper NPCs
-function getNpcSpriteColor(npc: Npc): number {
-  switch (npc.npcType) {
-    case 'archive_keeper':
-      return 0x9933ff; // purple
-    case 'scholar':
-      return 0x0099ff; // blue
-    default:
-      return 0xcccccc; // gray
-  }
+export const NPC_PROMPT_PROFILE_REGISTRY: Record<string, NpcPromptProfile> = {
+  archive_keeper: { ... },
+  engineer: {
+    personaContract: 'You are a practical engineer focused on mechanisms and routes.',
+    knowledgePolicy: 'Discuss machinery and access points only when supported by context.',
+    responseStyleConstraints: 'Respond directly with a pragmatic tone.',
+  },
+};
+```
+
+If no registry entry exists for the NPC's type, behavior remains valid via default fallback.
+
+### 4. Understand Prompt Context Construction
+`buildNpcPromptContext(npc, player)` returns deterministic JSON with this shape:
+
+```json
+{
+  "actor": { "id": "archivist-1", "npcType": "archive_keeper" },
+  "npcProfile": {
+    "profileKey": "archive_keeper",
+    "requestedNpcType": "archive_keeper",
+    "personaContract": "...",
+    "knowledgePolicy": "...",
+    "responseStyleConstraints": "..."
+  },
+  "npcInstance": {
+    "displayName": "The Archivist",
+    "position": { "x": 8, "y": 5 },
+    "dialogueContextKey": "npc_archive_keeper"
+  },
+  "player": { "id": "player", "displayName": "Player" }
 }
 ```
 
-Rendering uses the NPC's `position` and `displayName`:
+This keeps shared type-level prompt behavior (`npcProfile`) separate from per-instance fields (`npcInstance`).
 
-```typescript
-for (const npc of state.npcs) {
-  const sprite = createOrUpdateNpcSprite(npc, getNpcSpriteColor(npc));
-  container.addChild(sprite);
-}
-```
-
-### 3. Define Interaction and Dialogue
-Define interaction behavior in `src/interaction/npcInteraction.ts`. Route interaction based on `npcType`:
-
-```typescript
-export async function resolveNpcInteraction(
-  player: Player,
-  npc: Npc,
-  direction: DirectionKey
-): Promise<InteractionResponse> {
-  // Check adjacency
-  const adjacencyResolution = resolveAdjacentNpc(player, npc, direction);
-  
-  if (!adjacencyResolution.canInteract) {
-    return { text: 'Cannot reach that NPC.' };
-  }
-  
-  // Route to NPC type handler
-  switch (npc.npcType) {
-    case 'archive_keeper':
-      return resolveArchiveKeeperInteraction(player, npc);
-    case 'scholar':
-      return resolveScholarInteraction(player, npc);
-    default:
-      return { text: `Hello, I'm a ${npc.displayName}.` };
-  }
-}
-```
-
-The NPC's `dialogueContextKey` (derived from `npcType`) is used when building LLM prompt context:
-
-```typescript
-// In guardPromptContext.ts or similar
-function buildNpcPromptContext(npc: Npc, player: Player): string {
-  return `
-You are a ${npc.npcType}. The player's key to unlock your dialogue is: ${npc.dialogueContextKey}
-NPC name: ${npc.displayName}
-Player: ${player.displayName}
-  `;
-}
-```
-
-
-### 4. Add Tests
-Test that the NPC loads correctly and can be interacted with:
-
-```typescript
-// In src/world/level.test.ts
-describe('NPC loading', () => {
-  it('deserializes level NPCs with correct dialogueContextKey', () => {
-    const level: LevelData = {
-      ...minimalLevel,
-      npcs: [{ 
-        id: 'npc-1', 
-        displayName: 'Archivist', 
-        x: 8, 
-        y: 3, 
-        npcType: 'archive_keeper' 
-      }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
-    };
-
-    const state = deserializeLevel(validateLevelData(level));
-
-    expect(state.npcs).toHaveLength(1);
-    expect(state.npcs[0].npcType).toBe('archive_keeper');
-    expect(state.npcs[0].dialogueContextKey).toBe('npc_archive_keeper');
-  });
-
-  it('derives dialogueContextKey lowercase from npcType', () => {
-    const level: LevelData = {
-      ...minimalLevel,
-      npcs: [{ 
-        id: 'npc-1', 
-        displayName: 'Captain', 
-        x: 5, 
-        y: 5, 
-        npcType: 'GUARD_CAPTAIN' 
-      }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
-    };
-
-    const state = deserializeLevel(validateLevelData(level));
-    expect(state.npcs[0].dialogueContextKey).toBe('npc_guard_captain');
-  });
-});
-```
+### 5. Add Tests
+Cover both world loading and prompt resolution behavior:
+- `src/world/level.test.ts`: NPC deserialization and derived `dialogueContextKey`
+- `src/interaction/npcPromptContext.test.ts`: same-type reuse, cross-type differentiation, deterministic fallback, and deterministic serialized context
+- `src/interaction/npcInteraction.test.ts`: context passed to LLM includes expected actor/profile/instance/player sections
 
 ## Checklist
 
 - [ ] NPC added to level JSON (`public/levels/*.json`) with `id`, `displayName`, `x`, `y`, `npcType`
-- [ ] `npcType` matches the interaction handler routing (e.g., `'archive_keeper'`)
-- [ ] Interaction handler defined in `src/interaction/npcInteraction.ts` for the `npcType`
-- [ ] Rendering (if custom) handles the `npcType` in `src/render/scene.ts`
-- [ ] Tests verify NPC loads with correct `dialogueContextKey` derived from `npcType`
-- [ ] `dialogueContextKey` is used in LLM prompt context building
+- [ ] `npcType` follows registry naming style (normalized lowercase tokens such as `archive_keeper`)
+- [ ] Prompt profile entry added to `NPC_PROMPT_PROFILE_REGISTRY` when custom behavior is required
+- [ ] Fallback behavior is acceptable if no custom profile entry is added
+- [ ] Tests cover profile resolution and prompt context serialization (`src/interaction/npcPromptContext.test.ts`)
 - [ ] Level passes `validateLevelData()` and `deserializeLevel()` without errors
 - [ ] NPC position does not overlap with other entities (validated by `validateSpatialLayout()`)
 
 ---
 
-See [World Layer](WORLD_LAYER.md), [Type Reference](TYPES_REFERENCE.md), and [Interaction Layer](INTERACTION_LAYER.md) for more context.
+See [WORLD_LAYER.md](WORLD_LAYER.md), [TYPES_REFERENCE.md](TYPES_REFERENCE.md), and [INTERACTION_LAYER.md](INTERACTION_LAYER.md) for more context.
