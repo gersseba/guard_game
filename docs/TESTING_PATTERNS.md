@@ -5,7 +5,7 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
 ## Layer Testing Strategy
 
 ### World Layer Tests
-- **What to test:** Command application, state transitions, determinism
+- **What to test:** Command application, state transitions, determinism, and level schema validation
 - **Type:** Unit tests
 - **Pattern:** Given state + commands -> expected state (snapshot testing)
 - **Example:**
@@ -15,12 +15,20 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   expect(result.player.position).toEqual([6, 5]);
   ```
 - **No mocking:** World is pure logic; test the full stack
+- **Schema regression checks (`src/world/level.test.ts`):**
+  - `spriteSet` is accepted for player/guards/doors (and optional entities sharing the same schema)
+  - invalid `spriteSet` shapes throw descriptive errors (non-object, non-string directional values, empty object)
+  - deserialized world state keeps sprite metadata JSON-serializable via round-trip assertion
 
 ### Render Layer Tests
-- **What to test:** Sprite positioning, sprite lifecycle, viewport math, and DOM render utility behavior
+- **What to test:** Sprite positioning, sprite lifecycle, viewport math, deterministic asset fallback, and DOM render utility behavior
 - **Type:** Unit tests
 - **Pattern:** Render world state to the PixiJS container or mount a DOM render helper, then assert sprite properties or DOM attributes/events
 - **Caveat:** Rendering is mostly integration; focus on coordinate transforms and stable UI contracts
+- **Directional fallback regression checks (`src/render/scene.test.ts`):**
+  - `resolveSpriteAssetPathForDirection` honors deterministic fallback order for missing keys
+  - mixed contracts (`spriteSet` and legacy `spriteAssetPath`) still resolve to stable render behavior
+  - marker fallback still applies when resolved sprite path is unavailable or failed to load
 - **Paused-world UI regression checks:**
   - pause overlay starts hidden and becomes visible only after `show()`
   - viewport `inert` toggles on `show()` / `hide()`
@@ -37,7 +45,7 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   - overlay starts with no DOM children in the container
   - `show()` inserts one child element; `hide()` removes it
   - `show('win')` renders "You Won!" text; `show('lose')` renders "You Lost!" text
-  - repeated `show()` calls are idempotent — does not add additional elements or change the existing element reference
+  - repeated `show()` calls are idempotent - does not add additional elements or change the existing element reference
   - `hide()` is safe to call when already hidden (no error, no children remain)
 
 ### Interaction Layer Tests
@@ -67,7 +75,7 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   ```
 - **Command buffer checks** (`src/input/commands.test.ts`):
   - `drain()` returns enqueued commands in FIFO order
-  - `drain()` returns a snapshot — mutating the returned array does not affect the buffer
+  - `drain()` returns a snapshot - mutating the returned array does not affect the buffer
   - a second `drain()` after the first returns an empty array until new commands are enqueued
   - `clear()` discards all pending commands without preventing future `enqueue()` operations
 
@@ -85,6 +93,7 @@ When features cross layer boundaries, write integration tests:
 - **Interaction + result routing:** Interact command resolves target, dispatcher returns result, result dispatcher applies side effect
 - **NPC interaction + LLM:** Player message triggers LLM call and updates conversation thread
 - **Conversation pause lifecycle:** Conversational open pauses the runtime, shows pause UI, and close/Escape resume the runtime through the shared `onClose` path
+- **Level wiring checks:** Assert shipped level JSON deserializes expected gameplay positions and sprite metadata (`src/integration/starterLevel.test.ts`, `src/integration/riddleLevel.test.ts`)
 
 **Pattern:** End-to-end flow through multiple layers, assert final observable state.
 
