@@ -59,7 +59,58 @@ The current baseline runtime in `src/main.ts` follows this loop:
 4. If an `interact` command was issued, nearby NPC interaction is resolved through the interaction service and LLM client boundary.
 5. Every animation frame renders the latest world state through the Pixi render port and prints JSON state in the debug panel.
 
+## Architecture Documentation
+
+Full architectural guides and development patterns are in the [docs/](docs/) directory. Start here to understand the system:
+
+**Core Documentation:**
+- [Architecture Overview](docs/ARCHITECTURE.md) — System design, layers, contracts, and data flow
+- [Type Reference](docs/TYPES_REFERENCE.md) — Complete dictionary of game types and state structures
+
+**Layer Guides:**
+- [World Layer](docs/WORLD_LAYER.md) — Deterministic state model and command application
+- [Render Layer](docs/RENDER_LAYER.md) — PixiJS rendering and sprite management
+- [Interaction Layer](docs/INTERACTION_LAYER.md) — NPC interactions and LLM integration boundary
+- [Input Layer](docs/INPUT_LAYER.md) — Keyboard input and command mapping
+- [LLM Layer](docs/LLM_LAYER.md) — LLM client boundary and context generation
+
+**Development Patterns:**
+- [Add a Command](docs/ADD_COMMAND.md) — How to add a new player action
+- [Add an NPC](docs/ADD_NPC.md) — How to introduce a new NPC
+- [Add an Interaction](docs/ADD_INTERACTION.md) — How to add NPC interaction logic
+- [Extend World State](docs/EXTEND_STATE.md) — How to expand game state safely
+
+**Testing & Debugging:**
+- [Testing Patterns](docs/TESTING_PATTERNS.md) — Layer testing strategies and determinism verification
+
 ## Development Workflow
+
+### Full Ticket Flow (Recommended)
+
+For new features or significant changes, orchestrate the full workflow:
+
+```bash
+@coordinator: Run full flow for ticket #<number>
+```
+
+This will automatically:
+1. **Refine scope** via requirement engineer if needed
+2. **Implement** the feature via developer
+3. **Review** the PR via reviewer against acceptance criteria
+4. **Document** changes via documenter
+5. **Merge** when complete
+
+### Individual Agent Workflows
+
+You can also invoke agents separately for specific tasks:
+
+| Task | Agent | Example |
+|------|-------|---------|
+| Create/refine a ticket | `@requirement-engineer` | "Design an NPC patrol system" |
+| Implement a feature | `@developer` | "Implement ticket #12" |
+| Get architecture advice | `@tech-lead` | "How should we handle..." |
+| Review a PR | `@reviewer` | "Review PR #42" |
+| Update docs for a PR | `@documenter` | "Update docs for PR #42" |
 
 ### Branch Naming
 Feature branches use the format: `feature/<github-issue-number>-<kebab-case-summary>`
@@ -69,34 +120,50 @@ Example: `feature/1-setup-basic-structure`
 ### PR Workflow
 
 1. **Create a feature branch** from `main`
-2. **Categorize work** as one of:
-   - `AI_BEHAVIOR` — Copilot agent/skill customization changes
-   - `CHANGE` — Feature/game logic/rendering implementation
-   - `REFACTORING` — Code reorganization without behavior change
-3. **Add the appropriate GitHub label** to your PR
-4. **Open a PR** with a clear description of changes and validation performed
-5. **Request review** using the reviewer agent (see below)
+2. **Implement** the feature (or use `@developer` to automate)
+3. **Add tests** to verify functionality
+4. **Request review** via `@reviewer`
+5. **Update documentation** via `@documenter` (before merge)
+6. **Merge** when review passes and docs are updated
 
-### Adding PR Labels
+### Category Labels
 
-Labels are added automatically via GitHub API during PR creation or review. The category labels are:
-- `AI_BEHAVIOR` — Copilot agent/skill changes
-- `CHANGE` — Feature/gameplay/rendering changes  
+All PRs must have exactly one category label:
+- `AI_BEHAVIOR` — Copilot agent/skill customization changes
+- `CHANGE` — Feature/game logic/rendering implementation
+- `BUGS` — Defect fixes with tests
+- `DOCUMENTATION` — Docs/process updates
 - `REFACTORING` — Code reorganization without behavior change
 
 ## Agents & Skills
 
-The project uses Copilot agents and skills for automated code review and task management:
+Guard Game uses specialized Copilot agents to manage the full development workflow from idea to merge. Each agent has a specific role and is invoked based on the task at hand.
 
-### Agents
-- **developer** — Implements GitHub issues for the project
-- **reviewer** — Reviews PRs against issue acceptance criteria
-- **requirement engineer** — Creates and refines GitHub issues
+### Core Agents
+
+| Agent | Role | When to Use |
+|-------|------|-----------|
+| **requirement-engineer** | Designs implementation scope and acceptance criteria | When creating or refining GitHub issues |
+| **developer** | Implements features and fixes according to tickets | When starting work on a GitHub issue |
+| **tech-lead** | Architecture sparring and technology decisions | When designing solutions or making major architectural choices |
+| **reviewer** | Reviews PRs against acceptance criteria and architecture constraints | When a PR is ready for review |
+| **documenter** | Synchronizes documentation with code changes | When a PR passes review, before merge (automatic during coordination) |
+| **coordinator** | Orchestrates end-to-end ticket flow across agents | When running full ticket workflow (optional; agents work independently by default) |
+
+### How to Use Agents
+
+**Invoke in chat by name or type `/` to see available agents.** Each agent has a description matching its trigger phrase.
+
+**Examples:**
+- `@tech-lead: Should we use separate render systems for UI vs game world?`
+- `@reviewer: Review PR #42 against the acceptance criteria`
+- `@documenter: Update docs for the new interaction layer changes in this branch`
+- `@coordinator: Run full flow for ticket #15`
 
 ### Locating Agents & Skills
-- Agents: [.github/agents/](/.github/agents/)
-- Skills: [.github/skills/](/.github/skills/)
-- Project instructions: [.github/copilot-instructions.md](/.github/copilot-instructions.md)
+- **Agents:** [.github/agents/](/.github/agents/) — Each agent is an `.agent.md` file with description and behavior
+- **Skills:** [.github/skills/](/.github/skills/) — Workflows and best practices for specialized tasks
+- **Project Instructions:** [.github/copilot-instructions.md](/.github/copilot-instructions.md) — Baseline requirements and architecture constraints
 
 ## Project Management
 

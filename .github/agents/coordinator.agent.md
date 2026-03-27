@@ -28,13 +28,18 @@ Your job is to orchestrate a complete ticket workflow across specialized agents 
 - Invoke `reviewer` in single-PR mode for the active ticket PR.
 - Ensure reviewer posts a verdict comment to the PR.
 
-4. Feedback loop:
+4. Documentation stage:
+- When review passes, invoke `documenter` to synchronize docs with code changes.
+- Documenter updates relevant layer guides, pattern docs, or type reference.
+- Documentation changes merge into the same PR or a separate docs PR as needed.
+
+5. Feedback loop:
 - If reviewer identifies blocking findings, send the findings back to `developer` to address them.
 - Re-run `reviewer` after fixes.
 - Repeat until the PR is merge-ready or blocked by a user decision.
 
-5. Completion stage:
-- When merge-ready, invoke `developer` to finish the PR flow.
+6. Completion stage:
+- When PR is merge-ready and docs are updated, invoke `developer` to finish the PR flow.
 - Confirm merge result and local-main fast-forward status.
 - If the merged ticket is a sub ticket, ensure a parent-ticket status comment is added summarizing the change.
 - When the last sub ticket is merged, run parent-ticket completion review and transition parent to `Done` only if review passes.
