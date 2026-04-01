@@ -5,6 +5,7 @@ import type { LevelData } from './types';
 const minimalLevel: LevelData = {
   version: 1,
   name: 'Test Level',
+  objective: 'Reach the exit.',
   width: 20,
   height: 20,
   player: { x: 2, y: 3 },

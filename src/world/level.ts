@@ -50,6 +50,10 @@ export function validateLevelData(input: unknown): LevelData {
     throw new Error('Invalid level data: name must be a non-empty string');
   }
 
+  if (typeof raw['objective'] !== 'string' || raw['objective'].trim() === '') {
+    throw new Error('Invalid level data: objective must be a non-empty string');
+  }
+
   if (typeof raw['width'] !== 'number' || raw['width'] <= 0) {
     throw new Error('Invalid level data: width must be a positive number');
   }
@@ -279,6 +283,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       height: levelData.height,
       tileSize: DEFAULT_TILE_SIZE,
     },
+    levelObjective: levelData.objective,
     player: {
       id: 'player',
       displayName: 'Player',

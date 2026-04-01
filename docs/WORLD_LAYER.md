@@ -15,6 +15,7 @@ The world layer owns deterministic, JSON-serializable state and validation/deser
 `WorldState` in `src/world/types.ts` includes:
 - `tick`
 - `grid`
+- `levelObjective`
 - `player`
 - `npcs`
 - `guards`
@@ -42,7 +43,7 @@ Render consumes this token but does not author it.
 ## Level JSON Validation
 
 `validateLevelData()` in `src/world/level.ts` validates:
-- Required level metadata (`version`, `name`, dimensions)
+- Required level metadata (`version`, `name`, `objective`, dimensions)
 - `player`, `guards`, and `doors`
 - Optional `npcs` - array of level-defined NPCs with required `id`, `displayName`, `x`, `y`, and `npcType` fields
 - Optional `interactiveObjects`

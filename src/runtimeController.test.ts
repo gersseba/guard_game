@@ -6,6 +6,7 @@ import type { World, WorldCommand, WorldState } from './world/types';
 const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => ({
   tick: 0,
   grid: { width: 10, height: 10, tileSize: 32 },
+  levelObjective: overrides?.levelObjective ?? 'Reach the safe exit.',
   player: {
     id: 'player',
     displayName: 'Player',
@@ -17,7 +18,7 @@ const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => ({
   interactiveObjects: [],
   actorConversationHistoryByActorId: {},
   levelOutcome: null,
-  ...overrides,
+  ...(overrides ?? {}),
 });
 
 const createTestWorld = (

@@ -21,6 +21,7 @@ const createMockLlmClient = (): LlmClient => ({
 const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => ({
   tick: 0,
   grid: { width: 10, height: 10, tileSize: 32 },
+  levelObjective: overrides?.levelObjective ?? 'Find a way out.',
   player: {
     id: 'player',
     displayName: 'Player',
@@ -32,7 +33,7 @@ const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => ({
   interactiveObjects: [],
   actorConversationHistoryByActorId: {},
   levelOutcome: null,
-  ...overrides,
+  ...(overrides ?? {}),
 });
 
 // Utility to create test entities
@@ -482,7 +483,10 @@ describe('InteractionDispatcher', () => {
   describe('error handling', () => {
     it('throws error for unknown handler kind', async () => {
       const dispatcher = createInteractionDispatcher({ llmClient });
-      const fakeTarget = { kind: 'unknown' as const, target: createTestDoor('fake-1') } as any;
+      const fakeTarget = {
+        kind: 'unknown' as const,
+        target: createTestDoor('fake-1'),
+      } as unknown as Parameters<typeof dispatcher.dispatch>[0];
       const worldState = createTestWorldState();
 
       expect(() => dispatcher.dispatch(fakeTarget, worldState)).toThrow(

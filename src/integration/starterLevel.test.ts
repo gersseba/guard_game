@@ -152,6 +152,7 @@ describe('starter level integration pipeline', () => {
       const levelWithInstanceFields = {
         version: 1,
         name: 'Instance Fields Test',
+        objective: 'Verify instance field propagation.',
         width: 20,
         height: 20,
         player: { x: 10, y: 10 },

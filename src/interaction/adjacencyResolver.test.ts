@@ -5,6 +5,7 @@ import type { Door, Guard, InteractiveObject, Npc, WorldState } from '../world/t
 const baseState = (): WorldState => ({
   tick: 0,
   grid: { width: 12, height: 8, tileSize: 48 },
+  levelObjective: 'Reach the safe exit.',
   player: { id: 'player-1', displayName: 'Hero', position: { x: 3, y: 3 } },
   npcs: [],
   guards: [],

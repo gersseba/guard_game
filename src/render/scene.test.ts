@@ -14,6 +14,7 @@ const createWorldState = (): WorldState => ({
     height: 20,
     tileSize: 48,
   },
+  levelObjective: 'Reach the safe door.',
   player: {
     id: 'player-1',
     displayName: 'Player',

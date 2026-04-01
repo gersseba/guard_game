@@ -96,6 +96,7 @@ export interface WorldGrid {
 export interface LevelData {
   version: 1;
   name: string;
+  objective: string;
   width: number;
   height: number;
   player: { x: number; y: number; spriteAssetPath?: string; spriteSet?: SpriteSet };
@@ -155,6 +156,7 @@ export interface LevelData {
 export interface WorldState {
   tick: number;
   grid: WorldGrid;
+  levelObjective: string;
   player: Player;
   npcs: Npc[];
   guards: Guard[];
@@ -162,4 +164,20 @@ export interface WorldState {
   interactiveObjects: InteractiveObject[];
   actorConversationHistoryByActorId: ActorConversationHistoryByActorId;
   levelOutcome: 'win' | 'lose' | null;
+}
+
+export type WorldCommand =
+  | {
+      type: 'move';
+      dx: number;
+      dy: number;
+    }
+  | {
+      type: 'interact';
+    };
+
+export interface World {
+  getState(): WorldState;
+  applyCommands(commands: WorldCommand[]): void;
+  resetToState(state: WorldState): void;
 }

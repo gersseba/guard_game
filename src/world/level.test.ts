@@ -7,6 +7,7 @@ import type { LevelData } from './types';
 const minimalLevel: LevelData = {
   version: 1,
   name: 'Test Level',
+  objective: 'Reach the exit.',
   width: 20,
   height: 20,
   player: { x: 2, y: 3 },
@@ -69,6 +70,7 @@ describe('deserializeLevel', () => {
     const state = deserializeLevel(minimalLevel);
 
     expect(state.tick).toBe(0);
+    expect(state.levelObjective).toBe('Reach the exit.');
     expect(state.npcs).toEqual([]);
     expect(state.interactiveObjects).toEqual([]);
   });
@@ -292,6 +294,15 @@ describe('validateLevelData', () => {
     expect(() => validateLevelData(bad)).toThrowError('name must be a non-empty string');
   });
 
+  it('throws when objective is missing or empty', () => {
+    const missingObjective = { ...minimalLevel } as Record<string, unknown>;
+    delete missingObjective['objective'];
+    expect(() => validateLevelData(missingObjective)).toThrowError('objective must be a non-empty string');
+
+    const emptyObjective = { ...minimalLevel, objective: '   ' };
+    expect(() => validateLevelData(emptyObjective)).toThrowError('objective must be a non-empty string');
+  });
+
   it('throws when width is zero or negative', () => {
     expect(() => validateLevelData({ ...minimalLevel, width: 0 })).toThrowError('width must be a positive number');
     expect(() => validateLevelData({ ...minimalLevel, width: -5 })).toThrowError('width must be a positive number');
@@ -357,6 +368,13 @@ describe('starter level', () => {
     const state = deserializeLevel(level);
 
     expect(state.player.position).toEqual({ x: 10, y: 10 });
+  });
+
+  it('includes objective text in runtime world state', () => {
+    const level = validateLevelData(starterRaw);
+    const state = deserializeLevel(level);
+
+    expect(state.levelObjective).toBe(level.objective);
   });
 
   it('has a 20×20 grid', () => {

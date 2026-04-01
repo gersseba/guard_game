@@ -91,6 +91,7 @@ Stores conversation history by actor id. The current conversational actors are g
 ### WorldState
 - `tick: number`
 - `grid: WorldGrid`
+- `levelObjective: string`
 - `player: Player`
 - `npcs: Npc[]`
 - `guards: Guard[]`
@@ -186,6 +187,7 @@ Flat JSON level definition used by files in `public/levels/*.json`.
 Required fields:
 - `version: 1`
 - `name: string`
+- `objective: string`
 - `width: number`
 - `height: number`
 - `player: { x: number; y: number; spriteAssetPath?: string; spriteSet?: SpriteSet }`
