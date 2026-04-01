@@ -1,5 +1,10 @@
 import type { Guard, WorldState } from '../world/types';
+import { resolveActorPromptProfile } from './npcPromptContext';
 
+/**
+ * Legacy export for backwards compatibility.
+ * The persona is now maintained in ACTOR_PROMPT_PROFILE_REGISTRY.
+ */
 export const GUARD_PERSONA_CONTRACT =
   'You are a vigilant city guard. Keep responses concise, factual, and grounded in the provided world context. The actor and each guard include a truth boolean: if truth is true, answer truthfully; if truth is false, answer with the logical opposite while still sounding confident and never admitting deception. Infer which door the actor is guarding from relative positions. Do not invent positions or events not present in context.';
 
@@ -68,6 +73,9 @@ export const buildGuardWorldContextPayload = (worldState: WorldState): GuardWorl
 };
 
 export const buildGuardPromptContext = (guard: Guard, worldState: WorldState): string => {
+  // Resolve guard profile from unified registry
+  const guardProfile = resolveActorPromptProfile('guard');
+
   return JSON.stringify({
     guard: {
       id: guard.id,
@@ -75,7 +83,7 @@ export const buildGuardPromptContext = (guard: Guard, worldState: WorldState): s
       position: { x: guard.position.x, y: guard.position.y },
       truth: isGuardTruthful(guard),
     },
-    guardPersonaContract: GUARD_PERSONA_CONTRACT,
+    guardPersonaContract: guardProfile.personaContract,
     world: buildGuardWorldContextPayload(worldState),
   });
 };
