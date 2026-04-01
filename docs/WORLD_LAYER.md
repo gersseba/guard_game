@@ -40,6 +40,16 @@ Deterministic rules:
 
 Render consumes this token but does not author it.
 
+### Player Inventory State
+
+`player.inventory` is world-owned deterministic state with shape:
+- `items: Array<{ itemId, displayName, sourceObjectId, pickedUpAtTick }>`
+
+Deterministic rules:
+- New runtime state initializes `player.inventory.items` to `[]`.
+- Level deserialization also initializes `player.inventory.items` to `[]`.
+- Inventory entries are only appended by deterministic interaction logic in the interaction layer.
+
 ## Level JSON Validation
 
 `validateLevelData()` in `src/world/level.ts` validates:
@@ -73,6 +83,7 @@ For `interactiveObjects`, validation enforces:
 - `objectType` currently restricted to `supply-crate`
 - `interactionType` in `inspect | use | talk`
 - `state` in `idle | used`
+- optional `pickupItem` with non-empty string `itemId` and `displayName`
 - optional `firstUseOutcome` in `win | lose`
 
 ## Deserialization
@@ -119,6 +130,7 @@ Deserialization remains deterministic: the same `npcType` always produces the sa
 ### Interactive Object Deserialization
 
 Interactive object instance fields deserialize directly:
+- `pickupItem`
 - `idleMessage`
 - `usedMessage`
 - `firstUseOutcome`

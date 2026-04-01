@@ -19,6 +19,9 @@ const createWorldState = (): WorldState => ({
     id: 'player-1',
     displayName: 'Player',
     position: { x: 10, y: 10 },
+    inventory: {
+      items: [],
+    },
   },
   npcs: [
     {

@@ -3,23 +3,38 @@ import { createCommandBuffer } from './input/commands';
 import { createRuntimeController } from './runtimeController';
 import type { World, WorldCommand, WorldState } from './world/types';
 
-const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => ({
-  tick: 0,
-  grid: { width: 10, height: 10, tileSize: 32 },
-  levelObjective: overrides?.levelObjective ?? 'Reach the safe exit.',
-  player: {
-    id: 'player',
-    displayName: 'Player',
-    position: { x: 1, y: 1 },
-  },
-  guards: [],
-  doors: [],
-  npcs: [],
-  interactiveObjects: [],
-  actorConversationHistoryByActorId: {},
-  levelOutcome: null,
-  ...(overrides ?? {}),
-});
+const createTestWorldState = (
+  overrides?: Omit<Partial<WorldState>, 'player'> & { player?: Partial<WorldState['player']> },
+): WorldState => {
+  const baseState: WorldState = {
+    tick: 0,
+    grid: { width: 10, height: 10, tileSize: 32 },
+    levelObjective: 'Reach the safe exit.',
+    player: {
+      id: 'player',
+      displayName: 'Player',
+      position: { x: 1, y: 1 },
+      inventory: {
+        items: [],
+      },
+    },
+    guards: [],
+    doors: [],
+    npcs: [],
+    interactiveObjects: [],
+    actorConversationHistoryByActorId: {},
+    levelOutcome: null,
+  };
+
+  return {
+    ...baseState,
+    ...(overrides ?? {}),
+    player: {
+      ...baseState.player,
+      ...(overrides?.player ?? {}),
+    },
+  };
+};
 
 const createTestWorld = (
   initialState: WorldState = createTestWorldState(),

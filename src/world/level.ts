@@ -253,6 +253,22 @@ export function validateLevelData(input: unknown): LevelData {
         );
       }
 
+      if (interactiveObject['pickupItem'] !== undefined) {
+        const pickupItem = interactiveObject['pickupItem'] as Record<string, unknown>;
+        if (
+          typeof pickupItem !== 'object' ||
+          pickupItem === null ||
+          typeof pickupItem['itemId'] !== 'string' ||
+          pickupItem['itemId'].trim() === '' ||
+          typeof pickupItem['displayName'] !== 'string' ||
+          pickupItem['displayName'].trim() === ''
+        ) {
+          throw new Error(
+            `Invalid level data: interactiveObject at index ${i} has invalid pickupItem (must include non-empty string itemId and displayName)`,
+          );
+        }
+      }
+
       if (
         interactiveObject['spriteAssetPath'] !== undefined &&
         typeof interactiveObject['spriteAssetPath'] !== 'string'
@@ -288,6 +304,9 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       id: 'player',
       displayName: 'Player',
       position: { x: levelData.player.x, y: levelData.player.y },
+      inventory: {
+        items: [],
+      },
       facingDirection: 'front',
       ...(levelData.player.spriteAssetPath !== undefined
         ? { spriteAssetPath: levelData.player.spriteAssetPath }
@@ -332,6 +351,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       objectType: o.objectType,
       interactionType: o.interactionType,
       state: o.state,
+      pickupItem: o.pickupItem,
       idleMessage: o.idleMessage,
       usedMessage: o.usedMessage,
       firstUseOutcome: o.firstUseOutcome,

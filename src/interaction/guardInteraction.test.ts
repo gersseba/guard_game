@@ -5,7 +5,14 @@ import { GUARD_PERSONA_CONTRACT } from './guardPromptContext';
 import { createGuardInteractionService, handleGuardInteraction } from './guardInteraction';
 import type { Guard, Player } from '../world/types';
 
-const player: Player = { id: 'player-1', displayName: 'Hero', position: { x: 1, y: 1 } };
+const player: Player = {
+  id: 'player-1',
+  displayName: 'Hero',
+  position: { x: 1, y: 1 },
+  inventory: {
+    items: [],
+  },
+};
 
 const makeGuard = (guardState: Guard['guardState']): Guard => ({
   id: 'guard-1',

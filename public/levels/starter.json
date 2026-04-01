@@ -64,6 +64,10 @@
       "objectType": "supply-crate",
       "interactionType": "inspect",
       "state": "idle",
+      "pickupItem": {
+        "itemId": "starter-storage-key",
+        "displayName": "Storage Key"
+      },
       "idleMessage": "You crack open the crate and find emergency supplies.",
       "usedMessage": "The supply crate is already open and empty.",
       "spriteAssetPath": "/assets/medieval_supply_crate_inspect.svg"

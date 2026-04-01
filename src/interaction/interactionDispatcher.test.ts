@@ -18,23 +18,38 @@ const createMockLlmClient = (): LlmClient => ({
 });
 
 // Utility to create minimal test world state
-const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => ({
-  tick: 0,
-  grid: { width: 10, height: 10, tileSize: 32 },
-  levelObjective: overrides?.levelObjective ?? 'Find a way out.',
-  player: {
-    id: 'player',
-    displayName: 'Player',
-    position: { x: 0, y: 0 },
-  },
-  guards: [],
-  doors: [],
-  npcs: [],
-  interactiveObjects: [],
-  actorConversationHistoryByActorId: {},
-  levelOutcome: null,
-  ...(overrides ?? {}),
-});
+const createTestWorldState = (
+  overrides?: Omit<Partial<WorldState>, 'player'> & { player?: Partial<WorldState['player']> },
+): WorldState => {
+  const baseState: WorldState = {
+    tick: 0,
+    grid: { width: 10, height: 10, tileSize: 32 },
+    levelObjective: 'Find a way out.',
+    player: {
+      id: 'player',
+      displayName: 'Player',
+      position: { x: 0, y: 0 },
+      inventory: {
+        items: [],
+      },
+    },
+    guards: [],
+    doors: [],
+    npcs: [],
+    interactiveObjects: [],
+    actorConversationHistoryByActorId: {},
+    levelOutcome: null,
+  };
+
+  return {
+    ...baseState,
+    ...(overrides ?? {}),
+    player: {
+      ...baseState.player,
+      ...(overrides?.player ?? {}),
+    },
+  };
+};
 
 // Utility to create test entities
 const createTestGuard = (id: string): Guard => ({

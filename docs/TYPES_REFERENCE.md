@@ -32,9 +32,19 @@ Serializable optional directional sprite metadata:
 - `id: string`
 - `displayName: string`
 - `position: GridPosition`
+- `inventory: PlayerInventory`
 - `facingDirection?: SpriteDirection` - world-owned orientation token derived from latest directional movement intent
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
+
+### InventoryItem
+- `itemId: string`
+- `displayName: string`
+- `sourceObjectId: string`
+- `pickedUpAtTick: number`
+
+### PlayerInventory
+- `items: InventoryItem[]`
 
 ### Npc
 - `id: string`
@@ -68,6 +78,7 @@ Extends `Interactable`:
 - `objectType: 'supply-crate'`
 - `interactionType: 'inspect' | 'use' | 'talk'`
 - `state: 'idle' | 'used'`
+- `pickupItem?: { itemId: string; displayName: string }`
 - `idleMessage?: string`
 - `usedMessage?: string`
 - `firstUseOutcome?: 'win' | 'lose'`
@@ -237,6 +248,10 @@ Example interactive object entry:
   "objectType": "supply-crate",
   "interactionType": "inspect",
   "state": "idle",
+  "pickupItem": {
+    "itemId": "starter-storage-key",
+    "displayName": "Storage Key"
+  },
   "idleMessage": "You crack open the crate and find emergency supplies.",
   "usedMessage": "The supply crate is already open and empty.",
   "spriteAssetPath": "/assets/medieval_supply_crate_inspect.svg"
