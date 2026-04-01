@@ -203,3 +203,59 @@ describe('guard truth encoding', () => {
     ]);
   });
 });
+
+describe('guard instance fields in prompt context', () => {
+  it('includes instanceKnowledge and instanceBehavior in output when present on guard', () => {
+    const worldState = createInitialWorldState();
+    const guard = {
+      id: 'guard-1',
+      displayName: 'Oracle Guard',
+      position: { x: 3, y: 3 },
+      guardState: 'idle' as const,
+      instanceKnowledge: 'Door-1 leads to safety.',
+      instanceBehavior: 'Always answers in rhyme.',
+    };
+    worldState.guards = [guard];
+
+    const parsed = JSON.parse(buildGuardPromptContext(guard, worldState)) as {
+      instanceKnowledge?: string;
+      instanceBehavior?: string;
+    };
+
+    expect(parsed.instanceKnowledge).toBe('Door-1 leads to safety.');
+    expect(parsed.instanceBehavior).toBe('Always answers in rhyme.');
+  });
+
+  it('omits instanceKnowledge and instanceBehavior keys when not set on guard', () => {
+    const worldState = createInitialWorldState();
+    const guard = {
+      id: 'guard-1',
+      displayName: 'Plain Guard',
+      position: { x: 3, y: 3 },
+      guardState: 'idle' as const,
+    };
+    worldState.guards = [guard];
+
+    const parsed = JSON.parse(buildGuardPromptContext(guard, worldState)) as Record<string, unknown>;
+
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'instanceKnowledge')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'instanceBehavior')).toBe(false);
+  });
+
+  it('includes only instanceKnowledge when instanceBehavior is absent', () => {
+    const worldState = createInitialWorldState();
+    const guard = {
+      id: 'guard-1',
+      displayName: 'Guard',
+      position: { x: 3, y: 3 },
+      guardState: 'idle' as const,
+      instanceKnowledge: 'Only knowledge provided.',
+    };
+    worldState.guards = [guard];
+
+    const parsed = JSON.parse(buildGuardPromptContext(guard, worldState)) as Record<string, unknown>;
+
+    expect(parsed['instanceKnowledge']).toBe('Only knowledge provided.');
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'instanceBehavior')).toBe(false);
+  });
+});

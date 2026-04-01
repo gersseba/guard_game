@@ -78,5 +78,7 @@ export const buildGuardPromptContext = (guard: Guard, worldState: WorldState): s
     },
     guardPersonaContract: guardProfile.personaContract,
     world: worldKnowledge,
+    ...(guard.instanceKnowledge !== undefined && { instanceKnowledge: guard.instanceKnowledge }),
+    ...(guard.instanceBehavior !== undefined && { instanceBehavior: guard.instanceBehavior }),
   });
 };

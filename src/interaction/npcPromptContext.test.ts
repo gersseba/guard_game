@@ -225,3 +225,71 @@ describe('buildNpcPromptContext', () => {
     expect(worldKnowledge.otherVillagers[0].id).toBe('npc-villager-2');
   });
 });
+
+describe('NPC instance fields in prompt context', () => {
+  it('includes instanceKnowledge and instanceBehavior in output when present on NPC', () => {
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      id: 'npc-1',
+      instanceKnowledge: 'The archives burned in the third age.',
+      instanceBehavior: 'Refuses to discuss recent events.',
+    };
+    worldState.npcs = [npc];
+
+    const parsed = JSON.parse(buildNpcPromptContext(npc, worldState.player, worldState)) as {
+      instanceKnowledge?: string;
+      instanceBehavior?: string;
+    };
+
+    expect(parsed.instanceKnowledge).toBe('The archives burned in the third age.');
+    expect(parsed.instanceBehavior).toBe('Refuses to discuss recent events.');
+  });
+
+  it('omits instanceKnowledge and instanceBehavior keys when not set on NPC', () => {
+    const worldState = createInitialWorldState();
+    const npc = worldState.npcs[0];
+
+    const parsed = JSON.parse(buildNpcPromptContext(npc, worldState.player, worldState)) as Record<string, unknown>;
+
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'instanceKnowledge')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'instanceBehavior')).toBe(false);
+  });
+
+  it('includes only instanceBehavior when instanceKnowledge is absent', () => {
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      id: 'npc-1',
+      instanceBehavior: 'Only behavior provided.',
+    };
+    worldState.npcs = [npc];
+
+    const parsed = JSON.parse(buildNpcPromptContext(npc, worldState.player, worldState)) as Record<string, unknown>;
+
+    expect(parsed['instanceBehavior']).toBe('Only behavior provided.');
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'instanceKnowledge')).toBe(false);
+  });
+
+  it('instance fields appear alongside typeWorldKnowledge when actor type is known', () => {
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      id: 'npc-1',
+      npcType: 'villager',
+      instanceKnowledge: 'Village square floods in spring.',
+      instanceBehavior: 'Speaks slowly and carefully.',
+    };
+    worldState.npcs = [npc];
+
+    const parsed = JSON.parse(buildNpcPromptContext(npc, worldState.player, worldState)) as {
+      typeWorldKnowledge?: unknown;
+      instanceKnowledge?: string;
+      instanceBehavior?: string;
+    };
+
+    expect(parsed.typeWorldKnowledge).toBeDefined();
+    expect(parsed.instanceKnowledge).toBe('Village square floods in spring.');
+    expect(parsed.instanceBehavior).toBe('Speaks slowly and carefully.');
+  });
+});

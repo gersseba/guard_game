@@ -44,6 +44,8 @@ Serializable optional directional sprite metadata:
 - `dialogueContextKey: string` - Deterministically derived from `npcType` via `npc_${npcType.toLowerCase()}`
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
+- `instanceKnowledge?: string` - Instance-specific knowledge this NPC has; included in prompt context output when set
+- `instanceBehavior?: string` - Instance-specific behavior traits for this NPC; included in prompt context output when set
 
 ### Guard
 Extends `Interactable`:
@@ -51,6 +53,8 @@ Extends `Interactable`:
 - `honestyTrait?: 'truth-teller' | 'liar'`
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
+- `instanceKnowledge?: string` - Instance-specific knowledge this guard has; included in prompt context output when set
+- `instanceBehavior?: string` - Instance-specific behavior traits for this guard; included in prompt context output when set
 
 ### Door
 Extends `Interactable`:
@@ -140,9 +144,18 @@ Deterministic fallback profile used when a normalized `npcType` has no registry 
 - `npcProfile: ResolvedNpcPromptProfile`
 - `npcInstance: { displayName, position: { x, y }, dialogueContextKey }`
 - `typeWorldKnowledge?: unknown` — actor-type-specific world facts; omitted when `buildActorTypeWorldKnowledge` returns `null`
+- `instanceKnowledge?: string` — instance-specific knowledge from the NPC; included only when set on the `Npc` object
+- `instanceBehavior?: string` — instance-specific behavior traits from the NPC; included only when set on the `Npc` object
 - `player: { id, displayName }`
 
 This separates shared type-level prompt policy (`npcProfile`) from per-instance world facts (`npcInstance`) and type-scoped world context (`typeWorldKnowledge`).
+
+`buildGuardPromptContext(guard, worldState)` returns a serialized JSON object with:
+- `guard: { id, displayName, position: { x, y }, truth }`
+- `guardPersonaContract: string`
+- `world: GuardWorldContextPayload`
+- `instanceKnowledge?: string` — instance-specific knowledge from the guard; included only when set on the `Guard` object
+- `instanceBehavior?: string` — instance-specific behavior traits from the guard; included only when set on the `Guard` object
 
 ### ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS
 
@@ -176,11 +189,11 @@ Required fields:
 - `width: number`
 - `height: number`
 - `player: { x: number; y: number; spriteAssetPath?: string; spriteSet?: SpriteSet }`
-- `guards: Array<{ id, displayName, x, y, guardState, honestyTrait?, spriteAssetPath?, spriteSet? }>`
+- `guards: Array<{ id, displayName, x, y, guardState, honestyTrait?, spriteAssetPath?, spriteSet?, instanceKnowledge?, instanceBehavior? }>`
 - `doors: Array<{ id, displayName, x, y, doorState, outcome, spriteAssetPath?, spriteSet? }>`
 
 Optional fields:
-- `npcs: Array<{ id, displayName, x, y, npcType, spriteAssetPath?, spriteSet? }>`
+- `npcs: Array<{ id, displayName, x, y, npcType, spriteAssetPath?, spriteSet?, instanceKnowledge?, instanceBehavior? }>`
 - `interactiveObjects: Array<...>` with the same object fields as `InteractiveObject`, but `x/y` instead of `position`
 
 Shipped level sprite metadata examples:

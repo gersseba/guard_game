@@ -4,6 +4,8 @@ import { resolveAdjacentTarget } from '../interaction/adjacencyResolver';
 import { handleDoorInteraction } from '../interaction/doorInteraction';
 import { handleGuardInteraction } from '../interaction/guardInteraction';
 import { handleInteractiveObjectInteraction } from '../interaction/objectInteraction';
+import { buildGuardPromptContext } from '../interaction/guardPromptContext';
+import { buildNpcPromptContext } from '../interaction/npcPromptContext';
 import { deserializeLevel, validateLevelData } from '../world/level';
 import type { WorldState } from '../world/types';
 
@@ -144,3 +146,72 @@ describe('starter level integration pipeline', () => {
     expect(adjacent).toBeNull();
   });
 });
+
+  describe('instanceKnowledge and instanceBehavior full pipeline', () => {
+    it('propagates instanceKnowledge and instanceBehavior from level JSON through deserializeLevel into prompt context', () => {
+      const levelWithInstanceFields = {
+        version: 1,
+        name: 'Instance Fields Test',
+        width: 20,
+        height: 20,
+        player: { x: 10, y: 10 },
+        guards: [
+          {
+            id: 'guard-1',
+            displayName: 'Oracle Guard',
+            x: 5,
+            y: 10,
+            guardState: 'idle',
+            instanceKnowledge: 'Door-1 leads to safety.',
+            instanceBehavior: 'Always answers in rhyme.',
+          },
+        ],
+        doors: [
+          {
+            id: 'door-1',
+            displayName: 'West Door',
+            x: 4,
+            y: 10,
+            doorState: 'closed',
+            outcome: 'safe',
+          },
+        ],
+        npcs: [
+          {
+            id: 'npc-1',
+            displayName: 'The Archivist',
+            x: 15,
+            y: 14,
+            npcType: 'archive_keeper',
+            instanceKnowledge: 'The archives burned in the third age.',
+            instanceBehavior: 'Speaks in hushed tones.',
+          },
+        ],
+      };
+
+      const validated = validateLevelData(levelWithInstanceFields);
+      const worldState = deserializeLevel(validated);
+
+      // Assert the fields are preserved through deserialization
+      expect(worldState.guards[0].instanceKnowledge).toBe('Door-1 leads to safety.');
+      expect(worldState.guards[0].instanceBehavior).toBe('Always answers in rhyme.');
+      expect(worldState.npcs[0].instanceKnowledge).toBe('The archives burned in the third age.');
+      expect(worldState.npcs[0].instanceBehavior).toBe('Speaks in hushed tones.');
+
+      // Assert the fields appear in guard prompt context output
+      const guardContext = JSON.parse(buildGuardPromptContext(worldState.guards[0], worldState)) as {
+        instanceKnowledge?: string;
+        instanceBehavior?: string;
+      };
+      expect(guardContext.instanceKnowledge).toBe('Door-1 leads to safety.');
+      expect(guardContext.instanceBehavior).toBe('Always answers in rhyme.');
+
+      // Assert the fields appear in NPC prompt context output
+      const npcContext = JSON.parse(buildNpcPromptContext(worldState.npcs[0], worldState.player, worldState)) as {
+        instanceKnowledge?: string;
+        instanceBehavior?: string;
+      };
+      expect(npcContext.instanceKnowledge).toBe('The archives burned in the third age.');
+      expect(npcContext.instanceBehavior).toBe('Speaks in hushed tones.');
+    });
+  });
