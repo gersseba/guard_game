@@ -5,6 +5,7 @@ This directory contains architecture guides, layer-specific documentation, and d
 ## Fundamentals
 - [System Architecture](ARCHITECTURE.md) - Layered architecture overview, design principles, and data flow
 - [Type Reference](TYPES_REFERENCE.md) - Complete reference for key interfaces and data structures used throughout the codebase
+- [Game Design Baseline](GAME_DESIGN_BASELINE.md) - Current game state, implemented features, LLM boundaries, and entity knowledge contracts used by the game designer
 - [Guard Facing Direction (Ticket #93)](GUARD_FACING_DIRECTION.md) - Guard-facing world token, interaction approach-direction mapping, render consumption, and test coverage
 
 ## Layer Guides
@@ -34,6 +35,8 @@ Recipes and walkthroughs for common extension tasks:
 **Need to understand a type?** Check [Type Reference](TYPES_REFERENCE.md) for the complete data dictionary.
 
 **Stuck on a layer boundary issue?** Each layer guide includes contract documentation and extension points.
+
+See [Game Design Baseline](GAME_DESIGN_BASELINE.md) for the documenter-maintained source used by the game designer for direction, feasibility checks, and feature-gap analysis.
 
 ## Documentation Maintenance
 

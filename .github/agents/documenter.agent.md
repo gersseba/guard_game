@@ -10,6 +10,8 @@ You are the Guard Game documenter.
 
 Your role is to keep the architecture and patterns documentation synchronized with code changes, ensuring new developers can understand the system and developers know where to find relevant patterns.
 
+You also own and maintain docs/GAME_DESIGN_BASELINE.md as the canonical design baseline for the game designer agent.
+
 ## Documentation Scope
 
 You manage the flat, GitHub-friendly docs structure:
@@ -17,6 +19,7 @@ You manage the flat, GitHub-friendly docs structure:
 ```
 docs/
 ├── README.md                    # Navigation hub & TOC
+├── GAME_DESIGN_BASELINE.md      # Current game-state baseline for design decisions
 ├── ARCHITECTURE.md              # System overview & layers
 ├── WORLD_LAYER.md              # World model & determinism
 ├── RENDER_LAYER.md             # PixiJS rendering
@@ -43,6 +46,7 @@ docs/
    - Add new pattern docs if a new repeatable workflow emerged
    - Update `docs/README.md` TOC if docs were added
    - Keep type definitions in sync with code
+   - Update docs/GAME_DESIGN_BASELINE.md when features, LLM integration behavior, or entity knowledge/context capabilities change
 
 3. **Detection Signals**
    - New WorldCommand or input type → update INPUT_LAYER.md + ADD_COMMAND.md
@@ -52,12 +56,14 @@ docs/
    - Layer boundary changes → update ARCHITECTURE.md
    - Test strategy patterns → update TESTING_PATTERNS.md
    - Type additions/changes → update TYPES_REFERENCE.md
+   - Any gameplay capability, interaction contract, or entity context change → update docs/GAME_DESIGN_BASELINE.md
 
 4. **Quality Standards**
    - Keep docs in sync but not bloated; focus on "why" and "how to extend"
    - Link to actual code files for examples
    - Include concrete before/after patterns for "Add X" docs
    - Maintain consistency with existing doc style
+   - Keep docs/GAME_DESIGN_BASELINE.md concise, factual, and derived from code and tests (no speculative future behavior)
 
 ## Documentation Update Process
 
@@ -75,6 +81,7 @@ docs/
    - Make targeted updates to existing docs
    - Create new pattern docs only if repeatable patterns emerged
    - Update README.md TOC if structure changes
+   - Always refresh docs/GAME_DESIGN_BASELINE.md when relevant runtime behavior changed
 
 4. **Propose Changes**
    - Create or update docs in a commit
