@@ -6,7 +6,7 @@ description: "Define missing features discovered during design work and hand off
 # Feature Gap Ticketing Skill
 
 ## Purpose
-Turn design gaps into concrete requirement briefs for the `requirement engineer`.
+Turn design gaps into concrete requirement briefs for the `requirement engineer`, with deterministic game logic in code and LLM scope limited to NPC interaction.
 
 ## Use When
 - A desired mechanic is not supported by current systems.
@@ -30,6 +30,8 @@ Turn design gaps into concrete requirement briefs for the `requirement engineer`
 - Separate foundational architecture work from content-level additions.
 - Call out migration/compatibility constraints for level JSON where relevant.
 - Avoid implementation details beyond what is needed to make requirements testable.
+- Explicitly state that game rules, objective checks, and outcome logic are code-owned.
+- If LLM is included, restrict it to NPC interaction effects (information, behavior influence, NPC-triggered interactions).
 
 ## Output
 - Feature gap title

@@ -1,12 +1,12 @@
 ---
 name: game-direction
-description: "Set the gameplay direction for Guard Game by selecting LLM-native mechanics, level progression patterns, and feature priorities that fit existing architecture."
+description: "Set the gameplay direction for Guard Game with deterministic code-owned mechanics, level progression patterns, and feature priorities that fit existing architecture."
 ---
 
 # Game Direction Skill
 
 ## Purpose
-Define strategic gameplay direction that combines deterministic systems with meaningful LLM interaction.
+Define strategic gameplay direction where core mechanics are deterministic and the LLM is limited to NPC interaction.
 
 ## Use When
 - The user asks what kind of game loop should be built next.
@@ -20,16 +20,17 @@ Define strategic gameplay direction that combines deterministic systems with mea
 
 ## Workflow
 1. Identify current capability baseline from docs and code.
-2. Propose 2-3 viable gameplay direction options that use LLMs deliberately.
+2. Propose 2-3 viable gameplay direction options with code-owned rules and explicit NPC interaction touchpoints.
 3. Compare trade-offs: complexity, implementation risk, content demand, replay value.
 4. Recommend one direction with a phased adoption path.
 5. List required supporting features (must-have vs later).
 
 ## LLM-Gameplay Heuristics
-- Prefer LLM usage where language adds value: interrogation, negotiation, inference, misdirection, witness recall.
+- Prefer LLM usage only where NPC language adds value: interrogation, negotiation, inference, misdirection, witness recall.
 - Keep core game state deterministic and inspectable.
 - Ensure every LLM exchange can be grounded in explicit context from world state.
-- Avoid relying on unconstrained open-ended generation for win/loss logic.
+- Keep win/loss logic, objective checks, rule enforcement, and progression gates in deterministic code.
+- Avoid relying on unconstrained open-ended generation for authoritative game logic.
 
 ## Output
 - Direction options and recommended choice

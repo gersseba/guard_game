@@ -1,6 +1,6 @@
 ---
 name: level-design
-description: "Create levels that fit Guard Game's current systems, with valid level JSON-compatible entity planning and LLM-relevant interaction goals."
+description: "Create levels that fit Guard Game's current systems, with valid level JSON-compatible entity planning and NPC interaction goals that use the LLM without owning game rules."
 ---
 
 # Level Design Skill
@@ -28,7 +28,8 @@ Design practical, buildable levels aligned with current implementation and level
 
 ## Level Design Rules
 - Keep one clear objective per level.
-- Use LLM interactions to support deduction or context gathering, not random flavor only.
+- Use LLM interactions for NPC dialogue outcomes such as clues, trust shifts, and NPC-triggered interactions.
+- Keep objective completion checks, puzzle validation, and progression state changes in deterministic code.
 - Match NPC/guard behavior assumptions to currently available prompt context systems.
 - Keep asset requirements explicit and reusable where possible.
 
