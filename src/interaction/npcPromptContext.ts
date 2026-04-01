@@ -139,7 +139,7 @@ export type ActorTypeWorldKnowledgeBuilder = (
 export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldKnowledgeBuilder> = {
   guard: (worldState: WorldState): unknown => {
     // Guards know about other guards, doors, and the player
-    const guides = [...worldState.guards]
+    const guards = [...worldState.guards]
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((guard) => ({
         id: guard.id,
@@ -162,15 +162,15 @@ export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldK
         id: worldState.player.id,
         position: { x: worldState.player.position.x, y: worldState.player.position.y },
       },
-      guards: guides,
+      guards,
       doors,
     };
   },
 
-  villager: (worldState: WorldState): unknown => {
+  villager: (worldState: WorldState, actorId: string): unknown => {
     // Villagers know about other NPCs in the world
     const npcs = [...worldState.npcs]
-      .filter((npc) => npc.npcType === 'villager')
+      .filter((npc) => npc.npcType === 'villager' && npc.id !== actorId)
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((npc) => ({
         id: npc.id,
@@ -187,47 +187,10 @@ export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldK
       otherVillagers: npcs,
     };
   },
+};
 
-  archive_keeper: (worldState: WorldState): unknown => {
-    // Archive keepers know about archives/objects and nearby NPCs
-    const objects = [...worldState.interactiveObjects]
-      .sort((a, b) => a.id.localeCompare(b.id))
-      .map((obj) => ({
-        id: obj.id,
-        displayName: obj.displayName,
-        objectType: obj.objectType,
-        position: { x: obj.position.x, y: obj.position.y },
-      }));
-
-    return {
-      player: {
-        id: worldState.player.id,
-        position: { x: worldState.player.position.x, y: worldState.player.position.y },
-      },
-      archives: objects,
-    };
-  },
-
-  engineer: (worldState: WorldState): unknown => {
-    // Engineers know about interactive objects (machinery, mechanisms)
-    const objects = [...worldState.interactiveObjects]
-      .sort((a, b) => a.id.localeCompare(b.id))
-      .map((obj) => ({
-        id: obj.id,
-        displayName: obj.displayName,
-        objectType: obj.objectType,
-        state: obj.state,
-        position: { x: obj.position.x, y: obj.position.y },
-      }));
-
-    return {
-      player: {
-        id: worldState.player.id,
-        position: { x: worldState.player.position.x, y: worldState.player.position.y },
-      },
-      machinery: objects,
-    };
-  },
+const ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES: Record<string, string> = {
+  archive_keeper: 'villager',
 };
 
 /**
@@ -237,13 +200,26 @@ const resolveActorWorldKnowledgeBuilder = (
   actorType: string | null | undefined,
 ): ActorTypeWorldKnowledgeBuilder | undefined => {
   const normalizedType = normalizeActorType(actorType);
-  return ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS[normalizedType];
+  const actorTypeKey =
+    ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS[normalizedType] !== undefined
+      ? normalizedType
+      : ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES[normalizedType];
+
+  return actorTypeKey ? ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS[actorTypeKey] : undefined;
+};
+
+export const buildActorTypeWorldKnowledge = (
+  actorType: string | null | undefined,
+  worldState: WorldState,
+  actorId: string,
+): unknown | null => {
+  const worldKnowledgeBuilder = resolveActorWorldKnowledgeBuilder(actorType);
+  return worldKnowledgeBuilder ? worldKnowledgeBuilder(worldState, actorId) : null;
 };
 
 export const buildNpcPromptContext = (npc: Npc, player: Player, worldState: WorldState): string => {
   const resolvedProfile = resolveNpcPromptProfile(npc.npcType);
-  const worldKnowledgeBuilder = resolveActorWorldKnowledgeBuilder(npc.npcType);
-  const worldKnowledge = worldKnowledgeBuilder ? worldKnowledgeBuilder(worldState, npc.id) : null;
+  const worldKnowledge = buildActorTypeWorldKnowledge(npc.npcType, worldState, npc.id);
 
   return JSON.stringify({
     actor: {

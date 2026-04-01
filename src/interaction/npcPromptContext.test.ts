@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialWorldState } from '../world/state';
 import {
+  ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS,
   ACTOR_PROMPT_PROFILE_REGISTRY,
+  buildActorTypeWorldKnowledge,
   buildNpcPromptContext,
   DEFAULT_NPC_PROMPT_PROFILE,
   resolveNpcPromptProfile,
 } from './npcPromptContext';
+import { buildGuardPromptContext } from './guardPromptContext';
 
 describe('resolveNpcPromptProfile', () => {
   it('returns the same profile contract for different NPCs with the same npcType', () => {
@@ -80,14 +83,104 @@ describe('buildNpcPromptContext', () => {
 
   it('includes typeWorldKnowledge in context for known actor types', () => {
     const worldState = createInitialWorldState();
-    const archiveKeeperNpc = worldState.npcs[0]; // archive_keeper type
+    const villagerNpc = {
+      ...worldState.npcs[0],
+      id: 'npc-villager-1',
+      displayName: 'Local Villager',
+      npcType: 'villager',
+      dialogueContextKey: 'villager_intro',
+    };
+    worldState.npcs = [
+      villagerNpc,
+      {
+        ...villagerNpc,
+        id: 'npc-villager-2',
+        displayName: 'Neighbor Villager',
+        position: { x: 3, y: 2 },
+      },
+    ];
 
-    const context = JSON.parse(buildNpcPromptContext(archiveKeeperNpc, worldState.player, worldState)) as {
-      typeWorldKnowledge?: { player: unknown; archives: unknown[] };
+    const context = JSON.parse(buildNpcPromptContext(villagerNpc, worldState.player, worldState)) as {
+      typeWorldKnowledge?: { player: unknown; otherVillagers: unknown[] };
     };
 
     expect(context.typeWorldKnowledge).toBeDefined();
-    expect(context.typeWorldKnowledge?.archives).toBeDefined();
+    expect(context.typeWorldKnowledge?.otherVillagers).toBeDefined();
+    expect(context.typeWorldKnowledge?.otherVillagers).toHaveLength(1);
+  });
+
+  it('reuses the non-guard world-knowledge builder for active runtime archive_keeper NPCs', () => {
+    const worldState = createInitialWorldState();
+    const archiveKeeper = worldState.npcs[0];
+
+    const context = JSON.parse(buildNpcPromptContext(archiveKeeper, worldState.player, worldState)) as {
+      actor: { npcType: string };
+      typeWorldKnowledge?: { player: unknown; otherVillagers: unknown[] };
+    };
+
+    expect(context.actor.npcType).toBe('archive_keeper');
+    expect(context.typeWorldKnowledge).toBeDefined();
+    expect(context.typeWorldKnowledge?.otherVillagers).toEqual([]);
+  });
+
+  it('uses a deterministic unknown-type fallback with no typeWorldKnowledge payload', () => {
+    const worldState = createInitialWorldState();
+    const unknownNpc = {
+      ...worldState.npcs[0],
+      id: 'npc-unknown-1',
+      npcType: 'mystery_type',
+    };
+
+    const first = buildNpcPromptContext(unknownNpc, worldState.player, worldState);
+    const second = buildNpcPromptContext(unknownNpc, worldState.player, worldState);
+    const parsed = JSON.parse(first) as { typeWorldKnowledge?: unknown };
+
+    expect(first).toBe(second);
+    expect(parsed.typeWorldKnowledge).toBeUndefined();
+    expect(buildActorTypeWorldKnowledge('mystery_type', worldState, unknownNpc.id)).toBeNull();
+  });
+
+  it('provides different world payload shapes for guard and villager actor types', () => {
+    const worldState = createInitialWorldState();
+    worldState.guards = [
+      {
+        id: 'guard-1',
+        displayName: 'City Guard',
+        position: { x: 1, y: 1 },
+        guardState: 'idle',
+      },
+    ];
+    worldState.doors = [
+      {
+        id: 'door-1',
+        displayName: 'North Door',
+        position: { x: 2, y: 1 },
+        doorState: 'closed',
+        outcome: 'safe',
+      },
+    ];
+
+    const villagerNpc = {
+      ...worldState.npcs[0],
+      id: 'npc-villager-1',
+      npcType: 'villager',
+    };
+    worldState.npcs = [villagerNpc];
+
+    const guardContext = JSON.parse(buildGuardPromptContext(worldState.guards[0], worldState)) as {
+      world: { guards?: unknown[]; doors?: unknown[]; otherVillagers?: unknown[] };
+    };
+    const villagerContext = JSON.parse(buildNpcPromptContext(villagerNpc, worldState.player, worldState)) as {
+      typeWorldKnowledge?: { guards?: unknown[]; doors?: unknown[]; otherVillagers?: unknown[] };
+    };
+
+    expect(guardContext.world.guards).toBeDefined();
+    expect(guardContext.world.doors).toBeDefined();
+    expect(guardContext.world.otherVillagers).toBeUndefined();
+
+    expect(villagerContext.typeWorldKnowledge?.otherVillagers).toBeDefined();
+    expect(villagerContext.typeWorldKnowledge?.guards).toBeUndefined();
+    expect(villagerContext.typeWorldKnowledge?.doors).toBeUndefined();
   });
 
   it('produces deterministic serialized output for the same NPC snapshot', () => {
@@ -101,5 +194,34 @@ describe('buildNpcPromptContext', () => {
 
     expect(first).toBe(second);
     expect(first).toBe(third);
+  });
+
+  it('contains exactly guard and one non-guard builder in the actor-type world-knowledge registry', () => {
+    expect(Object.keys(ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS).sort()).toEqual(['guard', 'villager']);
+  });
+
+  it('excludes the requesting villager from otherVillagers world knowledge', () => {
+    const worldState = createInitialWorldState();
+    const requestingVillager = {
+      ...worldState.npcs[0],
+      id: 'npc-villager-1',
+      npcType: 'villager',
+    };
+    const otherVillager = {
+      ...requestingVillager,
+      id: 'npc-villager-2',
+      displayName: 'Neighbor Villager',
+      position: { x: 3, y: 2 },
+    };
+    worldState.npcs = [requestingVillager, otherVillager];
+
+    const worldKnowledge = buildActorTypeWorldKnowledge(
+      requestingVillager.npcType,
+      worldState,
+      requestingVillager.id,
+    ) as { otherVillagers: Array<{ id: string }> };
+
+    expect(worldKnowledge.otherVillagers).toHaveLength(1);
+    expect(worldKnowledge.otherVillagers[0].id).toBe('npc-villager-2');
   });
 });

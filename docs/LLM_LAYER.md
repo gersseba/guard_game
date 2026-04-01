@@ -29,13 +29,14 @@ The interaction layer is responsible for building `context` and maintaining conv
 ## NPC Prompt Context Flow
 
 For NPC conversational turns:
-1. `createNpcInteractionService()` in `src/interaction/npcInteraction.ts` builds context with `buildNpcPromptContext(npc, player)`.
+1. `createNpcInteractionService()` in `src/interaction/npcInteraction.ts` builds context with `buildNpcPromptContext(npc, player, worldState)`.
 2. The service passes actor id, context, player message, and history into `llmClient.complete(...)`.
 3. The LLM response text is appended to actor-scoped history.
 
-`buildNpcPromptContext()` includes both:
+`buildNpcPromptContext()` includes:
 - shared profile information (`npcProfile`) resolved from `npcType`
 - per-instance NPC data (`npcInstance`) from world state
+- actor-type world context (`typeWorldKnowledge`) when a builder resolves for the `npcType`
 
 ## Deterministic Fallbacks
 

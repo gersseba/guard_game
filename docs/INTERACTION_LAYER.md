@@ -81,24 +81,48 @@ Door and interactive object results never trigger `onConversationStarted`, so th
 
 Gameplay pause state is kept outside `WorldState`. UI pause presentation is also transient render-layer DOM state. Neither belongs in serialized world state or LLM context.
 
-## NPC Prompt Profile Context
+## Actor Prompt Context
 
-NPC conversational turns call `buildNpcPromptContext()` from `src/interaction/npcPromptContext.ts`.
+NPC and guard conversational turns build prompt context through `src/interaction/npcPromptContext.ts` (shared builders) and `src/interaction/guardPromptContext.ts`.
 
-Prompt profile resolution behavior:
+### Prompt Profile Resolution
+
+Prompt profile resolution behavior (shared by all actor types):
 - `npcType` is normalized via `trim().toLowerCase()`
 - profile lookup is performed against `ACTOR_PROMPT_PROFILE_REGISTRY`
 - `NPC_PROMPT_PROFILE_REGISTRY` remains as a legacy alias to the same shared registry for compatibility
 - unknown, empty, or missing `npcType` values deterministically fall back to `DEFAULT_NPC_PROMPT_PROFILE`
 - fallback responses expose `profileKey: 'default'`
 
-The serialized prompt context includes four top-level sections:
+### World Knowledge Builder Registry
+
+World knowledge is resolved separately from prompt profiles via `buildActorTypeWorldKnowledge(actorType, worldState, actorId)` in `src/interaction/npcPromptContext.ts`. Both `buildGuardPromptContext` and `buildNpcPromptContext` route through this function.
+
+Resolution order:
+1. Normalize `actorType` via `trim().toLowerCase()`
+2. Look up a builder directly in `ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS`
+3. If not found, check `ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES` and resolve to the alias target's builder
+4. If neither resolves, return `null` — `typeWorldKnowledge` is omitted from the context deterministically
+
+Current registry keys and payload shapes:
+- `guard`: `{ player, guards[], doors[] }` — all guards/doors with truth and outcome flags
+- `villager`: `{ player, otherVillagers[] }` — other villagers in the level, excluding the requesting actor by `actorId`
+
+Current aliases:
+- `archive_keeper → villager`
+
+Unknown actor types produce `null` and omit `typeWorldKnowledge` without throwing.
+
+### NPC Prompt Context Shape
+
+`buildNpcPromptContext(npc, player, worldState)` returns serialized JSON with up to five sections:
 - `actor`: stable actor identifier and raw `npcType`
 - `npcProfile`: resolved shared profile (`profileKey`, `requestedNpcType`, persona/knowledge/style constraints)
 - `npcInstance`: per-instance data (`displayName`, `position`, `dialogueContextKey`)
+- `typeWorldKnowledge` _(conditional)_: actor-type-specific world facts; present only when `buildActorTypeWorldKnowledge` returns a non-null value
 - `player`: player identifier and display name
 
-This split keeps shared type-level prompt policy separate from per-instance world facts.
+This split keeps shared type-level prompt policy (`npcProfile`) separate from per-instance world facts (`npcInstance`) and type-scoped world context (`typeWorldKnowledge`).
 
 ## Behavior Parity Expectations
 
@@ -130,7 +154,7 @@ See `src/interaction/guardInteraction.ts`, `src/interaction/npcInteraction.ts`, 
 
 - `src/interaction/interactionDispatcher.test.ts`: dispatch routing by kind, sync/async behavior parity, result dispatcher timing parity, door/object non-pause guarantee
 - `src/runtimeController.test.ts`: pause entry/exit lifecycle, command gating while paused, resume without command leak, level-outcome gating independent of pause state
-- `src/interaction/npcPromptContext.test.ts`: profile registry resolution, deterministic fallback, context shape determinism
+- `src/interaction/npcPromptContext.test.ts`: profile registry resolution, deterministic fallback, world knowledge builder registry keys, alias resolution (`archive_keeper → villager`), self-exclusion from `otherVillagers`, unknown-type `null` fallback, context shape determinism
 - `src/interaction/objectInteraction.test.ts`: object-type dispatcher behavior, first-use outcomes, repeat interactions
 - `src/integration/starterLevel.test.ts`: end-to-end adjacent object resolution and state updates
 - `src/interaction/adjacencyResolver.test.ts`: deterministic target resolution with interactive objects

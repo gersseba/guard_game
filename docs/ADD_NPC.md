@@ -69,8 +69,10 @@ export const ACTOR_PROMPT_PROFILE_REGISTRY: Record<string, ActorPromptProfile> =
 
 If no registry entry exists for the NPC's type, behavior remains valid via default fallback.
 
+**World knowledge builders are separate from prompt profiles.** If the new NPC type needs type-specific world facts in its prompt context (e.g., knowledge of other nearby actors), add a builder entry to `ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS` in `src/interaction/npcPromptContext.ts`. If the new type should share world knowledge with an existing type, add an alias entry to `ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES` instead (e.g., `new_type: 'villager'`). NPC types without a builder or alias receive no `typeWorldKnowledge` in their prompt context, which is valid default behavior.
+
 ### 4. Understand Prompt Context Construction
-`buildNpcPromptContext(npc, player)` returns deterministic JSON with this shape:
+`buildNpcPromptContext(npc, player, worldState)` returns deterministic JSON with this shape:
 
 ```json
 {
@@ -87,17 +89,23 @@ If no registry entry exists for the NPC's type, behavior remains valid via defau
     "position": { "x": 8, "y": 5 },
     "dialogueContextKey": "npc_archive_keeper"
   },
+  "typeWorldKnowledge": {
+    "player": { "id": "player", "position": { "x": 1, "y": 1 } },
+    "otherVillagers": []
+  },
   "player": { "id": "player", "displayName": "Player" }
 }
 ```
 
-This keeps shared type-level prompt behavior (`npcProfile`) separate from per-instance fields (`npcInstance`).
+`typeWorldKnowledge` is present here because `archive_keeper` is aliased to the `villager` builder via `ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES`. The `villager` builder provides a `{ player, otherVillagers[] }` payload, excluding the requesting actor from `otherVillagers`.
+
+This keeps shared type-level prompt behavior (`npcProfile`) separate from per-instance fields (`npcInstance`) and type-scoped world context (`typeWorldKnowledge`).
 
 ### 5. Add Tests
 Cover both world loading and prompt resolution behavior:
 - `src/world/level.test.ts`: NPC deserialization and derived `dialogueContextKey`
 - `src/interaction/npcPromptContext.test.ts`: same-type reuse, cross-type differentiation, deterministic fallback, and deterministic serialized context
-- `src/interaction/npcInteraction.test.ts`: context passed to LLM includes expected actor/profile/instance/player sections
+- `src/interaction/npcInteraction.test.ts`: context passed to LLM includes expected actor/profile/instance/typeWorldKnowledge/player sections
 
 ## Checklist
 
@@ -105,6 +113,7 @@ Cover both world loading and prompt resolution behavior:
 - [ ] `npcType` follows registry naming style (normalized lowercase tokens such as `archive_keeper`)
 - [ ] Prompt profile entry added to `ACTOR_PROMPT_PROFILE_REGISTRY` when custom behavior is required
 - [ ] Fallback behavior is acceptable if no custom profile entry is added
+- [ ] World knowledge builder added to `ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS`, or alias added to `ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES`, when type-specific world context is required; omitting both is valid when no world context is needed
 - [ ] Tests cover profile resolution and prompt context serialization (`src/interaction/npcPromptContext.test.ts`)
 - [ ] Level passes `validateLevelData()` and `deserializeLevel()` without errors
 - [ ] NPC position does not overlap with other entities (validated by `validateSpatialLayout()`)
