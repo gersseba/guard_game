@@ -236,6 +236,8 @@ export const buildNpcPromptContext = (npc: Npc, player: Player, worldState: Worl
       dialogueContextKey: npc.dialogueContextKey,
     },
     ...(worldKnowledge !== null && { typeWorldKnowledge: worldKnowledge }),
+    ...(npc.instanceKnowledge !== undefined && { instanceKnowledge: npc.instanceKnowledge }),
+    ...(npc.instanceBehavior !== undefined && { instanceBehavior: npc.instanceBehavior }),
     player: {
       id: player.id,
       displayName: player.displayName,
