@@ -95,27 +95,40 @@ Stores conversation history by actor id. The current conversational actors are g
 - `actorConversationHistoryByActorId: ActorConversationHistoryByActorId`
 - `levelOutcome: 'win' | 'lose' | null`
 
-## NPC Prompt Context Types
+## Actor and NPC Prompt Context Types
 
 Defined in `src/interaction/npcPromptContext.ts`.
 
-### NpcPromptProfile
+### ActorPromptProfile
 - `personaContract: string`
 - `knowledgePolicy?: string`
 - `responseStyleConstraints?: string`
 
-### ResolvedNpcPromptProfile
-Extends `NpcPromptProfile` with:
-- `profileKey: string` - Registry key used; `default` when fallback is applied
-- `requestedNpcType: string` - Normalized incoming type (`trim().toLowerCase()`, or `default` for missing/empty)
+### NpcPromptProfile
+Legacy NPC-focused alias for `ActorPromptProfile`.
 
-### NPC_PROMPT_PROFILE_REGISTRY
-`Record<string, NpcPromptProfile>` keyed by normalized `npcType` values.
+### ResolvedActorPromptProfile
+Extends `ActorPromptProfile` with:
+- `profileKey: string` - Registry key used; `default` when fallback is applied
+- `requestedActorType: string` - Normalized incoming type (`trim().toLowerCase()`, or `default` for missing/empty)
+
+### ResolvedNpcPromptProfile
+Extends `ActorPromptProfile` with:
+- `profileKey: string` - Registry key used; `default` when fallback is applied
+- `requestedNpcType: string` - NPC-focused compatibility field mapped from actor normalization
+
+### ACTOR_PROMPT_PROFILE_REGISTRY
+`Record<string, ActorPromptProfile>` keyed by normalized actor-type values.
 
 Current built-in keys:
+- `guard`
 - `archive_keeper`
 - `engineer`
 - `scholar`
+- `villager`
+
+### NPC_PROMPT_PROFILE_REGISTRY
+Legacy alias to `ACTOR_PROMPT_PROFILE_REGISTRY` retained for compatibility in NPC-specific call sites.
 
 ### DEFAULT_NPC_PROMPT_PROFILE
 Deterministic fallback profile used when a normalized `npcType` has no registry match.
