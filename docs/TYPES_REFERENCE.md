@@ -135,13 +135,35 @@ Deterministic fallback profile used when a normalized `npcType` has no registry 
 
 ## Prompt Context Shape
 
-`buildNpcPromptContext(npc, player)` returns a serialized JSON object with:
+`buildNpcPromptContext(npc, player, worldState)` returns a serialized JSON object with:
 - `actor: { id, npcType }`
 - `npcProfile: ResolvedNpcPromptProfile`
 - `npcInstance: { displayName, position: { x, y }, dialogueContextKey }`
+- `typeWorldKnowledge?: unknown` — actor-type-specific world facts; omitted when `buildActorTypeWorldKnowledge` returns `null`
 - `player: { id, displayName }`
 
-This separates shared type-level prompt policy (`npcProfile`) from per-instance world facts (`npcInstance`).
+This separates shared type-level prompt policy (`npcProfile`) from per-instance world facts (`npcInstance`) and type-scoped world context (`typeWorldKnowledge`).
+
+### ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS
+
+`Record<string, ActorTypeWorldKnowledgeBuilder>` — registry of world knowledge builders keyed by normalized actor-type values.
+
+Current entries and payload shapes:
+- `guard`: `{ player, guards[], doors[] }` — all guards/doors with truth and outcome flags
+- `villager`: `{ player, otherVillagers[] }` — other villagers in the level, excluding the requesting actor
+
+### ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES
+
+`Record<string, string>` — maps actor types without a direct registry entry to an existing builder key.
+
+Current entries:
+- `archive_keeper → villager`
+
+### buildActorTypeWorldKnowledge
+
+`buildActorTypeWorldKnowledge(actorType, worldState, actorId): unknown | null`
+
+Resolves the world knowledge builder for `actorType` (checking `ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS` first, then `ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES`) and invokes it with `worldState` and `actorId`. Returns `null` when no builder resolves. Called by both `buildGuardPromptContext` and `buildNpcPromptContext`.
 
 ## Level File Shape
 
