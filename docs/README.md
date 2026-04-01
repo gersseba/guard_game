@@ -35,6 +35,25 @@ Recipes and walkthroughs for common extension tasks:
 
 **Stuck on a layer boundary issue?** Each layer guide includes contract documentation and extension points.
 
+## Current Game State Snapshot
+
+This section is the documenter-maintained baseline for design decisions and feature-gap analysis.
+
+Use this section to capture only current, implemented behavior for:
+- Core game loop and deterministic rule enforcement
+- Implemented feature set and level progression capabilities
+- LLM integration boundaries (LLM used for NPC interaction only)
+- Entity knowledge/context contracts (type-level and instance-level)
+
+Recommended snapshot structure:
+1. Runtime Status: playable loop and implemented objectives
+2. Feature Inventory: implemented systems and missing pillars
+3. LLM Integration: where LLM is used and where it is explicitly not used
+4. Entity Knowledge Model: what player, guards, NPCs, and objects can expose to prompt context
+5. Known Constraints: current technical/design limits that affect new proposals
+
+The game designer agent should treat this section as the primary source when deciding direction, level feasibility, and feature gaps.
+
 ## Documentation Maintenance
 
 Documentation is maintained alongside code changes. When implementing a feature:

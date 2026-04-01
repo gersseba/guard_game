@@ -14,17 +14,19 @@ Design practical, buildable levels aligned with current implementation and level
 - You need to ensure a level is feasible with current world/interaction systems.
 
 ## Inputs
+- Current Game State Snapshot in docs/README.md (documenter-maintained baseline).
 - `docs/` guidance on world, interaction, and level loading.
 - Existing `public/levels/*.json` examples.
 - Current entity capabilities in `src/world/types.ts` and `src/world/level.ts`.
 
 ## Workflow
-1. Confirm available entity types, fields, and interaction patterns.
-2. Define level objective and player learning goal.
-3. Choose entity placement and conversational beats that support the objective.
-4. Validate feasibility against current mechanics.
-5. Produce a level spec that maps cleanly to existing level JSON.
-6. If required behavior cannot be represented, surface it as a feature gap.
+1. Confirm available entity types, features, LLM behavior boundaries, and knowledge/context contracts from the Current Game State Snapshot.
+2. If the snapshot is missing or stale, request a documenter refresh before producing a level proposal.
+3. Define level objective and player learning goal.
+4. Choose entity placement and conversational beats that support the objective.
+5. Validate feasibility against current mechanics.
+6. Produce a level spec that maps cleanly to existing level JSON.
+7. If required behavior cannot be represented, surface it as a feature gap.
 
 ## Level Design Rules
 - Keep one clear objective per level.
@@ -34,6 +36,7 @@ Design practical, buildable levels aligned with current implementation and level
 - Keep asset requirements explicit and reusable where possible.
 
 ## Output
+- Snapshot basis used (docs/README.md Current Game State Snapshot)
 - Level concept summary
 - JSON-compatible entity plan (player, guards, doors, npcs, objects)
 - Interaction intent per major actor
