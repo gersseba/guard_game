@@ -116,6 +116,19 @@ export function validateLevelData(input: unknown): LevelData {
     if (guard['spriteSet'] !== undefined) {
       validateSpriteSet(guard['spriteSet'], `guard at index ${i}`);
     }
+
+    // instanceKnowledge and instanceBehavior are optional strings
+    if (guard['instanceKnowledge'] !== undefined && typeof guard['instanceKnowledge'] !== 'string') {
+      throw new Error(
+        `Invalid level data: guard at index ${i} has invalid instanceKnowledge (must be a string when provided)`,
+      );
+    }
+
+    if (guard['instanceBehavior'] !== undefined && typeof guard['instanceBehavior'] !== 'string') {
+      throw new Error(
+        `Invalid level data: guard at index ${i} has invalid instanceBehavior (must be a string when provided)`,
+      );
+    }
   }
 
   if (!Array.isArray(raw['doors'])) {
@@ -184,6 +197,19 @@ export function validateLevelData(input: unknown): LevelData {
 
       if (npc['spriteSet'] !== undefined) {
         validateSpriteSet(npc['spriteSet'], `npc at index ${i}`);
+      }
+
+      // instanceKnowledge and instanceBehavior are optional strings
+      if (npc['instanceKnowledge'] !== undefined && typeof npc['instanceKnowledge'] !== 'string') {
+        throw new Error(
+          `Invalid level data: npc at index ${i} has invalid instanceKnowledge (must be a string when provided)`,
+        );
+      }
+
+      if (npc['instanceBehavior'] !== undefined && typeof npc['instanceBehavior'] !== 'string') {
+        throw new Error(
+          `Invalid level data: npc at index ${i} has invalid instanceBehavior (must be a string when provided)`,
+        );
       }
     }
   }
@@ -271,6 +297,8 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       dialogueContextKey: `npc_${n.npcType.toLowerCase()}`,
       ...(n.spriteAssetPath !== undefined ? { spriteAssetPath: n.spriteAssetPath } : {}),
       ...(n.spriteSet !== undefined ? { spriteSet: n.spriteSet } : {}),
+      ...(n.instanceKnowledge !== undefined ? { instanceKnowledge: n.instanceKnowledge } : {}),
+      ...(n.instanceBehavior !== undefined ? { instanceBehavior: n.instanceBehavior } : {}),
     })),
     guards: levelData.guards.map((g) => ({
       id: g.id,
@@ -280,6 +308,8 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       honestyTrait: g.honestyTrait,
       ...(g.spriteAssetPath !== undefined ? { spriteAssetPath: g.spriteAssetPath } : {}),
       ...(g.spriteSet !== undefined ? { spriteSet: g.spriteSet } : {}),
+      ...(g.instanceKnowledge !== undefined ? { instanceKnowledge: g.instanceKnowledge } : {}),
+      ...(g.instanceBehavior !== undefined ? { instanceBehavior: g.instanceBehavior } : {}),
     })),
     doors: levelData.doors.map((d) => ({
       id: d.id,
