@@ -8,11 +8,12 @@ The render layer translates `WorldState` into visual state and DOM-only runtime 
 - Keep viewport/camera centered around player with clamped world bounds
 - Map world entities to deterministic visuals by type and optional asset metadata
 - Consume world-owned player-facing direction when choosing player directional sprites
-- Manage DOM-only render utilities for runtime layout, chat UI, viewport pause presentation, and level-outcome presentation
+- Manage DOM-only render utilities for runtime layout, level controls UI, chat UI, viewport pause presentation, and level-outcome presentation
 
 Implementation entry points:
 - [src/render/scene.ts](../src/render/scene.ts)
 - [src/render/runtimeLayout.ts](../src/render/runtimeLayout.ts)
+- [src/render/levelUi.ts](../src/render/levelUi.ts)
 - [src/render/chatModal.ts](../src/render/chatModal.ts)
 - [src/render/viewportOverlay.ts](../src/render/viewportOverlay.ts)
 - [src/render/outcomeOverlay.ts](../src/render/outcomeOverlay.ts)
@@ -55,6 +56,7 @@ This keeps rendering deterministic even with partially configured sprite sets.
 
 The runtime mounts a small set of DOM-only helpers alongside the Pixi canvas:
 - `getRuntimeLayoutMarkup()` creates the host structure for viewport, side panels, modal host, and outcome host.
+- `createLevelUi()` manages level picker controls and the objective text panel in the runtime controls area.
 - `createChatModal()` manages the conversation dialog DOM and local focus behavior.
 - `createViewportOverlay()` manages the grey paused-world overlay inside `#viewport`.
 - `createOutcomeOverlay()` manages win/lose overlay messaging.
@@ -132,5 +134,6 @@ Source and verification:
 
 - `src/render/scene.test.ts`: color mapping, marker specs, sprite-mode behavior, player directional sprite selection from world-facing state, and deterministic directional fallback order
 - `src/render/runtimeLayout.test.ts`: viewport/layout behavior
+- `src/render/levelUi.test.ts`: level selector behavior and objective text rendering updates
 - `src/render/viewportOverlay.test.ts`: overlay visibility, `inert` toggling, focus blocking, and pointer blocking
 - `src/render/chatModal.test.ts`: close button and Escape exit behavior, modal visibility, and focus cleanup
