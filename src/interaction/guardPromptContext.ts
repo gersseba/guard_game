@@ -1,5 +1,9 @@
 import type { Guard, WorldState } from '../world/types';
-import { resolveActorPromptProfile, ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS } from './npcPromptContext';
+import {
+  ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS,
+  buildActorTypeWorldKnowledge,
+  resolveActorPromptProfile,
+} from './npcPromptContext';
 
 /**
  * Legacy export for backwards compatibility.
@@ -38,8 +42,6 @@ export interface GuardWorldContextPayload {
   }>;
 }
 
-const compareById = <T extends { id: string }>(a: T, b: T): number => a.id.localeCompare(b.id);
-
 /**
  * Legacy function for backwards compatibility.
  * Now wraps the guard world knowledge builder from the registry.
@@ -61,13 +63,11 @@ export const buildGuardWorldContextPayload = (worldState: WorldState): GuardWorl
 
 export const buildGuardPromptContext = (guard: Guard, worldState: WorldState): string => {
   const guardProfile = resolveActorPromptProfile('guard');
-  const worldKnowledgeBuilder = ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS['guard'];
+  const worldKnowledge = buildActorTypeWorldKnowledge('guard', worldState, guard.id);
 
-  if (!worldKnowledgeBuilder) {
+  if (worldKnowledge === null) {
     throw new Error('Guard world knowledge builder not found in registry');
   }
-
-  const worldKnowledge = worldKnowledgeBuilder(worldState, guard.id);
 
   return JSON.stringify({
     guard: {

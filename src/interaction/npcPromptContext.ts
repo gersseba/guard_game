@@ -139,7 +139,7 @@ export type ActorTypeWorldKnowledgeBuilder = (
 export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldKnowledgeBuilder> = {
   guard: (worldState: WorldState): unknown => {
     // Guards know about other guards, doors, and the player
-    const guides = [...worldState.guards]
+    const guards = [...worldState.guards]
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((guard) => ({
         id: guard.id,
@@ -162,7 +162,7 @@ export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldK
         id: worldState.player.id,
         position: { x: worldState.player.position.x, y: worldState.player.position.y },
       },
-      guards: guides,
+      guards,
       doors,
     };
   },
@@ -187,47 +187,6 @@ export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldK
       otherVillagers: npcs,
     };
   },
-
-  archive_keeper: (worldState: WorldState): unknown => {
-    // Archive keepers know about archives/objects and nearby NPCs
-    const objects = [...worldState.interactiveObjects]
-      .sort((a, b) => a.id.localeCompare(b.id))
-      .map((obj) => ({
-        id: obj.id,
-        displayName: obj.displayName,
-        objectType: obj.objectType,
-        position: { x: obj.position.x, y: obj.position.y },
-      }));
-
-    return {
-      player: {
-        id: worldState.player.id,
-        position: { x: worldState.player.position.x, y: worldState.player.position.y },
-      },
-      archives: objects,
-    };
-  },
-
-  engineer: (worldState: WorldState): unknown => {
-    // Engineers know about interactive objects (machinery, mechanisms)
-    const objects = [...worldState.interactiveObjects]
-      .sort((a, b) => a.id.localeCompare(b.id))
-      .map((obj) => ({
-        id: obj.id,
-        displayName: obj.displayName,
-        objectType: obj.objectType,
-        state: obj.state,
-        position: { x: obj.position.x, y: obj.position.y },
-      }));
-
-    return {
-      player: {
-        id: worldState.player.id,
-        position: { x: worldState.player.position.x, y: worldState.player.position.y },
-      },
-      machinery: objects,
-    };
-  },
 };
 
 /**
@@ -240,10 +199,18 @@ const resolveActorWorldKnowledgeBuilder = (
   return ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS[normalizedType];
 };
 
+export const buildActorTypeWorldKnowledge = (
+  actorType: string | null | undefined,
+  worldState: WorldState,
+  actorId: string,
+): unknown | null => {
+  const worldKnowledgeBuilder = resolveActorWorldKnowledgeBuilder(actorType);
+  return worldKnowledgeBuilder ? worldKnowledgeBuilder(worldState, actorId) : null;
+};
+
 export const buildNpcPromptContext = (npc: Npc, player: Player, worldState: WorldState): string => {
   const resolvedProfile = resolveNpcPromptProfile(npc.npcType);
-  const worldKnowledgeBuilder = resolveActorWorldKnowledgeBuilder(npc.npcType);
-  const worldKnowledge = worldKnowledgeBuilder ? worldKnowledgeBuilder(worldState, npc.id) : null;
+  const worldKnowledge = buildActorTypeWorldKnowledge(npc.npcType, worldState, npc.id);
 
   return JSON.stringify({
     actor: {
