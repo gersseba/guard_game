@@ -32,7 +32,7 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
     const assistantText = await llmClient
       .complete({
         actorId: request.npc.id,
-        context: buildNpcPromptContext(request.npc, request.player),
+        context: buildNpcPromptContext(request.npc, request.player, request.worldState),
         playerMessage: request.playerMessage,
         conversationHistory: historyWithPlayerMessage,
       })
@@ -78,12 +78,16 @@ export const handleNpcInteraction = async (
 
   return {
     npcId: request.npc.id,
-    responseText: fallbackText,
+    responseText: `${request.npc.displayName}: ${fallbackText}`,
     updatedWorldState: {
       ...request.worldState,
       actorConversationHistoryByActorId: {
         ...request.worldState.actorConversationHistoryByActorId,
-        [request.npc.id]: [...previousHistory, playerMessageRecord, assistantMessageRecord],
+        [request.npc.id]: [
+          ...previousHistory,
+          playerMessageRecord,
+          assistantMessageRecord,
+        ],
       },
     },
   };
