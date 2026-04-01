@@ -5,6 +5,7 @@ import {
   buildGuardWorldContextPayload,
   GUARD_PERSONA_CONTRACT,
 } from './guardPromptContext';
+import { ACTOR_PROMPT_PROFILE_REGISTRY } from './npcPromptContext';
 
 describe('buildGuardWorldContextPayload', () => {
   it('includes only player, guards, and doors with truth/safe booleans', () => {
@@ -132,6 +133,26 @@ describe('buildGuardWorldContextPayload', () => {
       truth: true,
     });
     expect(roundTrip.world).toEqual(parsed.world);
+  });
+
+  it('resolves guard persona contract from the shared actor profile registry', () => {
+    const worldState = createInitialWorldState();
+    worldState.guards = [
+      {
+        id: 'guard-1',
+        displayName: 'Guard',
+        position: { x: 2, y: 2 },
+        guardState: 'idle',
+      },
+    ];
+
+    const promptContext = buildGuardPromptContext(worldState.guards[0], worldState);
+    const parsed = JSON.parse(promptContext) as { guardPersonaContract: string };
+
+    expect(parsed.guardPersonaContract).toBe(ACTOR_PROMPT_PROFILE_REGISTRY.guard.personaContract);
+    expect(ACTOR_PROMPT_PROFILE_REGISTRY.guard.responseStyleConstraints).toBeDefined();
+    expect(ACTOR_PROMPT_PROFILE_REGISTRY.guard.responseStyleConstraints).toContain('guard-related topics');
+    expect(parsed.guardPersonaContract).toBe(GUARD_PERSONA_CONTRACT);
   });
 });
 
