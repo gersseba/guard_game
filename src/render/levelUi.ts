@@ -10,6 +10,8 @@ export interface LevelUiHandle {
   populateLevels(levels: LevelEntry[]): void;
   /** Reflect the currently active level id in the dropdown (without triggering onLevelSelect). */
   setSelectedLevel(levelId: string): void;
+  /** Display the active level objective text in the runtime controls area. */
+  setLevelObjective(objective: string): void;
 }
 
 /**
@@ -38,6 +40,14 @@ export function createLevelUi(container: HTMLElement, callbacks: LevelUiCallback
   resetButton.textContent = 'Reset';
   resetButton.disabled = true;
 
+  const objectiveHeading = document.createElement('h3');
+  objectiveHeading.className = 'level-ui-objective-title';
+  objectiveHeading.textContent = 'Objective';
+
+  const objectiveText = document.createElement('p');
+  objectiveText.className = 'level-ui-objective-text';
+  objectiveText.textContent = 'Load a level to view its objective.';
+
   select.addEventListener('change', () => {
     const selectedId = select.value;
     if (selectedId) {
@@ -52,6 +62,8 @@ export function createLevelUi(container: HTMLElement, callbacks: LevelUiCallback
   wrapper.appendChild(label);
   wrapper.appendChild(select);
   wrapper.appendChild(resetButton);
+  wrapper.appendChild(objectiveHeading);
+  wrapper.appendChild(objectiveText);
   container.appendChild(wrapper);
 
   return {
@@ -84,6 +96,10 @@ export function createLevelUi(container: HTMLElement, callbacks: LevelUiCallback
 
     setSelectedLevel(levelId: string): void {
       select.value = levelId;
+    },
+
+    setLevelObjective(objective: string): void {
+      objectiveText.textContent = objective;
     },
   };
 }

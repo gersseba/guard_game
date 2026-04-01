@@ -191,6 +191,7 @@ const startRuntime = async (): Promise<void> => {
         .then((newState) => {
           world.resetToState(newState);
           levelUi.setSelectedLevel(levelId);
+          levelUi.setLevelObjective(newState.levelObjective);
           outcomeOverlay.hide();
           levelOutcomeShown = false;
         })
@@ -204,6 +205,7 @@ const startRuntime = async (): Promise<void> => {
       fetchAndLoadLevel(levelUrl)
         .then((newState) => {
           world.resetToState(newState);
+          levelUi.setLevelObjective(newState.levelObjective);
           outcomeOverlay.hide();
           levelOutcomeShown = false;
         })
@@ -229,6 +231,7 @@ const startRuntime = async (): Promise<void> => {
         levelUi.setSelectedLevel(defaultLevel.id);
         return fetchAndLoadLevel(`${LEVELS_BASE_URL}/${defaultLevel.id}.json`).then((newState) => {
           world.resetToState(newState);
+          levelUi.setLevelObjective(newState.levelObjective);
         });
       }
 

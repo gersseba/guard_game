@@ -141,6 +141,25 @@ body {
   background: rgba(5, 10, 18, 0.75);
 }
 
+.level-ui {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.level-ui-objective-title {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+}
+
+.level-ui-objective-text {
+  margin: 0;
+  padding: 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(187, 224, 239, 0.2);
+  background: rgba(5, 10, 18, 0.7);
+  min-height: 3.2rem;
+}
+
 /* Chat Modal Styles */
 .chat-modal-overlay {
   position: fixed;

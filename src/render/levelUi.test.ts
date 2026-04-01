@@ -29,6 +29,9 @@ describe('createLevelUi', () => {
 
     expect(resetButton).not.toBeNull();
     expect(resetButton?.disabled).toBe(true);
+
+    const objectiveText = container.querySelector<HTMLElement>('.level-ui-objective-text');
+    expect(objectiveText?.textContent).toBe('Load a level to view its objective.');
   });
 
   it('keeps controls disabled when populated with an empty level list', () => {
@@ -98,5 +101,16 @@ describe('createLevelUi', () => {
     const select = container.querySelector<HTMLSelectElement>('#level-select');
     expect(select?.value).toBe('riddle');
     expect(onLevelSelect).not.toHaveBeenCalled();
+  });
+
+  it('renders and updates objective text through handle updates', () => {
+    const handle = createLevelUi(container, { onLevelSelect, onReset });
+
+    handle.setLevelObjective('Talk to both guards and pick the safe door.');
+    const objectiveText = container.querySelector<HTMLElement>('.level-ui-objective-text');
+    expect(objectiveText?.textContent).toBe('Talk to both guards and pick the safe door.');
+
+    handle.setLevelObjective('Reach the west door.');
+    expect(objectiveText?.textContent).toBe('Reach the west door.');
   });
 });
