@@ -51,6 +51,9 @@ Sprite metadata contracts:
 - `spriteAssetPath?: string` remains optional for player, guards, doors, npcs, and interactive objects.
 - `spriteSet?: SpriteSet` is now optional for player, guards, doors, npcs, and interactive objects.
 
+Guard instance fields:
+- optional `instanceKnowledge?: string` and `instanceBehavior?: string` — validated as strings when provided; passed through to runtime `Guard` objects
+
 When `spriteSet` is present, validation enforces:
 - it must be an object
 - only known keys are read (`default`, `front`, `away`, `left`, `right`)
@@ -62,6 +65,7 @@ Path format correctness and asset loadability are intentionally handled by rende
 For `npcs`, validation enforces:
 - required identity/position fields (`id`, `displayName`, `x`, `y`)
 - required `npcType: string` - categorizes the NPC's role (for example, `'archive_keeper'`, `'scholar'`)
+- optional `instanceKnowledge?: string` and `instanceBehavior?: string` — validated as strings when provided; passed through to runtime `Npc` objects
 
 For `interactiveObjects`, validation enforces:
 - required identity/position fields
@@ -104,7 +108,8 @@ NPCs from level JSON are transformed to runtime `Npc` objects with deterministic
   position: { x: 8, y: 5 },
   npcType: 'archive_keeper',
   dialogueContextKey: 'npc_archive_keeper',
-  spriteAssetPath: '/assets/medieval_npc_villager.svg'
+  spriteAssetPath: '/assets/medieval_npc_villager.svg',
+  // instanceKnowledge and instanceBehavior are included when present in the level JSON
 }
 ```
 

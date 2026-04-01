@@ -37,6 +37,21 @@ For NPC conversational turns:
 - shared profile information (`npcProfile`) resolved from `npcType`
 - per-instance NPC data (`npcInstance`) from world state
 - actor-type world context (`typeWorldKnowledge`) when a builder resolves for the `npcType`
+- instance-specific knowledge (`instanceKnowledge`) when present on the `Npc` object
+- instance-specific behavior traits (`instanceBehavior`) when present on the `Npc` object
+
+## Guard Prompt Context Flow
+
+For guard conversational turns:
+1. `createGuardInteractionService()` in `src/interaction/guardInteraction.ts` builds context with `buildGuardPromptContext(guard, worldState)`.
+2. The service passes actor id, context, player message, and history into `llmClient.complete(...)`.
+
+`buildGuardPromptContext()` includes:
+- the requesting guard's identity and truth encoding (`guard`)
+- guard persona contract (`guardPersonaContract`)
+- world knowledge payload (`world`) with all guards, doors, and player position
+- instance-specific knowledge (`instanceKnowledge`) when present on the `Guard` object
+- instance-specific behavior traits (`instanceBehavior`) when present on the `Guard` object
 
 ## Deterministic Fallbacks
 
