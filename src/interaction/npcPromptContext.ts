@@ -1,4 +1,4 @@
-import type { Npc, Player } from '../world/types';
+import type { Npc, Player, WorldState } from '../world/types';
 
 /**
  * Shared behavior profile for any actor type (Guard, NPC, etc).
@@ -54,7 +54,9 @@ export const ACTOR_PROMPT_PROFILE_REGISTRY: Record<string, ActorPromptProfile> =
   },
   engineer: {
     personaContract:
-      'You are a practical engineer focused on mechanisms, access routes, and route constraints when supported by the provided context.',
+      'You are a practical engineer focused on mechanisms, access routes, and keeping infrastructure operational.',
+    knowledgePolicy:
+      'You may discuss machinery, access points, repairs, and route constraints when supported by the provided context.',
     responseStyleConstraints: 'Respond directly with a pragmatic, technical tone.',
   },
   scholar: {
@@ -63,6 +65,13 @@ export const ACTOR_PROMPT_PROFILE_REGISTRY: Record<string, ActorPromptProfile> =
     knowledgePolicy:
       'You may discuss research topics and observed patterns when they are supported by the provided context.',
     responseStyleConstraints: 'Respond thoughtfully and avoid overstating certainty.',
+  },
+  villager: {
+    personaContract:
+      'You are a common villager with local knowledge and everyday concerns. You know your neighbors and the immediate community.',
+    knowledgePolicy:
+      'You may discuss other NPCs, local events, and community matters when supported by nearby context.',
+    responseStyleConstraints: 'Respond naturally and conversationally, like an ordinary person.',
   },
 };
 
@@ -105,8 +114,128 @@ export const resolveNpcPromptProfile = (npcType: string | null | undefined): Res
   return resolveActorPromptProfile(npcType);
 };
 
-export const buildNpcPromptContext = (npc: Npc, player: Player): string => {
+/**
+ * World knowledge builder for actor types.
+ * Takes a WorldState and actor ID, returns type-specific world context.
+ * Return value is serialized and included in the LLM prompt.
+ */
+export type ActorTypeWorldKnowledgeBuilder = (
+  worldState: WorldState,
+  actorId: string,
+) => unknown;
+
+/**
+ * Registry of world knowledge builders by actor type.
+ * Each actor type can declare what world facts it has access to.
+ */
+export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldKnowledgeBuilder> = {
+  guard: (worldState: WorldState): unknown => {
+    // Guards know about other guards, doors, and the player
+    const guides = [...worldState.guards]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((guard) => ({
+        id: guard.id,
+        displayName: guard.displayName,
+        position: { x: guard.position.x, y: guard.position.y },
+        truth: guard.honestyTrait !== 'liar',
+      }));
+
+    const doors = [...worldState.doors]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((door) => ({
+        id: door.id,
+        displayName: door.displayName,
+        position: { x: door.position.x, y: door.position.y },
+        safe: door.outcome === 'safe',
+      }));
+
+    return {
+      player: {
+        id: worldState.player.id,
+        position: { x: worldState.player.position.x, y: worldState.player.position.y },
+      },
+      guards: guides,
+      doors,
+    };
+  },
+
+  villager: (worldState: WorldState): unknown => {
+    // Villagers know about other NPCs in the world
+    const npcs = [...worldState.npcs]
+      .filter((npc) => npc.npcType === 'villager')
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((npc) => ({
+        id: npc.id,
+        displayName: npc.displayName,
+        position: { x: npc.position.x, y: npc.position.y },
+        npcType: npc.npcType,
+      }));
+
+    return {
+      player: {
+        id: worldState.player.id,
+        position: { x: worldState.player.position.x, y: worldState.player.position.y },
+      },
+      otherVillagers: npcs,
+    };
+  },
+
+  archive_keeper: (worldState: WorldState): unknown => {
+    // Archive keepers know about archives/objects and nearby NPCs
+    const objects = [...worldState.interactiveObjects]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((obj) => ({
+        id: obj.id,
+        displayName: obj.displayName,
+        objectType: obj.objectType,
+        position: { x: obj.position.x, y: obj.position.y },
+      }));
+
+    return {
+      player: {
+        id: worldState.player.id,
+        position: { x: worldState.player.position.x, y: worldState.player.position.y },
+      },
+      archives: objects,
+    };
+  },
+
+  engineer: (worldState: WorldState): unknown => {
+    // Engineers know about interactive objects (machinery, mechanisms)
+    const objects = [...worldState.interactiveObjects]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((obj) => ({
+        id: obj.id,
+        displayName: obj.displayName,
+        objectType: obj.objectType,
+        state: obj.state,
+        position: { x: obj.position.x, y: obj.position.y },
+      }));
+
+    return {
+      player: {
+        id: worldState.player.id,
+        position: { x: worldState.player.position.x, y: worldState.player.position.y },
+      },
+      machinery: objects,
+    };
+  },
+};
+
+/**
+ * Resolve world knowledge for an actor type. Returns a builder function or undefined if not found.
+ */
+const resolveActorWorldKnowledgeBuilder = (
+  actorType: string | null | undefined,
+): ActorTypeWorldKnowledgeBuilder | undefined => {
+  const normalizedType = normalizeActorType(actorType);
+  return ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS[normalizedType];
+};
+
+export const buildNpcPromptContext = (npc: Npc, player: Player, worldState: WorldState): string => {
   const resolvedProfile = resolveNpcPromptProfile(npc.npcType);
+  const worldKnowledgeBuilder = resolveActorWorldKnowledgeBuilder(npc.npcType);
+  const worldKnowledge = worldKnowledgeBuilder ? worldKnowledgeBuilder(worldState, npc.id) : null;
 
   return JSON.stringify({
     actor: {
@@ -122,6 +251,7 @@ export const buildNpcPromptContext = (npc: Npc, player: Player): string => {
       },
       dialogueContextKey: npc.dialogueContextKey,
     },
+    ...(worldKnowledge !== null && { typeWorldKnowledge: worldKnowledge }),
     player: {
       id: player.id,
       displayName: player.displayName,
