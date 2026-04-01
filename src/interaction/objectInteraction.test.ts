@@ -23,6 +23,7 @@ const makeSupplyCrate = (
 const createWorldState = (...interactiveObjects: InteractiveObject[]): WorldState => ({
   tick: 0,
   grid: { width: 12, height: 8, tileSize: 48 },
+  levelObjective: 'Inspect nearby objects for clues.',
   player,
   npcs: [],
   guards: [],

@@ -1,6 +1,7 @@
 {
   "version": 1,
   "name": "Two Guards, Two Doors",
+  "objective": "Question the two guards and pick the door that leads to safety.",
   "width": 20,
   "height": 20,
   "player": {

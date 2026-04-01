@@ -7,6 +7,7 @@ export const createInitialWorldState = (): WorldState => ({
     height: 8,
     tileSize: 48,
   },
+  levelObjective: 'Reach the safe exit.',
   player: {
     id: 'player-1',
     displayName: 'Guard',

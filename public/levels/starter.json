@@ -1,6 +1,7 @@
 {
   "version": 1,
   "name": "Starter",
+  "objective": "Talk to both guards, then choose the safe door to escape.",
   "width": 20,
   "height": 20,
   "player": {
