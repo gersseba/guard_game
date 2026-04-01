@@ -33,8 +33,8 @@ describe('starter level integration pipeline', () => {
     expect(worldState.npcs[0].spriteAssetPath).toBe('/assets/medieval_npc_villager.svg');
 
     expect(worldState.doors).toHaveLength(2);
-    expect(worldState.doors.find((door) => door.id === 'door-1')?.position).toEqual({ x: 2, y: 10 });
-    expect(worldState.doors.find((door) => door.id === 'door-2')?.position).toEqual({ x: 10, y: 2 });
+    expect(worldState.doors.find((door) => door.id === 'door-1')?.position).toEqual({ x: 4, y: 10 });
+    expect(worldState.doors.find((door) => door.id === 'door-2')?.position).toEqual({ x: 10, y: 4 });
 
     expect(worldState.interactiveObjects).toHaveLength(1);
     expect(worldState.interactiveObjects.find((object) => object.id === 'crate-supplies')?.position).toEqual({

@@ -49,14 +49,15 @@ Prompt persona/policy is resolved by `resolveNpcPromptProfile(npc.npcType)` in `
 
 How it works:
 - `npcType` is normalized to lowercase and trimmed
-- if present in `NPC_PROMPT_PROFILE_REGISTRY`, that profile is used
+- if present in `ACTOR_PROMPT_PROFILE_REGISTRY`, that profile is used
+- `NPC_PROMPT_PROFILE_REGISTRY` remains a legacy alias to the same shared registry
 - otherwise the deterministic `DEFAULT_NPC_PROMPT_PROFILE` is used
 - fallback sets `profileKey` to `default`
 
 To introduce a new NPC type with custom prompt behavior, add a registry entry:
 
 ```typescript
-export const NPC_PROMPT_PROFILE_REGISTRY: Record<string, NpcPromptProfile> = {
+export const ACTOR_PROMPT_PROFILE_REGISTRY: Record<string, ActorPromptProfile> = {
   archive_keeper: { ... },
   engineer: {
     personaContract: 'You are a practical engineer focused on mechanisms and routes.',
@@ -102,7 +103,7 @@ Cover both world loading and prompt resolution behavior:
 
 - [ ] NPC added to level JSON (`public/levels/*.json`) with `id`, `displayName`, `x`, `y`, `npcType`
 - [ ] `npcType` follows registry naming style (normalized lowercase tokens such as `archive_keeper`)
-- [ ] Prompt profile entry added to `NPC_PROMPT_PROFILE_REGISTRY` when custom behavior is required
+- [ ] Prompt profile entry added to `ACTOR_PROMPT_PROFILE_REGISTRY` when custom behavior is required
 - [ ] Fallback behavior is acceptable if no custom profile entry is added
 - [ ] Tests cover profile resolution and prompt context serialization (`src/interaction/npcPromptContext.test.ts`)
 - [ ] Level passes `validateLevelData()` and `deserializeLevel()` without errors

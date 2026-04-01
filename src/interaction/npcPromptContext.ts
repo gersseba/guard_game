@@ -20,10 +20,10 @@ export interface ResolvedActorPromptProfile extends ActorPromptProfile {
   requestedActorType: string;
 }
 
-/**
- * Legacy alias for backwards compatibility.
- */
-export type ResolvedNpcPromptProfile = ResolvedActorPromptProfile;
+export interface ResolvedNpcPromptProfile extends ActorPromptProfile {
+  profileKey: string;
+  requestedNpcType: string;
+}
 
 export const DEFAULT_ACTOR_PROMPT_PROFILE: ActorPromptProfile = {
   personaContract:
@@ -111,7 +111,15 @@ export const resolveActorPromptProfile = (
  * Legacy resolver for NPC-specific calls. Routes to shared resolver.
  */
 export const resolveNpcPromptProfile = (npcType: string | null | undefined): ResolvedNpcPromptProfile => {
-  return resolveActorPromptProfile(npcType);
+  const resolvedProfile = resolveActorPromptProfile(npcType);
+
+  return {
+    profileKey: resolvedProfile.profileKey,
+    requestedNpcType: resolvedProfile.requestedActorType,
+    personaContract: resolvedProfile.personaContract,
+    knowledgePolicy: resolvedProfile.knowledgePolicy,
+    responseStyleConstraints: resolvedProfile.responseStyleConstraints,
+  };
 };
 
 /**

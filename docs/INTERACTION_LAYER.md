@@ -87,7 +87,8 @@ NPC conversational turns call `buildNpcPromptContext()` from `src/interaction/np
 
 Prompt profile resolution behavior:
 - `npcType` is normalized via `trim().toLowerCase()`
-- profile lookup is performed against `NPC_PROMPT_PROFILE_REGISTRY`
+- profile lookup is performed against `ACTOR_PROMPT_PROFILE_REGISTRY`
+- `NPC_PROMPT_PROFILE_REGISTRY` remains as a legacy alias to the same shared registry for compatibility
 - unknown, empty, or missing `npcType` values deterministically fall back to `DEFAULT_NPC_PROMPT_PROFILE`
 - fallback responses expose `profileKey: 'default'`
 

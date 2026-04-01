@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialWorldState } from '../world/state';
 import {
+  ACTOR_PROMPT_PROFILE_REGISTRY,
   buildNpcPromptContext,
   DEFAULT_NPC_PROMPT_PROFILE,
   resolveNpcPromptProfile,
@@ -22,6 +23,17 @@ describe('resolveNpcPromptProfile', () => {
     expect(archiveKeeperProfile.profileKey).toBe('archive_keeper');
     expect(engineerProfile.profileKey).toBe('engineer');
     expect(archiveKeeperProfile.personaContract).not.toBe(engineerProfile.personaContract);
+  });
+
+  it('resolves NPC prompt profiles from the shared actor profile registry', () => {
+    const archiveKeeperProfile = resolveNpcPromptProfile('archive_keeper');
+
+    expect(archiveKeeperProfile.personaContract).toBe(
+      ACTOR_PROMPT_PROFILE_REGISTRY.archive_keeper.personaContract,
+    );
+    expect(archiveKeeperProfile.knowledgePolicy).toBe(
+      ACTOR_PROMPT_PROFILE_REGISTRY.archive_keeper.knowledgePolicy,
+    );
   });
 
   it('falls back to a deterministic default profile for unknown or missing npcType', () => {
