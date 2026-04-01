@@ -15,12 +15,12 @@ Define strategic gameplay direction where core mechanics are deterministic and t
 
 ## Inputs
 - Current project architecture and docs.
-- Current Game State Snapshot in docs/README.md (documenter-maintained baseline).
+- docs/GAME_DESIGN_BASELINE.md (documenter-maintained baseline).
 - Existing implemented mechanics and constraints.
 - Product goals (player fantasy, pacing, replayability).
 
 ## Workflow
-1. Identify current capability baseline from the Current Game State Snapshot in docs/README.md.
+1. Identify current capability baseline from docs/GAME_DESIGN_BASELINE.md.
 2. If the snapshot is missing or stale, request a documenter refresh before proposing direction options.
 3. Propose 2-3 viable gameplay direction options with code-owned rules and explicit NPC interaction touchpoints.
 4. Compare trade-offs: complexity, implementation risk, content demand, replay value.
@@ -35,7 +35,7 @@ Define strategic gameplay direction where core mechanics are deterministic and t
 - Avoid relying on unconstrained open-ended generation for authoritative game logic.
 
 ## Output
-- Snapshot basis used (docs/README.md Current Game State Snapshot)
+- Baseline used (docs/GAME_DESIGN_BASELINE.md)
 - Direction options and recommended choice
 - Why the recommended path fits current game architecture
 - Required feature pillars

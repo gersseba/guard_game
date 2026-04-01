@@ -15,12 +15,12 @@ Turn design gaps into concrete requirement briefs for the `requirement engineer`
 
 ## Inputs
 - Gap identified from game direction or level design.
-- Current Game State Snapshot in docs/README.md (documenter-maintained baseline).
+- docs/GAME_DESIGN_BASELINE.md (documenter-maintained baseline).
 - Current architecture boundaries and existing APIs/types.
 - Priority and dependency context.
 
 ## Workflow
-1. Verify the gap against the Current Game State Snapshot in docs/README.md.
+1. Verify the gap against docs/GAME_DESIGN_BASELINE.md.
 2. If the snapshot is missing or stale, request a documenter refresh before writing requirement briefs.
 3. Describe the player-facing problem caused by the gap.
 4. Define minimum viable feature scope and non-goals.
@@ -37,7 +37,7 @@ Turn design gaps into concrete requirement briefs for the `requirement engineer`
 - If LLM is included, restrict it to NPC interaction effects (information, behavior influence, NPC-triggered interactions).
 
 ## Output
-- Snapshot basis used (docs/README.md Current Game State Snapshot)
+- Baseline used (docs/GAME_DESIGN_BASELINE.md)
 - Feature gap title
 - Context/problem statement
 - Scope and non-goals

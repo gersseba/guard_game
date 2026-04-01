@@ -5,6 +5,7 @@ This directory contains architecture guides, layer-specific documentation, and d
 ## Fundamentals
 - [System Architecture](ARCHITECTURE.md) - Layered architecture overview, design principles, and data flow
 - [Type Reference](TYPES_REFERENCE.md) - Complete reference for key interfaces and data structures used throughout the codebase
+- [Game Design Baseline](GAME_DESIGN_BASELINE.md) - Current game state, implemented features, LLM boundaries, and entity knowledge contracts used by the game designer
 - [Guard Facing Direction (Ticket #93)](GUARD_FACING_DIRECTION.md) - Guard-facing world token, interaction approach-direction mapping, render consumption, and test coverage
 
 ## Layer Guides
@@ -35,24 +36,7 @@ Recipes and walkthroughs for common extension tasks:
 
 **Stuck on a layer boundary issue?** Each layer guide includes contract documentation and extension points.
 
-## Current Game State Snapshot
-
-This section is the documenter-maintained baseline for design decisions and feature-gap analysis.
-
-Use this section to capture only current, implemented behavior for:
-- Core game loop and deterministic rule enforcement
-- Implemented feature set and level progression capabilities
-- LLM integration boundaries (LLM used for NPC interaction only)
-- Entity knowledge/context contracts (type-level and instance-level)
-
-Recommended snapshot structure:
-1. Runtime Status: playable loop and implemented objectives
-2. Feature Inventory: implemented systems and missing pillars
-3. LLM Integration: where LLM is used and where it is explicitly not used
-4. Entity Knowledge Model: what player, guards, NPCs, and objects can expose to prompt context
-5. Known Constraints: current technical/design limits that affect new proposals
-
-The game designer agent should treat this section as the primary source when deciding direction, level feasibility, and feature gaps.
+See [Game Design Baseline](GAME_DESIGN_BASELINE.md) for the documenter-maintained source used by the game designer for direction, feasibility checks, and feature-gap analysis.
 
 ## Documentation Maintenance
 
