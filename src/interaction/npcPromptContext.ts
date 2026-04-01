@@ -167,10 +167,10 @@ export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldK
     };
   },
 
-  villager: (worldState: WorldState): unknown => {
+  villager: (worldState: WorldState, actorId: string): unknown => {
     // Villagers know about other NPCs in the world
     const npcs = [...worldState.npcs]
-      .filter((npc) => npc.npcType === 'villager')
+      .filter((npc) => npc.npcType === 'villager' && npc.id !== actorId)
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((npc) => ({
         id: npc.id,
@@ -189,6 +189,10 @@ export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldK
   },
 };
 
+const ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES: Record<string, string> = {
+  archive_keeper: 'villager',
+};
+
 /**
  * Resolve world knowledge for an actor type. Returns a builder function or undefined if not found.
  */
@@ -196,7 +200,12 @@ const resolveActorWorldKnowledgeBuilder = (
   actorType: string | null | undefined,
 ): ActorTypeWorldKnowledgeBuilder | undefined => {
   const normalizedType = normalizeActorType(actorType);
-  return ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS[normalizedType];
+  const actorTypeKey =
+    ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS[normalizedType] !== undefined
+      ? normalizedType
+      : ACTOR_WORLD_KNOWLEDGE_BUILDER_ALIASES[normalizedType];
+
+  return actorTypeKey ? ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS[actorTypeKey] : undefined;
 };
 
 export const buildActorTypeWorldKnowledge = (

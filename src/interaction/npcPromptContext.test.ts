@@ -106,6 +106,21 @@ describe('buildNpcPromptContext', () => {
 
     expect(context.typeWorldKnowledge).toBeDefined();
     expect(context.typeWorldKnowledge?.otherVillagers).toBeDefined();
+    expect(context.typeWorldKnowledge?.otherVillagers).toHaveLength(1);
+  });
+
+  it('reuses the non-guard world-knowledge builder for active runtime archive_keeper NPCs', () => {
+    const worldState = createInitialWorldState();
+    const archiveKeeper = worldState.npcs[0];
+
+    const context = JSON.parse(buildNpcPromptContext(archiveKeeper, worldState.player, worldState)) as {
+      actor: { npcType: string };
+      typeWorldKnowledge?: { player: unknown; otherVillagers: unknown[] };
+    };
+
+    expect(context.actor.npcType).toBe('archive_keeper');
+    expect(context.typeWorldKnowledge).toBeDefined();
+    expect(context.typeWorldKnowledge?.otherVillagers).toEqual([]);
   });
 
   it('uses a deterministic unknown-type fallback with no typeWorldKnowledge payload', () => {
@@ -183,5 +198,30 @@ describe('buildNpcPromptContext', () => {
 
   it('contains exactly guard and one non-guard builder in the actor-type world-knowledge registry', () => {
     expect(Object.keys(ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS).sort()).toEqual(['guard', 'villager']);
+  });
+
+  it('excludes the requesting villager from otherVillagers world knowledge', () => {
+    const worldState = createInitialWorldState();
+    const requestingVillager = {
+      ...worldState.npcs[0],
+      id: 'npc-villager-1',
+      npcType: 'villager',
+    };
+    const otherVillager = {
+      ...requestingVillager,
+      id: 'npc-villager-2',
+      displayName: 'Neighbor Villager',
+      position: { x: 3, y: 2 },
+    };
+    worldState.npcs = [requestingVillager, otherVillager];
+
+    const worldKnowledge = buildActorTypeWorldKnowledge(
+      requestingVillager.npcType,
+      worldState,
+      requestingVillager.id,
+    ) as { otherVillagers: Array<{ id: string }> };
+
+    expect(worldKnowledge.otherVillagers).toHaveLength(1);
+    expect(worldKnowledge.otherVillagers[0].id).toBe('npc-villager-2');
   });
 });
