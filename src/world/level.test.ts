@@ -755,3 +755,155 @@ describe('npcs field', () => {
   });
 });
 
+describe('instanceKnowledge and instanceBehavior fields', () => {
+  it('passes through guard instanceKnowledge and instanceBehavior during deserialization', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'Oracle Guard',
+          x: 5,
+          y: 7,
+          guardState: 'idle',
+          instanceKnowledge: 'This guard knows door-1 is safe.',
+          instanceBehavior: 'Speaks in riddles.',
+        },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.guards[0].instanceKnowledge).toBe('This guard knows door-1 is safe.');
+    expect(state.guards[0].instanceBehavior).toBe('Speaks in riddles.');
+  });
+
+  it('passes through NPC instanceKnowledge and instanceBehavior during deserialization', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [
+        {
+          id: 'npc-1',
+          displayName: 'Wise Archivist',
+          x: 8,
+          y: 3,
+          npcType: 'archive_keeper',
+          instanceKnowledge: 'Knows the archive holds records of the last five kings.',
+          instanceBehavior: 'Speaks formally at all times.',
+        },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.npcs[0].instanceKnowledge).toBe('Knows the archive holds records of the last five kings.');
+    expect(state.npcs[0].instanceBehavior).toBe('Speaks formally at all times.');
+  });
+
+  it('omits instanceKnowledge and instanceBehavior keys when not provided in guard', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      guards: [{ id: 'guard-1', displayName: 'Guard', x: 5, y: 7, guardState: 'idle' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const state = deserializeLevel(validateLevelData(level));
+
+    expect(Object.prototype.hasOwnProperty.call(state.guards[0], 'instanceKnowledge')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(state.guards[0], 'instanceBehavior')).toBe(false);
+  });
+
+  it('omits instanceKnowledge and instanceBehavior keys when not provided in NPC', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 'archive_keeper' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const state = deserializeLevel(validateLevelData(level));
+
+    expect(Object.prototype.hasOwnProperty.call(state.npcs[0], 'instanceKnowledge')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(state.npcs[0], 'instanceBehavior')).toBe(false);
+  });
+
+  it('rejects guard with non-string instanceKnowledge', () => {
+    const bad = {
+      ...minimalLevel,
+      guards: [{ id: 'guard-1', displayName: 'Guard', x: 5, y: 7, guardState: 'idle', instanceKnowledge: 42 }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid instanceKnowledge');
+  });
+
+  it('rejects guard with non-string instanceBehavior', () => {
+    const bad = {
+      ...minimalLevel,
+      guards: [{ id: 'guard-1', displayName: 'Guard', x: 5, y: 7, guardState: 'idle', instanceBehavior: true }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid instanceBehavior');
+  });
+
+  it('rejects NPC with non-string instanceKnowledge', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 'archivist', instanceKnowledge: [] }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid instanceKnowledge');
+  });
+
+  it('rejects NPC with non-string instanceBehavior', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 'archivist', instanceBehavior: 0 }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid instanceBehavior');
+  });
+
+  it('deserializes a level with both guard and NPC instance fields correctly end-to-end', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'Riddle Guard',
+          x: 5,
+          y: 7,
+          guardState: 'idle',
+          instanceKnowledge: 'Door-1 leads to safety.',
+          instanceBehavior: 'Always answers in rhyme.',
+        },
+      ],
+      npcs: [
+        {
+          id: 'npc-1',
+          displayName: 'Keeper',
+          x: 8,
+          y: 3,
+          npcType: 'archive_keeper',
+          instanceKnowledge: 'The archives burned in the third age.',
+          instanceBehavior: 'Refuses to discuss recent events.',
+        },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const state = deserializeLevel(validateLevelData(level));
+
+    expect(state.guards[0].instanceKnowledge).toBe('Door-1 leads to safety.');
+    expect(state.guards[0].instanceBehavior).toBe('Always answers in rhyme.');
+    expect(state.npcs[0].instanceKnowledge).toBe('The archives burned in the third age.');
+    expect(state.npcs[0].instanceBehavior).toBe('Refuses to discuss recent events.');
+  });
+});
+
