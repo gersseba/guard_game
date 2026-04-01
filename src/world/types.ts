@@ -34,6 +34,10 @@ export interface Npc {
   dialogueContextKey: string;
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
+  /** Instance-specific knowledge this NPC has (overrides or extends type-level knowledge). */
+  instanceKnowledge?: string;
+  /** Instance-specific behavior traits for this NPC (overrides or extends type-level behavior). */
+  instanceBehavior?: string;
 }
 
 export interface ConversationMessage {
@@ -57,6 +61,10 @@ export interface Guard extends Interactable {
   facingDirection?: SpriteDirection;
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
+  /** Instance-specific knowledge this guard has (overrides or extends type-level knowledge). */
+  instanceKnowledge?: string;
+  /** Instance-specific behavior traits for this guard (overrides or extends type-level behavior). */
+  instanceBehavior?: string;
 }
 
 /** A door that the player can pass through or be blocked by. */
@@ -100,6 +108,10 @@ export interface LevelData {
     honestyTrait?: 'truth-teller' | 'liar';
     spriteAssetPath?: string;
     spriteSet?: SpriteSet;
+    /** Instance-specific knowledge this guard has. */
+    instanceKnowledge?: string;
+    /** Instance-specific behavior traits for this guard. */
+    instanceBehavior?: string;
   }>;
   doors: Array<{
     id: string;
@@ -119,6 +131,10 @@ export interface LevelData {
     npcType: string;
     spriteAssetPath?: string;
     spriteSet?: SpriteSet;
+    /** Instance-specific knowledge this NPC has. */
+    instanceKnowledge?: string;
+    /** Instance-specific behavior traits for this NPC. */
+    instanceBehavior?: string;
   }>;
   interactiveObjects?: Array<{
     id: string;
@@ -146,21 +162,4 @@ export interface WorldState {
   interactiveObjects: InteractiveObject[];
   actorConversationHistoryByActorId: ActorConversationHistoryByActorId;
   levelOutcome: 'win' | 'lose' | null;
-}
-
-export type WorldCommand =
-  | {
-      type: 'move';
-      dx: number;
-      dy: number;
-    }
-  | {
-      type: 'interact';
-    };
-
-export interface World {
-  getState(): WorldState;
-  applyCommands(commands: WorldCommand[]): void;
-  /** Replace the current world state wholesale (e.g. level load or reset). */
-  resetToState(state: WorldState): void;
 }
