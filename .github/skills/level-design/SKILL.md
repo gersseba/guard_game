@@ -1,0 +1,40 @@
+---
+name: level-design
+description: "Create levels that fit Guard Game's current systems, with valid level JSON-compatible entity planning and LLM-relevant interaction goals."
+---
+
+# Level Design Skill
+
+## Purpose
+Design practical, buildable levels aligned with current implementation and level JSON schema.
+
+## Use When
+- The user asks for a new level concept or concrete level setup.
+- A design needs to be translated into level JSON-compatible structure.
+- You need to ensure a level is feasible with current world/interaction systems.
+
+## Inputs
+- `docs/` guidance on world, interaction, and level loading.
+- Existing `public/levels/*.json` examples.
+- Current entity capabilities in `src/world/types.ts` and `src/world/level.ts`.
+
+## Workflow
+1. Confirm available entity types, fields, and interaction patterns.
+2. Define level objective and player learning goal.
+3. Choose entity placement and conversational beats that support the objective.
+4. Validate feasibility against current mechanics.
+5. Produce a level spec that maps cleanly to existing level JSON.
+6. If required behavior cannot be represented, surface it as a feature gap.
+
+## Level Design Rules
+- Keep one clear objective per level.
+- Use LLM interactions to support deduction or context gathering, not random flavor only.
+- Match NPC/guard behavior assumptions to currently available prompt context systems.
+- Keep asset requirements explicit and reusable where possible.
+
+## Output
+- Level concept summary
+- JSON-compatible entity plan (player, guards, doors, npcs, objects)
+- Interaction intent per major actor
+- Feasibility notes and known constraints
+- Explicit feature-gap list if something is missing
