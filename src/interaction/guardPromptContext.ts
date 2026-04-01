@@ -1,5 +1,5 @@
 import type { Guard, WorldState } from '../world/types';
-import { resolveActorPromptProfile } from './npcPromptContext';
+import { resolveActorPromptProfile, ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS } from './npcPromptContext';
 
 /**
  * Legacy export for backwards compatibility.
@@ -40,41 +40,34 @@ export interface GuardWorldContextPayload {
 
 const compareById = <T extends { id: string }>(a: T, b: T): number => a.id.localeCompare(b.id);
 
+/**
+ * Legacy function for backwards compatibility.
+ * Now wraps the guard world knowledge builder from the registry.
+ */
 export const buildGuardWorldContextPayload = (worldState: WorldState): GuardWorldContextPayload => {
-  const doors = [...worldState.doors]
-    .sort(compareById)
-    .map((door) => ({
-      id: door.id,
-      displayName: door.displayName,
-      position: { x: door.position.x, y: door.position.y },
-      safe: door.outcome === 'safe',
-    }));
+  const builder = ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS['guard'];
+  if (!builder) {
+    throw new Error('Guard world knowledge builder not found in registry');
+  }
 
-  const guards = [...worldState.guards]
-    .sort(compareById)
-    .map((guard) => ({
-      id: guard.id,
-      displayName: guard.displayName,
-      position: { x: guard.position.x, y: guard.position.y },
-      truth: isGuardTruthful(guard),
-    }));
-
-  return {
-    player: {
-      id: worldState.player.id,
-      position: {
-        x: worldState.player.position.x,
-        y: worldState.player.position.y,
-      },
-    },
-    guards,
-    doors,
+  const payload = builder(worldState, 'placeholder') as {
+    player: { id: string; position: { x: number; y: number } };
+    guards: Array<{ id: string; displayName: string; position: { x: number; y: number }; truth: boolean }>;
+    doors: Array<{ id: string; displayName: string; position: { x: number; y: number }; safe: boolean }>;
   };
+
+  return payload;
 };
 
 export const buildGuardPromptContext = (guard: Guard, worldState: WorldState): string => {
-  // Resolve guard profile from unified registry
   const guardProfile = resolveActorPromptProfile('guard');
+  const worldKnowledgeBuilder = ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS['guard'];
+
+  if (!worldKnowledgeBuilder) {
+    throw new Error('Guard world knowledge builder not found in registry');
+  }
+
+  const worldKnowledge = worldKnowledgeBuilder(worldState, guard.id);
 
   return JSON.stringify({
     guard: {
@@ -84,6 +77,6 @@ export const buildGuardPromptContext = (guard: Guard, worldState: WorldState): s
       truth: isGuardTruthful(guard),
     },
     guardPersonaContract: guardProfile.personaContract,
-    world: buildGuardWorldContextPayload(worldState),
+    world: worldKnowledge,
   });
 };
