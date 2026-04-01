@@ -54,11 +54,11 @@ describe('buildNpcPromptContext', () => {
       position: { x: 10, y: 4 },
     };
 
-    const firstContext = JSON.parse(buildNpcPromptContext(firstNpc, worldState.player)) as {
+    const firstContext = JSON.parse(buildNpcPromptContext(firstNpc, worldState.player, worldState)) as {
       npcProfile: { profileKey: string; personaContract: string };
       npcInstance: { displayName: string; position: { x: number; y: number } };
     };
-    const secondContext = JSON.parse(buildNpcPromptContext(secondNpc, worldState.player)) as typeof firstContext;
+    const secondContext = JSON.parse(buildNpcPromptContext(secondNpc, worldState.player, worldState)) as typeof firstContext;
 
     expect(firstContext.npcProfile).toEqual(secondContext.npcProfile);
     expect(firstContext.npcInstance).not.toEqual(secondContext.npcInstance);
@@ -66,13 +66,26 @@ describe('buildNpcPromptContext', () => {
     expect(secondContext.npcInstance.displayName).toBe('Senior Archivist');
   });
 
+  it('includes typeWorldKnowledge in context for known actor types', () => {
+    const worldState = createInitialWorldState();
+    const archiveKeeperNpc = worldState.npcs[0]; // archive_keeper type
+
+    const context = JSON.parse(buildNpcPromptContext(archiveKeeperNpc, worldState.player, worldState)) as {
+      typeWorldKnowledge?: { player: unknown; archives: unknown[] };
+    };
+
+    expect(context.typeWorldKnowledge).toBeDefined();
+    expect(context.typeWorldKnowledge?.archives).toBeDefined();
+  });
+
   it('produces deterministic serialized output for the same NPC snapshot', () => {
     const worldState = createInitialWorldState();
-    const first = buildNpcPromptContext(worldState.npcs[0], worldState.player);
-    const second = buildNpcPromptContext(worldState.npcs[0], worldState.player);
+    const first = buildNpcPromptContext(worldState.npcs[0], worldState.player, worldState);
+    const second = buildNpcPromptContext(worldState.npcs[0], worldState.player, worldState);
     const roundTrippedNpc = JSON.parse(JSON.stringify(worldState.npcs[0])) as (typeof worldState.npcs)[number];
     const roundTrippedPlayer = JSON.parse(JSON.stringify(worldState.player)) as typeof worldState.player;
-    const third = buildNpcPromptContext(roundTrippedNpc, roundTrippedPlayer);
+    const roundTrippedWorldState = JSON.parse(JSON.stringify(worldState)) as typeof worldState;
+    const third = buildNpcPromptContext(roundTrippedNpc, roundTrippedPlayer, roundTrippedWorldState);
 
     expect(first).toBe(second);
     expect(first).toBe(third);
