@@ -29,6 +29,20 @@ describe('runtime layout markup', () => {
     expect(worldStateIndex).toBeGreaterThan(levelControlsIndex);
   });
 
+  it('includes a right-side level briefing target in the primary area', () => {
+    const markup = getRuntimeLayoutMarkup();
+
+    expect(markup).toContain('id="level-briefing"');
+
+    const primaryIndex = markup.indexOf('class="guard-game-primary"');
+    const briefingIndex = markup.indexOf('id="level-briefing"');
+    const secondaryIndex = markup.indexOf('class="guard-game-secondary"');
+
+    expect(primaryIndex).toBeGreaterThanOrEqual(0);
+    expect(briefingIndex).toBeGreaterThan(primaryIndex);
+    expect(briefingIndex).toBeLessThan(secondaryIndex);
+  });
+
   it('includes a chat modal host element', () => {
     const markup = getRuntimeLayoutMarkup();
 

@@ -7,7 +7,11 @@ export const createInitialWorldState = (): WorldState => ({
     height: 8,
     tileSize: 48,
   },
-  levelObjective: 'Reach the safe exit.',
+  levelMetadata: {
+    name: 'Sandbox',
+    premise: 'A baseline deterministic world used before a level is loaded.',
+    goal: 'Move around and interact with nearby entities.',
+  },
   player: {
     id: 'player-1',
     displayName: 'Guard',

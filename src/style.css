@@ -88,6 +88,11 @@ body {
   flex-direction: column;
 }
 
+.guard-game-panel-briefing {
+  display: flex;
+  flex-direction: column;
+}
+
 .guard-game-panel h2 {
   margin: 0 0 0.5rem;
   font-size: 1rem;
@@ -128,6 +133,34 @@ body {
   word-break: break-word;
   max-height: 280px;
   overflow: auto;
+}
+
+.guard-game-level-briefing {
+  margin: 0;
+  padding: 0;
+}
+
+.guard-game-briefing {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.guard-game-briefing-label {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  color: rgba(187, 224, 239, 0.95);
+}
+
+.guard-game-briefing-copy {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(187, 224, 239, 0.2);
+  background: rgba(5, 10, 18, 0.75);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .guard-game-interaction-log {
@@ -349,6 +382,10 @@ body {
   .guard-game-primary {
     grid-template-columns: 1fr;
   }
+
+  .guard-game-panel-briefing {
+    order: 2;
+  }
 }
 
 @media (max-width: 700px) {
@@ -358,6 +395,10 @@ body {
 
   .guard-game-secondary {
     grid-template-columns: 1fr;
+  }
+
+  .guard-game-briefing-copy {
+    font-size: 0.95rem;
   }
 
   .guard-game-viewport {

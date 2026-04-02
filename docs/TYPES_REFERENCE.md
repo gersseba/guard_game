@@ -102,7 +102,7 @@ Stores conversation history by actor id. The current conversational actors are g
 ### WorldState
 - `tick: number`
 - `grid: WorldGrid`
-- `levelObjective: string`
+- `levelMetadata: LevelMetadata` - narrative setup and goal for the current level
 - `player: Player`
 - `npcs: Npc[]`
 - `guards: Guard[]`
@@ -192,13 +192,19 @@ Resolves the world knowledge builder for `actorType` (checking `ACTOR_TYPE_WORLD
 
 ## Level File Shape
 
+### LevelMetadata
+- `name: string` - display name of the level
+- `premise: string` - narrative setup and context for the player
+- `goal: string` - concise, actionable objective for the player
+
 ### LevelData
 Flat JSON level definition used by files in `public/levels/*.json`.
 
 Required fields:
 - `version: 1`
 - `name: string`
-- `objective: string`
+- `premise: string` - non-empty, concise narrative setup for the level
+- `goal: string` - non-empty, concise actionable objective for the player
 - `width: number`
 - `height: number`
 - `player: { x: number; y: number; spriteAssetPath?: string; spriteSet?: SpriteSet }`
@@ -212,6 +218,21 @@ Optional fields:
 Shipped level sprite metadata examples:
 - `public/levels/starter.json` shows single-path `spriteAssetPath` usage.
 - `public/levels/riddle.json` shows directional `spriteSet` usage for player and guards, and `default` door sprite sets.
+
+Premise/goal guidance:
+- Keep each field short enough for downstream overlays (target 1 sentence each).
+- Keep language deterministic and level-specific; avoid dynamic placeholders.
+
+Example level header:
+
+```json
+{
+  "version": 1,
+  "name": "Two Guards, Two Doors",
+  "premise": "Two guards stand by two doors, but one guard lies while the other tells the truth.",
+  "goal": "Question the guards and choose the door that leads to safety."
+}
+```
 
 Example NPC entry:
 
