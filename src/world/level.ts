@@ -219,6 +219,22 @@ export function validateLevelData(input: unknown): LevelData {
           `Invalid level data: npc at index ${i} has invalid instanceBehavior (must be a string when provided)`,
         );
       }
+
+      // riddleClue is optional
+      if (npc['riddleClue'] !== undefined) {
+        const riddleClue = npc['riddleClue'] as Record<string, unknown>;
+        if (
+          typeof riddleClue !== 'object' ||
+          riddleClue === null ||
+          typeof riddleClue['clueId'] !== 'string' ||
+          typeof riddleClue['doorId'] !== 'string' ||
+          (riddleClue['truthBehavior'] !== 'truthful' && riddleClue['truthBehavior'] !== 'inverse')
+        ) {
+          throw new Error(
+            `Invalid level data: npc at index ${i} has invalid riddleClue (must have clueId, doorId, and truthBehavior ('truthful' or 'inverse'))`,
+          );
+        }
+      }
     }
   }
 
@@ -303,15 +319,11 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       height: levelData.height,
       tileSize: DEFAULT_TILE_SIZE,
     },
-<<<<<<< HEAD
-    levelObjective: levelData.objective,
-=======
     levelMetadata: {
       name: levelData.name,
       premise: levelData.premise,
       goal: levelData.goal,
     },
->>>>>>> b9bd8b0 (#111 add premise and goal metadata to level system)
     player: {
       id: 'player',
       displayName: 'Player',
@@ -325,17 +337,47 @@ export function deserializeLevel(levelData: LevelData): WorldState {
         : {}),
       ...(levelData.player.spriteSet !== undefined ? { spriteSet: levelData.player.spriteSet } : {}),
     },
-    npcs: (levelData.npcs ?? []).map((n) => ({
-      id: n.id,
-      displayName: n.displayName,
-      position: { x: n.x, y: n.y },
-      npcType: n.npcType,
-      dialogueContextKey: `npc_${n.npcType.toLowerCase()}`,
-      ...(n.spriteAssetPath !== undefined ? { spriteAssetPath: n.spriteAssetPath } : {}),
-      ...(n.spriteSet !== undefined ? { spriteSet: n.spriteSet } : {}),
-      ...(n.instanceKnowledge !== undefined ? { instanceKnowledge: n.instanceKnowledge } : {}),
-      ...(n.instanceBehavior !== undefined ? { instanceBehavior: n.instanceBehavior } : {}),
-    })),
+    npcs: (levelData.npcs ?? []).map((n) => {
+      const npc = {
+        id: n.id,
+        displayName: n.displayName,
+        position: { x: n.x, y: n.y },
+        npcType: n.npcType,
+        dialogueContextKey: `npc_${n.npcType.toLowerCase()}`,
+        ...(n.spriteAssetPath !== undefined ? { spriteAssetPath: n.spriteAssetPath } : {}),
+        ...(n.spriteSet !== undefined ? { spriteSet: n.spriteSet } : {}),
+        ...(n.instanceKnowledge !== undefined ? { instanceKnowledge: n.instanceKnowledge } : {}),
+        ...(n.instanceBehavior !== undefined ? { instanceBehavior: n.instanceBehavior } : {}),
+      } as any;
+
+      // Add riddleClue if present, computing mustStateDoorAs
+      if (n.riddleClue !== undefined) {
+        const door = levelData.doors.find((d) => d.id === n.riddleClue!.doorId);
+        if (!door) {
+          throw new Error(
+            `Invalid level data: npc ${n.id} references non-existent door ${n.riddleClue.doorId}`,
+          );
+        }
+
+        // Logic: if door is safe and NPC is truthful, NPC must state "safe"
+        //        if door is safe and NPC is inverse, NPC must state "danger"
+        //        if door is danger and NPC is truthful, NPC must state "danger"
+        //        if door is danger and NPC is inverse, NPC must state "safe"
+        const mustStateDoorAs: 'safe' | 'danger' =
+          (door.outcome === 'safe') === (n.riddleClue.truthBehavior === 'truthful')
+            ? 'safe'
+            : 'danger';
+
+        npc.riddleClue = {
+          clueId: n.riddleClue.clueId,
+          doorId: n.riddleClue.doorId,
+          truthBehavior: n.riddleClue.truthBehavior,
+          mustStateDoorAs,
+        };
+      }
+
+      return npc;
+    }),
     guards: levelData.guards.map((g) => ({
       id: g.id,
       displayName: g.displayName,

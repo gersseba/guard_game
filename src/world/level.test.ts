@@ -88,7 +88,7 @@ describe('deserializeLevel', () => {
     const state = deserializeLevel(minimalLevel);
 
     expect(state.tick).toBe(0);
-    expect(state.levelObjective).toBe('Reach the exit.');
+    expect(state.levelMetadata.goal).toBe('Reach the safe test door.');
     expect(state.npcs).toEqual([]);
     expect(state.interactiveObjects).toEqual([]);
     expect(state.player.inventory.items).toEqual([]);
@@ -320,15 +320,6 @@ describe('validateLevelData', () => {
     expect(() => validateLevelData(bad)).toThrowError('name must be a non-empty string');
   });
 
-<<<<<<< HEAD
-  it('throws when objective is missing or empty', () => {
-    const missingObjective = { ...minimalLevel } as Record<string, unknown>;
-    delete missingObjective['objective'];
-    expect(() => validateLevelData(missingObjective)).toThrowError('objective must be a non-empty string');
-
-    const emptyObjective = { ...minimalLevel, objective: '   ' };
-    expect(() => validateLevelData(emptyObjective)).toThrowError('objective must be a non-empty string');
-=======
   it('throws when premise is missing or empty', () => {
     const missingPremise = { ...minimalLevel } as Omit<LevelData, 'premise'>;
     delete (missingPremise as Record<string, unknown>).premise;
@@ -345,7 +336,6 @@ describe('validateLevelData', () => {
 
     expect(() => validateLevelData(missingGoal)).toThrowError('goal must be a non-empty string');
     expect(() => validateLevelData({ ...minimalLevel, goal: '' })).toThrowError('goal must be a non-empty string');
->>>>>>> b9bd8b0 (#111 add premise and goal metadata to level system)
   });
 
   it('throws when width is zero or negative', () => {
