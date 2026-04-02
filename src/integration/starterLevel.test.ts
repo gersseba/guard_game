@@ -166,12 +166,8 @@ describe('starter level integration pipeline', () => {
       const levelWithInstanceFields = {
         version: 1,
         name: 'Instance Fields Test',
-<<<<<<< HEAD
-        objective: 'Verify instance field propagation.',
-=======
         premise: 'A deterministic fixture for instance fields.',
         goal: 'Confirm instance fields propagate to prompt context.',
->>>>>>> b9bd8b0 (#111 add premise and goal metadata to level system)
         width: 20,
         height: 20,
         player: { x: 10, y: 10 },
