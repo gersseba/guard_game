@@ -108,11 +108,18 @@ export interface WorldGrid {
   tileSize: number;
 }
 
+export interface LevelMetadata {
+  name: string;
+  premise: string;
+  goal: string;
+}
+
 /** Flat JSON representation of a level file (public/levels/*.json). Version-stamped for future migrations. */
 export interface LevelData {
   version: 1;
   name: string;
-  objective: string;
+  premise: string;
+  goal: string;
   width: number;
   height: number;
   player: { x: number; y: number; spriteAssetPath?: string; spriteSet?: SpriteSet };
@@ -176,7 +183,11 @@ export interface LevelData {
 export interface WorldState {
   tick: number;
   grid: WorldGrid;
+<<<<<<< HEAD
   levelObjective: string;
+=======
+  levelMetadata: LevelMetadata;
+>>>>>>> b9bd8b0 (#111 add premise and goal metadata to level system)
   player: Player;
   npcs: Npc[];
   guards: Guard[];

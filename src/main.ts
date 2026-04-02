@@ -11,6 +11,7 @@ import { getActorConversationHistory } from './interaction/actorConversationThre
 import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
+import { createLevelBriefingPanel } from './render/levelBriefing';
 import { createChatModal } from './render/chatModal';
 import { createOutcomeOverlay } from './render/outcomeOverlay';
 import { createViewportOverlay } from './render/viewportOverlay';
@@ -29,12 +30,20 @@ if (!appElement) {
 appElement.innerHTML = getRuntimeLayoutMarkup();
 
 const viewportElement = document.querySelector<HTMLElement>('#viewport');
+const levelBriefingElement = document.querySelector<HTMLElement>('#level-briefing');
 const levelControlsElement = document.querySelector<HTMLElement>('#level-controls');
 const worldStateElement = document.querySelector<HTMLElement>('#world-state');
 const chatModalHostElement = document.querySelector<HTMLElement>('#chat-modal-host');
 const outcomeOverlayHostElement = document.querySelector<HTMLElement>('#outcome-overlay-host');
 
-if (!viewportElement || !levelControlsElement || !worldStateElement || !chatModalHostElement || !outcomeOverlayHostElement) {
+if (
+  !viewportElement ||
+  !levelBriefingElement ||
+  !levelControlsElement ||
+  !worldStateElement ||
+  !chatModalHostElement ||
+  !outcomeOverlayHostElement
+) {
   throw new Error('Expected runtime shell elements to exist.');
 }
 
@@ -44,6 +53,7 @@ const llmClient = createGeminiLlmClient();
 const interactionDispatcher = createInteractionDispatcher({ llmClient });
 const outcomeOverlay = createOutcomeOverlay(outcomeOverlayHostElement);
 const viewportPauseOverlay = createViewportOverlay(viewportElement);
+const levelBriefingPanel = createLevelBriefingPanel(levelBriefingElement);
 
 /**
  * Chat modal instance with callbacks wired to game logic.
@@ -252,6 +262,7 @@ const startRuntime = async (): Promise<void> => {
 
     const currentWorldState = world.getState();
     renderPort.render(currentWorldState);
+    levelBriefingPanel.render(currentWorldState.levelMetadata);
     worldStateElement.textContent = JSON.stringify(currentWorldState, null, 2);
 
     if (currentWorldState.levelOutcome && !levelOutcomeShown) {
@@ -264,6 +275,7 @@ const startRuntime = async (): Promise<void> => {
 
   const initialWorldState = world.getState();
   renderPort.render(initialWorldState);
+  levelBriefingPanel.render(initialWorldState.levelMetadata);
   worldStateElement.textContent = JSON.stringify(initialWorldState, null, 2);
   requestAnimationFrame(runFrame);
 };

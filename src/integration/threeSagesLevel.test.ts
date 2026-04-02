@@ -16,6 +16,11 @@ describe('three sages level integration pipeline', () => {
     const worldState = deserializeLevel(validated);
 
     expect(worldState).toBeDefined();
+    expect(worldState.levelMetadata).toEqual({
+      name: 'Three Sages at the Fork',
+      premise: 'Three sages offer conflicting clues about which forked path is safe.',
+      goal: "Interpret the sages' statements and pick the safe door.",
+    });
     expect(worldState.player.position).toEqual({ x: 10, y: 16 });
     expect(worldState.player.facingDirection).toBe('front');
 

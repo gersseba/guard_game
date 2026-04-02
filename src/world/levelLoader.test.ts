@@ -5,7 +5,8 @@ import type { LevelData } from './types';
 const minimalLevel: LevelData = {
   version: 1,
   name: 'Test Level',
-  objective: 'Reach the exit.',
+  premise: 'A deterministic test premise.',
+  goal: 'Verify level loading behavior.',
   width: 20,
   height: 20,
   player: { x: 2, y: 3 },
@@ -39,6 +40,11 @@ describe('fetchAndLoadLevel', () => {
     expect(state.grid.width).toBe(20);
     expect(state.grid.height).toBe(20);
     expect(state.tick).toBe(0);
+    expect(state.levelMetadata).toEqual({
+      name: 'Test Level',
+      premise: 'A deterministic test premise.',
+      goal: 'Verify level loading behavior.',
+    });
   });
 
   it('throws when the server returns a non-ok status', async () => {

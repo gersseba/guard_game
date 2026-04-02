@@ -1,6 +1,8 @@
 {
   "version": 1,
   "name": "Three Sages at the Fork",
+  "premise": "Three sages offer conflicting clues about which forked path is safe.",
+  "goal": "Interpret the sages' statements and pick the safe door.",
   "width": 20,
   "height": 20,
   "player": {

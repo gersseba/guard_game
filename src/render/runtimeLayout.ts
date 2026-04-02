@@ -11,8 +11,12 @@ export const getRuntimeLayoutMarkup = (): string => {
           <h2>Viewport</h2>
           <div id="viewport" class="guard-game-viewport"></div>
         </section>
+        <section class="guard-game-panel guard-game-panel-briefing">
+          <h2>Level Briefing</h2>
+          <div id="level-briefing" class="guard-game-level-briefing"></div>
+        </section>
       </section>
-      <section class="guard-game-secondary" aria-label="Level controls and world state">
+      <section class="guard-game-secondary" aria-label="Level controls and world state diagnostics">
         <section class="guard-game-panel">
           <h2>Level Controls</h2>
           <div id="level-controls" class="guard-game-level-controls"></div>

@@ -16,6 +16,11 @@ describe('riddle level integration pipeline', () => {
     const worldState = deserializeLevel(validated);
 
     expect(worldState).toBeDefined();
+    expect(worldState.levelMetadata).toEqual({
+      name: 'Two Guards, Two Doors',
+      premise: 'Two guards stand by two doors, but one guard lies while the other tells the truth.',
+      goal: 'Question the guards and choose the door that leads to safety.',
+    });
     expect(worldState.player.position).toEqual({ x: 10, y: 15 });
     expect(worldState.player.facingDirection).toBe('front');
 

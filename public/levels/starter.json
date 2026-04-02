@@ -1,7 +1,8 @@
 {
   "version": 1,
   "name": "Starter",
-  "objective": "Talk to both guards, then choose the safe door to escape.",
+  "premise": "You are a town guard testing patrol routes around a guarded courtyard.",
+  "goal": "Inspect nearby clues and choose the safe exit door.",
   "width": 20,
   "height": 20,
   "player": {

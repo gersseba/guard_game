@@ -50,8 +50,12 @@ export function validateLevelData(input: unknown): LevelData {
     throw new Error('Invalid level data: name must be a non-empty string');
   }
 
-  if (typeof raw['objective'] !== 'string' || raw['objective'].trim() === '') {
-    throw new Error('Invalid level data: objective must be a non-empty string');
+  if (typeof raw['premise'] !== 'string' || raw['premise'].trim() === '') {
+    throw new Error('Invalid level data: premise must be a non-empty string');
+  }
+
+  if (typeof raw['goal'] !== 'string' || raw['goal'].trim() === '') {
+    throw new Error('Invalid level data: goal must be a non-empty string');
   }
 
   if (typeof raw['width'] !== 'number' || raw['width'] <= 0) {
@@ -299,7 +303,15 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       height: levelData.height,
       tileSize: DEFAULT_TILE_SIZE,
     },
+<<<<<<< HEAD
     levelObjective: levelData.objective,
+=======
+    levelMetadata: {
+      name: levelData.name,
+      premise: levelData.premise,
+      goal: levelData.goal,
+    },
+>>>>>>> b9bd8b0 (#111 add premise and goal metadata to level system)
     player: {
       id: 'player',
       displayName: 'Player',
