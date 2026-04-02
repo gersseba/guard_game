@@ -17,10 +17,22 @@ export interface SpriteSet {
   right?: string;
 }
 
+export interface InventoryItem {
+  itemId: string;
+  displayName: string;
+  sourceObjectId: string;
+  pickedUpAtTick: number;
+}
+
+export interface PlayerInventory {
+  items: InventoryItem[];
+}
+
 export interface Player {
   id: string;
   displayName: string;
   position: GridPosition;
+  inventory: PlayerInventory;
   facingDirection?: SpriteDirection;
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
@@ -79,6 +91,10 @@ export interface InteractiveObject extends Interactable {
   objectType: 'supply-crate';
   interactionType: 'inspect' | 'use' | 'talk';
   state: 'idle' | 'used';
+  pickupItem?: {
+    itemId: string;
+    displayName: string;
+  };
   idleMessage?: string;
   usedMessage?: string;
   firstUseOutcome?: 'win' | 'lose';
@@ -145,6 +161,10 @@ export interface LevelData {
     objectType: 'supply-crate';
     interactionType: 'inspect' | 'use' | 'talk';
     state: 'idle' | 'used';
+    pickupItem?: {
+      itemId: string;
+      displayName: string;
+    };
     idleMessage?: string;
     usedMessage?: string;
     firstUseOutcome?: 'win' | 'lose';

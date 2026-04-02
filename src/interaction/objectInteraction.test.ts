@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { handleInteractiveObjectInteraction } from './objectInteraction';
 import type { InteractiveObject, Player, WorldState } from '../world/types';
 
-const player: Player = { id: 'player-1', displayName: 'Hero', position: { x: 3, y: 3 } };
+const player: Player = {
+  id: 'player-1',
+  displayName: 'Hero',
+  position: { x: 3, y: 3 },
+  inventory: {
+    items: [],
+  },
+};
 
 const makeSupplyCrate = (
   id: string,
@@ -37,6 +44,10 @@ describe('handleInteractiveObjectInteraction', () => {
   it('uses shared object-type behavior and instance fields for first supply-crate interaction', () => {
     const crate = makeSupplyCrate('crate-a', 'idle', {
       idleMessage: 'You lift the lid and uncover a brass key.',
+      pickupItem: {
+        itemId: 'brass-key',
+        displayName: 'Brass Key',
+      },
       firstUseOutcome: 'win',
     });
     const worldState = createWorldState(crate);
@@ -51,6 +62,14 @@ describe('handleInteractiveObjectInteraction', () => {
     expect(result.responseText).toBe('You lift the lid and uncover a brass key.');
     expect(result.updatedWorldState.levelOutcome).toBe('win');
     expect(result.updatedWorldState.interactiveObjects[0].state).toBe('used');
+    expect(result.updatedWorldState.player.inventory.items).toEqual([
+      {
+        itemId: 'brass-key',
+        displayName: 'Brass Key',
+        sourceObjectId: 'crate-a',
+        pickedUpAtTick: 0,
+      },
+    ]);
   });
 
   it('returns used-state message on repeat interaction and does not re-trigger first-use outcome', () => {
@@ -69,6 +88,7 @@ describe('handleInteractiveObjectInteraction', () => {
     expect(result.responseText).toBe('Only splinters remain inside the crate.');
     expect(result.updatedWorldState.levelOutcome).toBeNull();
     expect(result.updatedWorldState.interactiveObjects[0].state).toBe('used');
+    expect(result.updatedWorldState.player.inventory.items).toEqual([]);
   });
 
   it('keeps per-instance outcomes distinct while reusing the same supply-crate handler', () => {
@@ -93,7 +113,39 @@ describe('handleInteractiveObjectInteraction', () => {
 
     expect(winningResult.responseText).toBe('You find the evacuation signal flare.');
     expect(winningResult.updatedWorldState.levelOutcome).toBe('win');
+    expect(winningResult.updatedWorldState.player.inventory.items).toEqual([]);
     expect(neutralResult.responseText).toBe('You find rope and a water skin.');
     expect(neutralResult.updatedWorldState.levelOutcome).toBeNull();
+    expect(neutralResult.updatedWorldState.player.inventory.items).toEqual([]);
+  });
+
+  it('does not duplicate pickup from the same object instance across repeated interactions', () => {
+    const crate = makeSupplyCrate('crate-repeat', 'idle', {
+      pickupItem: {
+        itemId: 'field-rations',
+        displayName: 'Field Rations',
+      },
+    });
+
+    const firstResult = handleInteractiveObjectInteraction({
+      interactiveObject: crate,
+      player,
+      worldState: createWorldState(crate),
+    });
+
+    const secondResult = handleInteractiveObjectInteraction({
+      interactiveObject: firstResult.updatedWorldState.interactiveObjects[0],
+      player,
+      worldState: firstResult.updatedWorldState,
+    });
+
+    expect(firstResult.updatedWorldState.player.inventory.items).toHaveLength(1);
+    expect(secondResult.updatedWorldState.player.inventory.items).toHaveLength(1);
+    expect(secondResult.updatedWorldState.player.inventory.items[0]).toEqual({
+      itemId: 'field-rations',
+      displayName: 'Field Rations',
+      sourceObjectId: 'crate-repeat',
+      pickedUpAtTick: 0,
+    });
   });
 });

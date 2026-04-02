@@ -116,6 +116,14 @@ describe('starter level integration pipeline', () => {
     expect(firstResult.responseText).toBe('You crack open the crate and find emergency supplies.');
     expect(firstResult.updatedWorldState.interactiveObjects[0].state).toBe('used');
     expect(firstResult.updatedWorldState.levelOutcome).toBeNull();
+    expect(firstResult.updatedWorldState.player.inventory.items).toEqual([
+      {
+        itemId: 'starter-storage-key',
+        displayName: 'Storage Key',
+        sourceObjectId: 'crate-supplies',
+        pickedUpAtTick: 0,
+      },
+    ]);
 
     const secondResult = handleInteractiveObjectInteraction({
       interactiveObject: firstResult.updatedWorldState.interactiveObjects[0],
@@ -125,6 +133,7 @@ describe('starter level integration pipeline', () => {
 
     expect(secondResult.responseText).toBe('The supply crate is already open and empty.');
     expect(secondResult.updatedWorldState.interactiveObjects[0].state).toBe('used');
+    expect(secondResult.updatedWorldState.player.inventory.items).toHaveLength(1);
 
     expect(worldState).toEqual(beforeInteraction);
   });

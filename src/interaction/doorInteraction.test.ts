@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { handleDoorInteraction } from './doorInteraction';
 import type { Door, Player } from '../world/types';
 
-const player: Player = { id: 'player-1', displayName: 'Hero', position: { x: 1, y: 1 } };
+const player: Player = {
+  id: 'player-1',
+  displayName: 'Hero',
+  position: { x: 1, y: 1 },
+  inventory: {
+    items: [],
+  },
+};
 
 const makeDoor = (doorState: Door['doorState'], outcome?: Door['outcome']): Door => ({
   id: 'door-1',

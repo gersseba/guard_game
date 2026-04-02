@@ -28,6 +28,12 @@ const handleSupplyCrateInteraction: InteractiveObjectTypeHandler = (
 	request,
 ): InteractiveObjectInteractionResult => {
 	const wasUsed = request.interactiveObject.state === 'used';
+	const pickupItem = request.interactiveObject.pickupItem;
+	const inventoryItems = request.worldState.player.inventory.items;
+	const inventoryAlreadyContainsObjectPickup = inventoryItems.some(
+		(item) => item.sourceObjectId === request.interactiveObject.id,
+	);
+	const canPickup = !wasUsed && pickupItem !== undefined && !inventoryAlreadyContainsObjectPickup;
 	const responseText = wasUsed
 		? request.interactiveObject.usedMessage ?? `${request.interactiveObject.displayName} is already open.`
 		: request.interactiveObject.idleMessage ??
@@ -42,8 +48,26 @@ const handleSupplyCrateInteraction: InteractiveObjectTypeHandler = (
 		request.worldState.levelOutcome ??
 		(!wasUsed ? (request.interactiveObject.firstUseOutcome ?? null) : null);
 
+	const nextInventoryItems = canPickup
+		? [
+				...inventoryItems,
+				{
+					itemId: pickupItem.itemId,
+					displayName: pickupItem.displayName,
+					sourceObjectId: request.interactiveObject.id,
+					pickedUpAtTick: request.worldState.tick,
+				},
+			]
+		: inventoryItems;
+
 	const updatedWorldState: WorldState = {
 		...request.worldState,
+		player: {
+			...request.worldState.player,
+			inventory: {
+				items: nextInventoryItems,
+			},
+		},
 		interactiveObjects: replaceInteractiveObjectInWorld(request.worldState, updatedObject),
 		levelOutcome: nextLevelOutcome,
 	};

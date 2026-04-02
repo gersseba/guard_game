@@ -23,6 +23,9 @@ describe('deserializeLevel', () => {
       id: 'player',
       displayName: 'Player',
       position: { x: 2, y: 3 },
+      inventory: {
+        items: [],
+      },
       facingDirection: 'front',
     });
   });
@@ -73,6 +76,14 @@ describe('deserializeLevel', () => {
     expect(state.levelObjective).toBe('Reach the exit.');
     expect(state.npcs).toEqual([]);
     expect(state.interactiveObjects).toEqual([]);
+    expect(state.player.inventory.items).toEqual([]);
+  });
+
+  it('keeps player inventory JSON-serializable after deserialization', () => {
+    const state = deserializeLevel(minimalLevel);
+
+    const roundTrip = JSON.parse(JSON.stringify(state)) as typeof state;
+    expect(roundTrip.player.inventory.items).toEqual([]);
   });
 
   it('handles empty guard and door arrays', () => {
@@ -342,6 +353,30 @@ describe('validateLevelData', () => {
     expect(() => validateLevelData(bad)).toThrowError('doors must be an array');
   });
 
+  it('throws when interactiveObject pickupItem is invalid', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      interactiveObjects: [
+        {
+          id: 'crate-1',
+          displayName: 'Crate',
+          x: 4,
+          y: 4,
+          objectType: 'supply-crate',
+          interactionType: 'inspect',
+          state: 'idle',
+          pickupItem: {
+            itemId: '',
+            displayName: 'Key',
+          },
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid pickupItem');
+  });
+
   it('throws when input is not an object', () => {
     expect(() => validateLevelData(null)).toThrowError('expected an object');
     expect(() => validateLevelData('string')).toThrowError('expected an object');
@@ -403,6 +438,16 @@ describe('starter level', () => {
 
     expect(state.guards.map((g) => g.id)).toEqual(['guard-1', 'guard-2']);
     expect(state.doors.map((d) => d.id)).toEqual(['door-1', 'door-2']);
+  });
+
+  it('maps starter pickup item metadata into interactive object state', () => {
+    const level = validateLevelData(starterRaw);
+    const state = deserializeLevel(level);
+
+    expect(state.interactiveObjects[0].pickupItem).toEqual({
+      itemId: 'starter-storage-key',
+      displayName: 'Storage Key',
+    });
   });
 });
 

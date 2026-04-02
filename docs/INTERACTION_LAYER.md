@@ -142,6 +142,12 @@ Related tests live in `src/interaction/interactionDispatcher.test.ts` under disp
 
 This allows multiple objects to share one behavior implementation while retaining per-instance outcomes/messages from level JSON.
 
+Pickup behavior is deterministic and code-owned:
+- if an interactive object has `pickupItem` and is interacted with in `idle` state, the item is added to `player.inventory.items`
+- pickup entries include `sourceObjectId` and `pickedUpAtTick` to keep state auditable and replay-friendly
+- repeated interactions on the same object instance cannot duplicate pickup entries
+- no LLM call participates in pickup rule enforcement
+
 ## LLM Boundary
 
 Only conversational player-message flows route to the LLM layer (guard/NPC chat services). Chat-open flows and deterministic door/object interactions do not call the LLM client.
