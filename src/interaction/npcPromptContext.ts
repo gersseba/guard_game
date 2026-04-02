@@ -221,6 +221,20 @@ export const buildNpcPromptContext = (npc: Npc, player: Player, worldState: Worl
   const resolvedProfile = resolveNpcPromptProfile(npc.npcType);
   const worldKnowledge = buildActorTypeWorldKnowledge(npc.npcType, worldState, npc.id);
 
+  // Compute RiddleClueConstraint if riddleClue is present
+  let riddleClueConstraint: any = undefined;
+  if (npc.riddleClue !== undefined) {
+    const { doorId, mustStateDoorAs } = npc.riddleClue;
+    const door = worldState.doors.find((d) => d.id === doorId);
+    if (door) {
+      riddleClueConstraint = {
+        doorId,
+        mustStateDoorAs,
+        constraint: `You must claim this door is "${mustStateDoorAs}".`,
+      };
+    }
+  }
+
   return JSON.stringify({
     actor: {
       id: npc.id,
@@ -238,6 +252,7 @@ export const buildNpcPromptContext = (npc: Npc, player: Player, worldState: Worl
     ...(worldKnowledge !== null && { typeWorldKnowledge: worldKnowledge }),
     ...(npc.instanceKnowledge !== undefined && { instanceKnowledge: npc.instanceKnowledge }),
     ...(npc.instanceBehavior !== undefined && { instanceBehavior: npc.instanceBehavior }),
+    ...(riddleClueConstraint !== undefined && { riddleClueConstraint }),
     player: {
       id: player.id,
       displayName: player.displayName,
