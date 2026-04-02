@@ -319,15 +319,11 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       height: levelData.height,
       tileSize: DEFAULT_TILE_SIZE,
     },
-<<<<<<< HEAD
-    levelObjective: levelData.objective,
-=======
     levelMetadata: {
       name: levelData.name,
       premise: levelData.premise,
       goal: levelData.goal,
     },
->>>>>>> b9bd8b0 (#111 add premise and goal metadata to level system)
     player: {
       id: 'player',
       displayName: 'Player',

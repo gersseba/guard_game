@@ -212,11 +212,7 @@ export interface LevelData {
 export interface WorldState {
   tick: number;
   grid: WorldGrid;
-<<<<<<< HEAD
-  levelObjective: string;
-=======
   levelMetadata: LevelMetadata;
->>>>>>> b9bd8b0 (#111 add premise and goal metadata to level system)
   player: Player;
   npcs: Npc[];
   guards: Guard[];
