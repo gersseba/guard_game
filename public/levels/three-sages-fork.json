@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "name": "Three Sages at the Fork",
+  "width": 20,
+  "height": 20,
+  "player": {
+    "x": 10,
+    "y": 16,
+    "spriteSet": {
+      "default": "/assets/medieval_player_farmer_front.svg",
+      "front": "/assets/medieval_player_farmer_front.svg",
+      "away": "/assets/medieval_player_farmer_away.svg",
+      "left": "/assets/medieval_player_farmer_left.svg",
+      "right": "/assets/medieval_player_farmer_right.svg"
+    }
+  },
+  "guards": [],
+  "doors": [
+    {
+      "id": "door-west-arch",
+      "displayName": "Western Arch",
+      "x": 8,
+      "y": 3,
+      "doorState": "closed",
+      "outcome": "safe",
+      "spriteSet": {
+        "default": "/assets/medieval_door_wooden_closed.svg"
+      }
+    },
+    {
+      "id": "door-east-gate",
+      "displayName": "Eastern Gate",
+      "x": 12,
+      "y": 3,
+      "doorState": "closed",
+      "outcome": "danger",
+      "spriteSet": {
+        "default": "/assets/medieval_door_wooden_closed.svg"
+      }
+    }
+  ],
+  "npcs": [
+    {
+      "id": "archivist",
+      "displayName": "Archivist",
+      "x": 8,
+      "y": 9,
+      "npcType": "archive_keeper",
+      "spriteAssetPath": "/assets/medieval_npc_villager.svg",
+      "instanceKnowledge": "You are a keeper of records. You have studied the ancient texts about the western passage.",
+      "instanceBehavior": "You speak with scholarly precision and always verify facts before stating them.",
+      "riddleClue": {
+        "clueId": "clue-west-truthful",
+        "doorId": "door-west-arch",
+        "truthBehavior": "truthful"
+      }
+    },
+    {
+      "id": "mechanic",
+      "displayName": "Mechanic",
+      "x": 10,
+      "y": 9,
+      "npcType": "engineer",
+      "spriteAssetPath": "/assets/medieval_npc_villager.svg",
+      "instanceKnowledge": "You maintain the gates. You know about both passages but choose to mislead travelers about them.",
+      "instanceBehavior": "You are clever and enjoy wordplay and riddles. You like to mislead people for entertainment.",
+      "riddleClue": {
+        "clueId": "clue-east-inverse",
+        "doorId": "door-east-gate",
+        "truthBehavior": "inverse"
+      }
+    },
+    {
+      "id": "gossip",
+      "displayName": "Gossip",
+      "x": 12,
+      "y": 9,
+      "npcType": "villager",
+      "spriteAssetPath": "/assets/medieval_npc_villager.svg",
+      "instanceKnowledge": "You have heard rumors about both passages from travelers. You know the eastern gate leads to danger, and you voice this openly.",
+      "instanceBehavior": "You are talkative and love sharing what you have learned from others. You speak your mind freely.",
+      "riddleClue": {
+        "clueId": "clue-east-truthful",
+        "doorId": "door-east-gate",
+        "truthBehavior": "truthful"
+      }
+    }
+  ]
+}
