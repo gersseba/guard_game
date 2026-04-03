@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createCommandBuffer } from './input/commands';
 import { createRuntimeController } from './runtimeController';
+import { createDefaultItemUseResolver } from './interaction/itemUse';
 import type { World, WorldCommand, WorldState } from './world/types';
 
 const createTestWorldState = (
@@ -16,6 +17,7 @@ const createTestWorldState = (
       position: { x: 1, y: 1 },
       inventory: {
         items: [],
+        selectedItem: null,
       },
     },
     guards: [],
@@ -143,5 +145,113 @@ describe('createRuntimeController', () => {
 
     expect(applyCommandsSpy).toHaveBeenCalledWith([]);
     expect(runInteractions).toHaveBeenCalledWith(world.getState(), []);
+  });
+
+  it('emits deterministic no-selection item-use result when no inventory item is selected', () => {
+    const commandBuffer = createCommandBuffer();
+    const { world } = createTestWorld();
+    const runInteractions = vi.fn();
+    const onItemUseAttemptResolved = vi.fn();
+    const controller = createRuntimeController({
+      world,
+      commandBuffer,
+      runInteractions,
+      itemUseResolver: createDefaultItemUseResolver(),
+      onItemUseAttemptResolved,
+    });
+
+    commandBuffer.enqueue({ type: 'useSelectedItem' });
+    controller.stepSimulation();
+
+    expect(onItemUseAttemptResolved).toHaveBeenCalledTimes(1);
+    expect(onItemUseAttemptResolved).toHaveBeenCalledWith({
+      tick: 1,
+      commandIndex: 0,
+      selectedItem: null,
+      result: 'no-selection',
+      target: null,
+    });
+  });
+
+  it('emits deterministic no-target item-use result when an inventory item is selected', () => {
+    const commandBuffer = createCommandBuffer();
+    const { world } = createTestWorld(
+      createTestWorldState({
+        player: {
+          inventory: {
+            items: [
+              {
+                itemId: 'key-bronze',
+                displayName: 'Bronze Key',
+                sourceObjectId: 'crate-1',
+                pickedUpAtTick: 0,
+              },
+            ],
+            selectedItem: {
+              slotIndex: 0,
+              itemId: 'key-bronze',
+            },
+          },
+        },
+      }),
+    );
+    const runInteractions = vi.fn();
+    const onItemUseAttemptResolved = vi.fn();
+    const controller = createRuntimeController({
+      world,
+      commandBuffer,
+      runInteractions,
+      itemUseResolver: createDefaultItemUseResolver(),
+      onItemUseAttemptResolved,
+    });
+
+    commandBuffer.enqueue({ type: 'useSelectedItem' });
+    controller.stepSimulation();
+
+    expect(onItemUseAttemptResolved).toHaveBeenCalledTimes(1);
+    expect(onItemUseAttemptResolved).toHaveBeenCalledWith({
+      tick: 1,
+      commandIndex: 0,
+      selectedItem: {
+        slotIndex: 0,
+        itemId: 'key-bronze',
+      },
+      result: 'no-target',
+      target: null,
+    });
+  });
+
+  it('emits item-use results deterministically for multiple use commands in one tick', () => {
+    const commandBuffer = createCommandBuffer();
+    const { world } = createTestWorld();
+    const runInteractions = vi.fn();
+    const onItemUseAttemptResolved = vi.fn();
+    const controller = createRuntimeController({
+      world,
+      commandBuffer,
+      runInteractions,
+      itemUseResolver: createDefaultItemUseResolver(),
+      onItemUseAttemptResolved,
+    });
+
+    commandBuffer.enqueue({ type: 'move', dx: 1, dy: 0 });
+    commandBuffer.enqueue({ type: 'useSelectedItem' });
+    commandBuffer.enqueue({ type: 'useSelectedItem' });
+    controller.stepSimulation();
+
+    expect(onItemUseAttemptResolved).toHaveBeenNthCalledWith(1, {
+      tick: 1,
+      commandIndex: 1,
+      selectedItem: null,
+      result: 'no-selection',
+      target: null,
+    });
+    expect(onItemUseAttemptResolved).toHaveBeenNthCalledWith(2, {
+      tick: 1,
+      commandIndex: 2,
+      selectedItem: null,
+      result: 'no-selection',
+      target: null,
+    });
   });
 });
