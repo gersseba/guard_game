@@ -210,8 +210,8 @@ describe('deserializeLevel', () => {
     const state = deserializeLevel(level);
 
     expect(state.doors).toEqual([
-      { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, doorState: 'locked', outcome: 'safe' },
-      { id: 'door-2', displayName: 'Side Door', position: { x: 19, y: 0 }, doorState: 'open', outcome: 'danger' },
+      { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, doorState: 'locked', outcome: 'safe', isUnlocked: false },
+      { id: 'door-2', displayName: 'Side Door', position: { x: 19, y: 0 }, doorState: 'open', outcome: 'danger', isUnlocked: false },
     ]);
   });
 
@@ -679,13 +679,13 @@ describe('outcome field', () => {
     expect(state.doors[0].outcome).toBe('danger');
   });
 
-  it('rejects doors without outcome field', () => {
-    const bad = {
+  it('accepts doors without outcome field (outcome is optional for locked/key-based doors)', () => {
+    const noOutcome = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'No outcome', x: 0, y: 10, doorState: 'open' }],
+      doors: [{ id: 'door-1', displayName: 'No outcome', x: 0, y: 10, doorState: 'locked' }],
     };
 
-    expect(() => validateLevelData(bad)).toThrowError('must have id, displayName, x, y, doorState, and outcome');
+    expect(() => validateLevelData(noOutcome)).not.toThrow();
   });
 
   it('rejects doors with invalid outcome value', () => {

@@ -190,6 +190,16 @@ const runtimeController = createRuntimeController({
       lastItemUseAttemptEvent: event,
     };
 
+    // If a door was unlocked via correct item-use, apply the unlock mutation
+    if (event.doorUnlockedId) {
+      updatedState = {
+        ...updatedState,
+        doors: updatedState.doors.map((door) =>
+          door.id === event.doorUnlockedId ? { ...door, isUnlocked: true } : door,
+        ),
+      };
+    }
+
     // If a guard was affected by item-use success, mark it
     if (event.affectedEntityType === 'guard' && event.affectedEntityId) {
       updatedState = {

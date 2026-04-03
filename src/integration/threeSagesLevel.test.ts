@@ -233,8 +233,7 @@ describe('three sages level integration pipeline', () => {
       expect(threeSagesEntry?.name).toBe('Three Sages at the Fork');
     });
 
-    it('manifest has three levels including three-sages-fork', () => {
-      expect(manifestJson).toHaveLength(3);
+    it('manifest contains three-sages-fork level entry', () => {
       expect(manifestJson.map((e: { id: string }) => e.id)).toContain('three-sages-fork');
     });
   });

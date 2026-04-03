@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "name": "The Locked Armory",
+  "premise": "A locked armory holds the supplies you need. You spotted a key in an old crate nearby.",
+  "goal": "Find the key, unlock the armory door, and step through to safety.",
+  "width": 20,
+  "height": 15,
+  "player": {
+    "x": 10,
+    "y": 12
+  },
+  "guards": [],
+  "doors": [
+    {
+      "id": "armory-door",
+      "displayName": "Armory Door",
+      "x": 10,
+      "y": 7,
+      "doorState": "locked",
+      "requiredItemId": "armory-key",
+      "outcome": "safe"
+    }
+  ],
+  "npcs": [],
+  "interactiveObjects": [
+    {
+      "id": "old-crate",
+      "displayName": "Old Crate",
+      "x": 10,
+      "y": 11,
+      "objectType": "supply-crate",
+      "interactionType": "inspect",
+      "state": "idle",
+      "pickupItem": {
+        "itemId": "armory-key",
+        "displayName": "Armory Key"
+      },
+      "idleMessage": "Inside the dusty crate you find a heavy iron key.",
+      "usedMessage": "The crate is empty."
+    }
+  ]
+}

@@ -33,7 +33,10 @@ export const getBlockingOccupants = (worldState: WorldState, position: GridPosit
 
   for (const door of worldState.doors) {
     if (samePosition(door.position, position)) {
-      blockers.push({ label: `door:${door.id}`, position: door.position });
+      // Only block traversal if door has not been unlocked via item-use.
+      if (!door.isUnlocked) {
+        blockers.push({ label: `door:${door.id}`, position: door.position });
+      }
     }
   }
 

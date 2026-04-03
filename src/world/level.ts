@@ -184,16 +184,20 @@ export function validateLevelData(input: unknown): LevelData {
       typeof door['displayName'] !== 'string' ||
       typeof door['x'] !== 'number' ||
       typeof door['y'] !== 'number' ||
-      typeof door['doorState'] !== 'string' ||
-      typeof door['outcome'] !== 'string'
+      typeof door['doorState'] !== 'string'
     ) {
       throw new Error(
-        `Invalid level data: door at index ${i} must have id, displayName, x, y, doorState, and outcome`,
+        `Invalid level data: door at index ${i} must have id, displayName, x, y, and doorState`,
       );
     }
-    if (door['outcome'] !== 'safe' && door['outcome'] !== 'danger') {
+    if (door['outcome'] !== undefined && door['outcome'] !== 'safe' && door['outcome'] !== 'danger') {
       throw new Error(
         `Invalid level data: door at index ${i} has invalid outcome (must be 'safe' or 'danger')`,
+      );
+    }
+    if (door['requiredItemId'] !== undefined && typeof door['requiredItemId'] !== 'string') {
+      throw new Error(
+        `Invalid level data: door at index ${i} has invalid requiredItemId (must be a string when provided)`,
       );
     }
 
@@ -433,7 +437,9 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       displayName: d.displayName,
       position: { x: d.x, y: d.y },
       doorState: d.doorState,
-      outcome: d.outcome,
+      ...(d.outcome !== undefined ? { outcome: d.outcome } : {}),
+      ...(d.requiredItemId !== undefined ? { requiredItemId: d.requiredItemId } : {}),
+      isUnlocked: false,
       ...(d.spriteAssetPath !== undefined ? { spriteAssetPath: d.spriteAssetPath } : {}),
       ...(d.spriteSet !== undefined ? { spriteSet: d.spriteSet } : {}),
     })),
