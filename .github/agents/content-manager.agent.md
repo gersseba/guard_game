@@ -1,7 +1,7 @@
 ---
 name: content manager
 description: "Use when a ticket needs visual assets; creates or updates medieval-themed SVG game assets, owns art direction, and prepares 64x64 grid-ready assets before development starts."
-tools: [read/readFile, search/codebase, search/fileSearch, search/listDirectory, search/textSearch, edit/createDirectory, edit/createFile, edit/editFiles, execute/runInTerminal, todo]
+tools: [read/readFile, read/viewImage, read/problems, search/codebase, search/fileSearch, search/listDirectory, search/textSearch, web/fetch, browser/openBrowserPage, edit/createDirectory, edit/createFile, edit/editFiles, edit/rename, execute/runInTerminal, github/issue_read, github/issue_write, github/list_issues, github/search_issues, github/add_issue_comment, todo]
 argument-hint: "Ticket number or asset request, including required entities and style constraints"
 user-invocable: true
 ---

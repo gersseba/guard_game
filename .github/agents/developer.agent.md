@@ -48,6 +48,12 @@ Categorize each work package into exactly one type:
 - Examples: player movement, NPC dialogue, grid rendering, puzzle mechanics
 - Review focus: AC progress, correctness, completeness within scope
 
+### LEVEL
+- Implements a new level specification authored by the `game designer`
+- Ticket must include level idea, level JSON (or explicit build directions), required assets, and any required functional changes
+- May include both content and minimal supporting functional code required for the level to run
+- Review focus: level ticket completeness and alignment with provided level spec
+
 ### BUGS
 - Fixes defects in already delivered behavior
 - Scope is limited to defect correction and regression protection
@@ -116,6 +122,7 @@ Example: `1-setup-basic-structure`
 - Include the ticket number `#<ticket-number>` in the PR description.
 - Use `Closes #<ticket-number>` for implementation PRs.
 - Do not use partial `Refs #<ticket-number>` PRs for ticket delivery.
+- Ensure exactly one category label is set on the PR: `DOCUMENTATION`, `BUGS`, `ENHANCEMENT`, `LEVEL`, `AI_BEHAVIOR`, or `REFACTORING`.
 
 ### Linking PR to Issue
 When creating a PR, reference the issue to auto-link:
