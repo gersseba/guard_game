@@ -24,6 +24,11 @@ const createTestWorldState = (
   const baseState: WorldState = {
     tick: 0,
     grid: { width: 10, height: 10, tileSize: 32 },
+    levelMetadata: {
+      name: 'Test Level',
+      premise: 'Fixture for interaction dispatcher tests.',
+      goal: 'Dispatch interaction handlers deterministically.',
+    },
     levelObjective: 'Find a way out.',
     player: {
       id: 'player',

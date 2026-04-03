@@ -14,6 +14,11 @@ const createWorldState = (): WorldState => ({
     height: 20,
     tileSize: 48,
   },
+  levelMetadata: {
+    name: 'Test Level',
+    premise: 'Fixture for scene rendering tests.',
+    goal: 'Render world entities.',
+  },
   levelObjective: 'Reach the safe door.',
   player: {
     id: 'player-1',

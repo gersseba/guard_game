@@ -26,7 +26,7 @@ export interface InventoryItem {
 
 export interface PlayerInventory {
   items: InventoryItem[];
-  selectedItem: SelectedInventoryItem | null;
+  selectedItem?: SelectedInventoryItem | null;
 }
 
 export interface SelectedInventoryItem {
@@ -162,6 +162,7 @@ export interface LevelData {
   name: string;
   premise: string;
   goal: string;
+  objective?: string;
   width: number;
   height: number;
   player: { x: number; y: number; spriteAssetPath?: string; spriteSet?: SpriteSet };
@@ -232,12 +233,14 @@ export interface WorldState {
   tick: number;
   grid: WorldGrid;
   levelMetadata: LevelMetadata;
+  levelObjective?: string;
   player: Player;
   npcs: Npc[];
   guards: Guard[];
   doors: Door[];
   interactiveObjects: InteractiveObject[];
   actorConversationHistoryByActorId: ActorConversationHistoryByActorId;
+  lastItemUseAttemptEvent?: ItemUseAttemptResultEvent | null;
   levelOutcome: 'win' | 'lose' | null;
 }
 

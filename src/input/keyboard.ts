@@ -11,9 +11,17 @@ const keyToCommandMap: Record<string, WorldCommand> = {
   s: { type: 'move', dx: 0, dy: 1 },
   d: { type: 'move', dx: 1, dy: 0 },
   e: { type: 'interact' },
+  f: { type: 'useSelectedItem' },
 };
 
 export const mapKeyboardEventToWorldCommand = (key: string): WorldCommand | null => {
+  if (/^[1-9]$/.test(key)) {
+    return {
+      type: 'selectInventorySlot',
+      slotIndex: Number(key) - 1,
+    };
+  }
+
   return keyToCommandMap[key] ?? null;
 };
 
