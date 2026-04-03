@@ -170,6 +170,34 @@ describe('deserializeLevel', () => {
     });
   });
 
+  it('maps guard itemUseRules when configured', () => {
+    const state = deserializeLevel({
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'North Guard',
+          x: 5,
+          y: 7,
+          guardState: 'patrolling',
+          itemUseRules: {
+            'gift-token': {
+              allowed: true,
+              responseText: 'Pass granted.',
+            },
+          },
+        },
+      ],
+    });
+
+    expect(state.guards[0].itemUseRules).toEqual({
+      'gift-token': {
+        allowed: true,
+        responseText: 'Pass granted.',
+      },
+    });
+  });
+
   it('maps door flat fields to nested Door with correct position and doorState', () => {
     const level: LevelData = {
       ...minimalLevel,
@@ -402,6 +430,57 @@ describe('validateLevelData', () => {
     expect(() => validateLevelData(bad)).toThrowError('invalid pickupItem');
   });
 
+  it('throws when guard itemUseRules has invalid rule shape', () => {
+    const bad = {
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'Guard',
+          x: 5,
+          y: 7,
+          guardState: 'idle',
+          itemUseRules: {
+            'gift-token': {
+              allowed: 'yes',
+              responseText: 'Wrong shape',
+            },
+          },
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('itemUseRules.gift-token.allowed must be a boolean');
+  });
+
+  it('throws when interactiveObject itemUseRules has invalid rule shape', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      interactiveObjects: [
+        {
+          id: 'crate-1',
+          displayName: 'Crate',
+          x: 4,
+          y: 4,
+          objectType: 'supply-crate',
+          interactionType: 'inspect',
+          state: 'idle',
+          itemUseRules: {
+            'unlock-rune': {
+              allowed: true,
+              responseText: 42,
+            },
+          },
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'itemUseRules.unlock-rune.responseText must be a string',
+    );
+  });
+
   it('throws when input is not an object', () => {
     expect(() => validateLevelData(null)).toThrowError('expected an object');
     expect(() => validateLevelData('string')).toThrowError('expected an object');
@@ -472,6 +551,25 @@ describe('starter level', () => {
     expect(state.interactiveObjects[0].pickupItem).toEqual({
       itemId: 'starter-storage-key',
       displayName: 'Storage Key',
+    });
+  });
+
+  it('deserializes starter guard and object itemUseRules', () => {
+    const level = validateLevelData(starterRaw);
+    const state = deserializeLevel(level);
+
+    expect(state.guards[0].itemUseRules).toEqual({
+      'gift-token': {
+        allowed: true,
+        responseText: 'A gift! How kind of you. You may pass.',
+      },
+    });
+
+    expect(state.interactiveObjects[0].itemUseRules).toEqual({
+      'unlock-rune': {
+        allowed: true,
+        responseText: "The rune fits perfectly! The crate's lock clicks open.",
+      },
     });
   });
 });

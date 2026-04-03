@@ -13,7 +13,6 @@ export interface ItemUseResolver {
 /**
  * Deterministic resolver for item-use attempts.
  * Supports:
- * - Door unlock: correct item + locked door = success + doorUnlockedId
  * - Guard rules: matching rule + allowed = success with affectedEntityId/Type
  * - Object rules: matching rule + allowed = success with affectedEntityId/Type
  * Wrong item or unsupported target = blocked/no-rule with no mutation.
@@ -46,55 +45,6 @@ export const createDefaultItemUseResolver = (): ItemUseResolver => {
           result: 'no-target',
           target: null,
         };
-      }
-
-      // Handle door item-use (unlock)
-      if (adjacentTarget.kind === 'door') {
-        const door = adjacentTarget.target;
-
-        // Door doesn't require an item
-        if (!door.requiredItemId) {
-          return {
-            tick: worldState.tick,
-            commandIndex,
-            selectedItem,
-            result: 'no-target',
-            target: {
-              kind: 'door',
-              targetId: door.id,
-            },
-          };
-        }
-
-        // Door requires an item. Check if selected item matches.
-        const itemMatches = selectedItem.itemId === door.requiredItemId;
-
-        if (itemMatches) {
-          // Correct key: success!
-          return {
-            tick: worldState.tick,
-            commandIndex,
-            selectedItem,
-            result: 'success',
-            target: {
-              kind: 'door',
-              targetId: door.id,
-            },
-            doorUnlockedId: door.id,
-          };
-        } else {
-          // Wrong key: blocked
-          return {
-            tick: worldState.tick,
-            commandIndex,
-            selectedItem,
-            result: 'blocked',
-            target: {
-              kind: 'door',
-              targetId: door.id,
-            },
-          };
-        }
       }
 
       // Handle guard item-use (rules)

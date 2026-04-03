@@ -31,6 +31,34 @@ const validateSpriteSet = (
   }
 };
 
+const validateItemUseRules = (value: unknown, contextLabel: string): void => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`Invalid level data: ${contextLabel} itemUseRules must be an object when provided`);
+  }
+
+  const rawRules = value as Record<string, unknown>;
+  for (const [itemId, rule] of Object.entries(rawRules)) {
+    if (typeof rule !== 'object' || rule === null || Array.isArray(rule)) {
+      throw new Error(
+        `Invalid level data: ${contextLabel} itemUseRules.${itemId} must be an object with allowed and responseText`,
+      );
+    }
+
+    const rawRule = rule as Record<string, unknown>;
+    if (typeof rawRule['allowed'] !== 'boolean') {
+      throw new Error(
+        `Invalid level data: ${contextLabel} itemUseRules.${itemId}.allowed must be a boolean`,
+      );
+    }
+
+    if (typeof rawRule['responseText'] !== 'string') {
+      throw new Error(
+        `Invalid level data: ${contextLabel} itemUseRules.${itemId}.responseText must be a string`,
+      );
+    }
+  }
+};
+
 /**
  * Validates that an unknown value conforms to the LevelData schema.
  * Throws a descriptive Error if any required field is missing or has an unexpected type/value.
@@ -136,6 +164,10 @@ export function validateLevelData(input: unknown): LevelData {
       throw new Error(
         `Invalid level data: guard at index ${i} has invalid instanceBehavior (must be a string when provided)`,
       );
+    }
+
+    if (guard['itemUseRules'] !== undefined) {
+      validateItemUseRules(guard['itemUseRules'], `guard at index ${i}`);
     }
   }
 
@@ -301,6 +333,10 @@ export function validateLevelData(input: unknown): LevelData {
       if (interactiveObject['spriteSet'] !== undefined) {
         validateSpriteSet(interactiveObject['spriteSet'], `interactiveObject at index ${i}`);
       }
+
+      if (interactiveObject['itemUseRules'] !== undefined) {
+        validateItemUseRules(interactiveObject['itemUseRules'], `interactiveObject at index ${i}`);
+      }
     }
   }
 
@@ -390,6 +426,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       ...(g.spriteSet !== undefined ? { spriteSet: g.spriteSet } : {}),
       ...(g.instanceKnowledge !== undefined ? { instanceKnowledge: g.instanceKnowledge } : {}),
       ...(g.instanceBehavior !== undefined ? { instanceBehavior: g.instanceBehavior } : {}),
+      ...(g.itemUseRules !== undefined ? { itemUseRules: g.itemUseRules } : {}),
     })),
     doors: levelData.doors.map((d) => ({
       id: d.id,
@@ -413,6 +450,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       firstUseOutcome: o.firstUseOutcome,
       spriteAssetPath: o.spriteAssetPath,
       spriteSet: o.spriteSet,
+      itemUseRules: o.itemUseRules,
     })),
     actorConversationHistoryByActorId: {},
     lastItemUseAttemptEvent: null,
