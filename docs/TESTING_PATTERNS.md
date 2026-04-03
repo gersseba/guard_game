@@ -64,18 +64,7 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   - conversational player-message path is asynchronous
   - deterministic door/object paths stay synchronous
   - door/object results do not trigger paused-world UI side effects
-- **Door unlock regression checks** (`src/interaction/itemUse.test.ts`):
-  - `no-selection` result returned when player has no selected item
-  - `no-target` result returned when no adjacent door exists or adjacent target is not a door
-  - `no-target` result returned when adjacent door does not require an item (`requiredItemId` not set)
-  - `success` result with `doorUnlockedId` returned when selected item `itemId` matches door's `requiredItemId`
-  - `blocked` result returned (without `doorUnlockedId`) when selected item does not match door's `requiredItemId`
-  - command index preserved in emitted `ItemUseAttemptResultEvent` for tick-time ordering
-  - multiple use commands in one tick emit stable ordered events preserving original command sequence
-  - deterministic event results for identical input state (no nondeterminism)
-  - unlocked door state survives JSON serialization roundtrip
-
- - **Guard item-use rule checks** (`src/interaction/itemUse.test.ts`):
+- **Guard item-use rule checks** (`src/interaction/itemUse.test.ts`):
    - `success` result with `affectedEntityType='guard'`, `affectedEntityId`, and `ruleResponseText` when guard has allowed rule for item
    - `blocked` result with `ruleResponseText` (no entity mutation) when guard has disallowed rule for item
    - `no-rule` result when guard has no rule for selected item (item not supported)

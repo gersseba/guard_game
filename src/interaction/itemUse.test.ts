@@ -241,6 +241,79 @@ describe('itemUseResolver', () => {
     expect(event.ruleResponseText).toBe('The latch opens.');
   });
 
+  it('returns blocked when object rule denies selected item', () => {
+    const worldState = createTestWorldState({
+      player: {
+        id: 'player-1',
+        displayName: 'Hero',
+        position: { x: 5, y: 5 },
+        inventory: {
+          items: [{ itemId: 'lockpick', displayName: 'Lockpick', sourceObjectId: 'obj-1', pickedUpAtTick: 10 }],
+          selectedItem: { slotIndex: 0, itemId: 'lockpick' },
+        },
+      },
+      interactiveObjects: [
+        {
+          id: 'crate-1',
+          displayName: 'Supply Crate',
+          position: { x: 5, y: 6 },
+          objectType: 'supply-crate',
+          interactionType: 'inspect',
+          state: 'idle',
+          itemUseRules: {
+            lockpick: {
+              allowed: false,
+              responseText: 'This crate cannot be forced.',
+            },
+          },
+        },
+      ],
+    });
+
+    const event = resolver.resolveItemUseAttempt({ worldState, commandIndex: 8 });
+
+    expect(event.result).toBe('blocked');
+    expect(event.target).toEqual({ kind: 'interactiveObject', targetId: 'crate-1' });
+    expect(event.affectedEntityType).toBeUndefined();
+    expect(event.affectedEntityId).toBeUndefined();
+    expect(event.ruleResponseText).toBe('This crate cannot be forced.');
+  });
+
+  it('returns no-rule when object has no matching itemUseRules entry', () => {
+    const worldState = createTestWorldState({
+      player: {
+        id: 'player-1',
+        displayName: 'Hero',
+        position: { x: 5, y: 5 },
+        inventory: {
+          items: [{ itemId: 'apple', displayName: 'Apple', sourceObjectId: 'obj-1', pickedUpAtTick: 10 }],
+          selectedItem: { slotIndex: 0, itemId: 'apple' },
+        },
+      },
+      interactiveObjects: [
+        {
+          id: 'crate-1',
+          displayName: 'Supply Crate',
+          position: { x: 5, y: 6 },
+          objectType: 'supply-crate',
+          interactionType: 'inspect',
+          state: 'idle',
+          itemUseRules: {
+            'unlock-rune': {
+              allowed: true,
+              responseText: 'The latch opens.',
+            },
+          },
+        },
+      ],
+    });
+
+    const event = resolver.resolveItemUseAttempt({ worldState, commandIndex: 9 });
+
+    expect(event.result).toBe('no-rule');
+    expect(event.target).toEqual({ kind: 'interactiveObject', targetId: 'crate-1' });
+  });
+
   it('is deterministic for the same guard-rule input', () => {
     const worldState = createTestWorldState({
       player: {

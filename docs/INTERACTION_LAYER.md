@@ -73,12 +73,6 @@ Current behavior:
 - Emits one `ItemUseAttemptResultEvent` per `useSelectedItem` command, preserving the command index from the tick command list.
 - Returns `no-selection` when no selected item exists.
 - Returns `no-target` when an item is selected but no adjacent target exists or the adjacent target doesn't accept item-use.
-- Implements **door unlock resolution**: when an adjacent door requires a specific item (`requiredItemId`):
-  - If selected item `itemId` matches `requiredItemId`, returns `result='success'` with `doorUnlockedId` set to the door id
-  - If selected item doesn't match, returns `result='blocked'` with no `doorUnlockedId`
-  - Door unlock state persists via `door.isUnlocked` flag (JSON-serializable)
-  - Once unlocked, `door.isUnlocked = true` allows traversal; [spatialRules.canMovePlayerTo()](../src/world/spatialRules.ts#L38) skips blocked-door checks for unlocked doors
-  - Unlock state persists through level state save/restore and JSON serialization
 - Emits target info (door/guard/npc/interactiveObject) for debugging and event logging.
 
 ### Guard and Object Item-Use Rules
@@ -100,12 +94,11 @@ When an adjacent target is a guard or interactive object, the resolver checks fo
 
 All rules are deterministic and code-owned. No LLM involvement in item-use success/failure determination. Response text is narrative only.
 
-Main-loop wiring in `src/main.ts` commits the latest emitted event to `worldState.lastItemUseAttemptEvent` via immutable `world.resetToState(...)`. When `doorUnlockedId` is present, mutates the corresponding door to set `door.isUnlocked = true`.
+Main-loop wiring in `src/main.ts` commits the latest emitted event to `worldState.lastItemUseAttemptEvent` via immutable `world.resetToState(...)`.
 
 LLM boundary note:
 - Item-use attempt resolution is deterministic and code-owned.
 - No LLM call is involved in item-use result determination.
-- Door unlock rules are entirely code-determined; doors cannot be unlocked by player dialogue.
 - Guard and object item-use rules are entirely code-determined; success/failure outcomes cannot be negotiated with the LLM.
 
 ## Conversation Pause Lifecycle
