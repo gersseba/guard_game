@@ -62,6 +62,7 @@ References one selected inventory slot by index and item id. Invalid slot select
 - `selectedItem: SelectedInventoryItem | null`
 - `result: ItemUseAttemptResult`
 - `target: { kind: 'door' | 'guard' | 'npc' | 'interactiveObject'; targetId: string } | null`
+- `doorUnlockedId?: string` - If a door was unlocked via correct item-use, this field contains the door id. Used by runtime to apply door unlock mutations.
 
 Represents one deterministic selected-item use attempt resolved for a specific command index in a tick.
 
@@ -89,6 +90,9 @@ Extends `Interactable`:
 Extends `Interactable`:
 - `doorState: 'open' | 'closed' | 'locked'`
 - `outcome?: 'safe' | 'danger'`
+- `requiredItemId?: string` - Item id required to unlock this door via item-use. If set, door must be interacted with using this item before traversal is allowed.
+- `consumeOnUse?: boolean` - Whether the required item should be consumed when used to unlock (default: false)
+- `isUnlocked?: boolean` - Whether this door has been unlocked via item-use. Once set to true, door allows traversal regardless of doorState. Persists through world state serialization (default: false).
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
 
