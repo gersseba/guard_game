@@ -5,8 +5,12 @@ import type { WorldState, Door } from '../world/types';
 const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => {
   const baseState: WorldState = {
     tick: 100,
-    levelId: 'test-level',
     grid: { width: 10, height: 10, tileSize: 32 },
+    levelMetadata: {
+      name: 'Test Level',
+      premise: 'Test fixture for item use resolution',
+      goal: 'Test door unlock mechanics',
+    },
     player: {
       id: 'player-1',
       displayName: 'Hero',
@@ -20,6 +24,7 @@ const createTestWorldState = (overrides?: Partial<WorldState>): WorldState => {
     guards: [],
     interactiveObjects: [],
     actorConversationHistoryByActorId: {},
+    levelOutcome: null,
   };
 
   return { ...baseState, ...overrides };
@@ -314,8 +319,12 @@ describe('itemUseResolver - door unlock', () => {
 
       const worldState: WorldState = {
         tick: 200,
-        levelId: 'prison',
         grid: { width: 10, height: 10, tileSize: 32 },
+        levelMetadata: {
+          name: 'Prison Level',
+          premise: 'Test door unlock persistence',
+          goal: 'Escape the prison',
+        },
         player: {
           id: 'player-1',
           displayName: 'Prisoner',
@@ -329,6 +338,7 @@ describe('itemUseResolver - door unlock', () => {
         guards: [],
         interactiveObjects: [],
         actorConversationHistoryByActorId: {},
+        levelOutcome: null,
       };
 
       // Serialize and deserialize
