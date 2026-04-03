@@ -34,7 +34,16 @@ export interface SelectedInventoryItem {
   itemId: string;
 }
 
-export type ItemUseAttemptResult = 'no-selection' | 'no-target' | 'blocked' | 'success';
+/**
+ * Deterministic item-use rule for guards or objects.
+ * Defines whether an item can be used and what response to provide.
+ */
+export interface ItemUseRule {
+  allowed: boolean;
+  responseText: string;
+}
+
+export type ItemUseAttemptResult = 'no-selection' | 'no-target' | 'blocked' | 'success' | 'no-rule';
 
 export interface ItemUseAttemptResultEvent {
   tick: number;
@@ -42,11 +51,15 @@ export interface ItemUseAttemptResultEvent {
   selectedItem: SelectedInventoryItem | null;
   result: ItemUseAttemptResult;
   target: {
-    kind: 'door' | 'guard' | 'npc' | 'interactiveObject';
+    kind: 'guard' | 'npc' | 'interactiveObject';
     targetId: string;
   } | null;
-  /** If a door was unlocked, this field contains the door ID */
-  doorUnlockedId?: string;
+  /** Type of entity affected by successful item-use rule (guard or object) */
+  affectedEntityType?: 'guard' | 'object';
+  /** ID of entity affected by successful item-use rule */
+  affectedEntityId?: string;
+  /** Response text from the applied item-use rule */
+  ruleResponseText?: string;
 }
 
 export interface Player {
@@ -121,18 +134,14 @@ export interface Guard extends Interactable {
   instanceKnowledge?: string;
   /** Instance-specific behavior traits for this guard (overrides or extends type-level behavior). */
   instanceBehavior?: string;
+  /** Deterministic item-use rules: item ID → rule definition */
+  itemUseRules?: Record<string, ItemUseRule>;
 }
 
 /** A door that the player can pass through or be blocked by. */
 export interface Door extends Interactable {
   doorState: 'open' | 'closed' | 'locked';
   outcome?: 'safe' | 'danger';
-  /** Item ID required to unlock this door (if set, door must be interacted with using this item) */
-  requiredItemId?: string;
-  /** Whether this item should be consumed when used to unlock the door (default: false) */
-  consumeOnUse?: boolean;
-  /** Whether this door has been unlocked via item-use (persists unlock state; default: false) */
-  isUnlocked?: boolean;
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
 }
@@ -150,6 +159,8 @@ export interface InteractiveObject extends Interactable {
   firstUseOutcome?: 'win' | 'lose';
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
+  /** Deterministic item-use rules: item ID → rule definition */
+  itemUseRules?: Record<string, ItemUseRule>;
 }
 
 export interface WorldGrid {
@@ -187,6 +198,8 @@ export interface LevelData {
     instanceKnowledge?: string;
     /** Instance-specific behavior traits for this guard. */
     instanceBehavior?: string;
+    /** Deterministic item-use rules: item ID → rule definition */
+    itemUseRules?: Record<string, ItemUseRule>;
   }>;
   doors: Array<{
     id: string;
@@ -234,6 +247,8 @@ export interface LevelData {
     firstUseOutcome?: 'win' | 'lose';
     spriteAssetPath?: string;
     spriteSet?: SpriteSet;
+    /** Deterministic item-use rules: item ID → rule definition */
+    itemUseRules?: Record<string, ItemUseRule>;
   }>;
 }
 

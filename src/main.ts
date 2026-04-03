@@ -190,12 +190,22 @@ const runtimeController = createRuntimeController({
       lastItemUseAttemptEvent: event,
     };
 
-    // If a door was unlocked, apply the unlock mutation
-    if (event.doorUnlockedId) {
+    // If a guard was affected by item-use success, mark it
+    if (event.affectedEntityType === 'guard' && event.affectedEntityId) {
       updatedState = {
         ...updatedState,
-        doors: updatedState.doors.map((door) =>
-          door.id === event.doorUnlockedId ? { ...door, isUnlocked: true } : door,
+        guards: updatedState.guards.map((guard) =>
+          guard.id === event.affectedEntityId ? { ...guard, guardState: 'alert' as const } : guard,
+        ),
+      };
+    }
+
+    // If an object was affected by item-use success, mark it as used
+    if (event.affectedEntityType === 'object' && event.affectedEntityId) {
+      updatedState = {
+        ...updatedState,
+        interactiveObjects: updatedState.interactiveObjects.map((obj) =>
+          obj.id === event.affectedEntityId ? { ...obj, state: 'used' as const } : obj,
         ),
       };
     }

@@ -73,19 +73,33 @@ Current behavior:
 - Emits one `ItemUseAttemptResultEvent` per `useSelectedItem` command, preserving the command index from the tick command list.
 - Returns `no-selection` when no selected item exists.
 - Returns `no-target` when an item is selected but no adjacent target exists or the adjacent target doesn't accept item-use.
-- Implements **door unlock resolution**: when an adjacent door requires a specific item (`requiredItemId`):
-  - If selected item `itemId` matches `requiredItemId`, returns `result='success'` with `doorUnlockedId` set to the door id
-  - If selected item doesn't match, returns `result='blocked'` with no `doorUnlockedId`
-  - Door unlock state persists via `door.isUnlocked` flag (JSON-serializable)
-  - Once unlocked, door allows traversal and blocks are skipped in spatial rules
 - Emits target info (door/guard/npc/interactiveObject) for debugging and event logging.
 
-Main-loop wiring in `src/main.ts` commits the latest emitted event to `worldState.lastItemUseAttemptEvent` via immutable `world.resetToState(...)`. When `doorUnlockedId` is present, mutates the corresponding door to set `door.isUnlocked = true`.
+### Guard and Object Item-Use Rules
+
+When an adjacent target is a guard or interactive object, the resolver checks for data-driven item-use rules:
+- **Guard rules**: `guard.itemUseRules?: Record<string, ItemUseRule>`
+  - If selected item has a matching rule entry:
+    - `rule.allowed === true`: returns `result='success'` with `affectedEntityType='guard'`, `affectedEntityId`, and `ruleResponseText`
+    - `rule.allowed === false`: returns `result='blocked'` with `ruleResponseText` (no entity mutation)
+  - If selected item has no matching rule: returns `result='no-rule'` (unsupported item for this guard)
+  - Successful use marks guard state to `'alert'` via runtime integration (world layer mutation)
+
+- **Object rules**: `interactiveObject.itemUseRules?: Record<string, ItemUseRule>`
+  - If selected item has a matching rule entry:
+    - `rule.allowed === true`: returns `result='success'` with `affectedEntityType='object'`, `affectedEntityId`, and `ruleResponseText`
+    - `rule.allowed === false`: returns `result='blocked'` with `ruleResponseText` (no entity mutation)
+  - If selected item has no matching rule: returns `result='no-rule'` (unsupported item for this object)
+  - Successful use marks object state to `'used'` via runtime integration (world layer mutation)
+
+All rules are deterministic and code-owned. No LLM involvement in item-use success/failure determination. Response text is narrative only.
+
+Main-loop wiring in `src/main.ts` commits the latest emitted event to `worldState.lastItemUseAttemptEvent` via immutable `world.resetToState(...)`.
 
 LLM boundary note:
 - Item-use attempt resolution is deterministic and code-owned.
 - No LLM call is involved in item-use result determination.
-- Door unlock rules are entirely code-determined; doors cannot be unlocked by player dialogue.
+- Guard and object item-use rules are entirely code-determined; success/failure outcomes cannot be negotiated with the LLM.
 
 ## Conversation Pause Lifecycle
 

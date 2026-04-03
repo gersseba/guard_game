@@ -66,6 +66,18 @@ Deterministic rules:
 - Runtime emits one event per `useSelectedItem` command using command index ordering within the tick.
 - Main-loop wiring commits each emitted event immutably, so the last one in a tick becomes the stored event.
 
+### Door Unlock State
+
+`door.isUnlocked` is a serializable boolean flag that tracks whether a door has been unlocked via item-use interaction.
+
+Deterministic rules:
+- New runtime state initializes all doors with `isUnlocked: false` (default, omitted if false).
+- Level deserialization also initializes all doors with `isUnlocked: false` unless explicitly set in the level JSON.
+- Item-use resolver emits `doorUnlockedId` when player's selected item matches a door's `requiredItemId`.
+- Main-loop wiring commits unlock mutations: when `event.doorUnlockedId` is present, the corresponding door is mutated to set `isUnlocked: true` (`src/main.ts` line 198).
+- Once `isUnlocked` is true, the door allows traversal: `canMovePlayerTo()` in [src/world/spatialRules.ts](../src/world/spatialRules.ts#L38) skips blocked-door checks for unlocked doors.
+- Unlock state persists through JSON serialization and level state save/restore, enabling preserved progress across play sessions.
+
 ## Level JSON Validation
 
 `validateLevelData()` in `src/world/level.ts` validates:

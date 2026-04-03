@@ -64,6 +64,23 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   - conversational player-message path is asynchronous
   - deterministic door/object paths stay synchronous
   - door/object results do not trigger paused-world UI side effects
+- **Guard item-use rule checks** (`src/interaction/itemUse.test.ts`):
+   - `success` result with `affectedEntityType='guard'`, `affectedEntityId`, and `ruleResponseText` when guard has allowed rule for item
+   - `blocked` result with `ruleResponseText` (no entity mutation) when guard has disallowed rule for item
+   - `no-rule` result when guard has no rule for selected item (item not supported)
+   - `no-rule` result when guard has no `itemUseRules` defined (all items unsupported)
+   - rule response text correctly included in event for UI display
+   - multiple guard rules on same guard resolve correctly (rule lookup by itemId)
+   - item-use rule data survives JSON serialization roundtrip
+
+ - **Object item-use rule checks** (`src/interaction/itemUse.test.ts`):
+   - `success` result with `affectedEntityType='object'`, `affectedEntityId`, and `ruleResponseText` when object has allowed rule for item
+   - `blocked` result with `ruleResponseText` (no entity mutation) when object has disallowed rule for item
+   - `no-rule` result when object has no rule for selected item (item not supported)
+   - `no-rule` result when object has no `itemUseRules` defined (all items unsupported)
+   - rule response text correctly included in event for UI display
+   - multiple object rules on same object resolve correctly (rule lookup by itemId)
+   - item-use rule data survives JSON serialization roundtrip
 - **Prompt-profile checks (NPC):**
   - same `npcType` resolves to same profile contract
   - different `npcType` values resolve to distinct profiles
