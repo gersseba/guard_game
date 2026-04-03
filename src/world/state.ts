@@ -12,12 +12,14 @@ export const createInitialWorldState = (): WorldState => ({
     premise: 'A baseline deterministic world used before a level is loaded.',
     goal: 'Move around and interact with nearby entities.',
   },
+  levelObjective: 'Move around and interact with nearby entities.',
   player: {
     id: 'player-1',
     displayName: 'Guard',
     position: { x: 1, y: 1 },
     inventory: {
       items: [],
+      selectedItem: null,
     },
     facingDirection: 'front',
   },
@@ -46,6 +48,7 @@ export const createInitialWorldState = (): WorldState => ({
     },
   ],
   actorConversationHistoryByActorId: {},
+  lastItemUseAttemptEvent: null,
   levelOutcome: null,
 });
 

@@ -23,6 +23,8 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
 - **Movement intent regression checks (`src/world/world.test.ts`):**
   - directional movement intents deterministically map to `player.facingDirection` (`left`, `right`, `away`, `front`)
   - facing direction still updates from directional intent when movement is blocked
+  - `selectInventorySlot` stores `{ slotIndex, itemId }` for valid indexes using the current deterministic inventory order
+  - invalid inventory indexes clear `player.inventory.selectedItem` to `null`
 
 ### Render Layer Tests
 - **What to test:** Sprite positioning, sprite lifecycle, viewport math, deterministic asset fallback, and DOM render utility behavior
@@ -83,6 +85,22 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
   - `drain()` returns a snapshot - mutating the returned array does not affect the buffer
   - a second `drain()` after the first returns an empty array until new commands are enqueued
   - `clear()` discards all pending commands without preventing future `enqueue()` operations
+- **Keyboard mapping checks** (`src/input/keyboard.test.ts`):
+  - `f` maps to `useSelectedItem`
+  - numeric keys `1`..`9` map to `selectInventorySlot` with zero-based `slotIndex`
+  - unrelated keys still resolve to `null`
+
+### Runtime Orchestration Tests
+- **What to test:** Tick-time command gating, pause semantics, command-indexed callbacks, and state-commit orchestration that intentionally lives outside the pure world layer
+- **Type:** Unit tests
+- **Pattern:** Enqueue commands into `CommandBuffer`, step `RuntimeController`, then assert callback order and payloads against the resulting world snapshot
+- **Item-use pipeline checks** (`src/runtimeController.test.ts`):
+  - each `useSelectedItem` command emits exactly one deterministic `ItemUseAttemptResultEvent`
+  - emitted events preserve the original command index from the drained tick list
+  - no selected item resolves to `no-selection`
+  - selected item with no target rules resolves to `no-target`
+  - multiple use commands in one tick emit stable ordered callbacks
+  - paused runtime and level-outcome gating prevent item-use callbacks from leaking through unintended ticks
 
 ### LLM Layer Tests
 - **What to test:** Context serialization, response parsing, API fallbacks
@@ -95,6 +113,7 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
 When features cross layer boundaries, write integration tests:
 - **Player movement + rendering:** World updates position and facing direction, render layer reflects the selected sprite orientation
 - **Input + world:** Keyboard input flows through buffer and updates world state
+- **Input + runtime item-use:** Keyboard input or buffered commands trigger stable selected-item use callbacks without mutating render or LLM layers directly
 - **Interaction + result routing:** Interact command resolves target, dispatcher returns result, result dispatcher applies side effect
 - **NPC interaction + LLM:** Player message triggers LLM call and updates conversation thread
 - **Conversation pause lifecycle:** Conversational open pauses the runtime, shows pause UI, and close/Escape resume the runtime through the shared `onClose` path

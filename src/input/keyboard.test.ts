@@ -16,6 +16,15 @@ describe('mapKeyboardEventToWorldCommand', () => {
 
   it('preserves interact mapping and ignores unrelated keys', () => {
     expect(mapKeyboardEventToWorldCommand('e')).toEqual({ type: 'interact' });
+    expect(mapKeyboardEventToWorldCommand('f')).toEqual({ type: 'useSelectedItem' });
+    expect(mapKeyboardEventToWorldCommand('1')).toEqual({
+      type: 'selectInventorySlot',
+      slotIndex: 0,
+    });
+    expect(mapKeyboardEventToWorldCommand('9')).toEqual({
+      type: 'selectInventorySlot',
+      slotIndex: 8,
+    });
     expect(mapKeyboardEventToWorldCommand('q')).toBeNull();
   });
 });

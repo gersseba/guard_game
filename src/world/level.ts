@@ -324,12 +324,14 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       premise: levelData.premise,
       goal: levelData.goal,
     },
+    levelObjective: levelData.objective ?? levelData.goal,
     player: {
       id: 'player',
       displayName: 'Player',
       position: { x: levelData.player.x, y: levelData.player.y },
       inventory: {
         items: [],
+        selectedItem: null,
       },
       facingDirection: 'front',
       ...(levelData.player.spriteAssetPath !== undefined
@@ -413,6 +415,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       spriteSet: o.spriteSet,
     })),
     actorConversationHistoryByActorId: {},
+    lastItemUseAttemptEvent: null,
     levelOutcome: null,
   };
   validateSpatialLayout(worldState);

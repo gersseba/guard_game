@@ -55,9 +55,10 @@ The current baseline runtime in `src/main.ts` follows this loop:
 
 1. Keyboard input maps to `WorldCommand` values and is enqueued into `CommandBuffer`.
 2. A fixed simulation tick of 100ms drains buffered commands.
-3. `world.applyCommands(commands)` updates deterministic state and advances `tick`.
-4. If an `interact` command was issued, nearby NPC interaction is resolved through the interaction service and LLM client boundary.
-5. Every animation frame renders the latest world state through the Pixi render port and prints JSON state in the debug panel.
+3. `world.applyCommands(commands)` updates deterministic state and advances `tick`, including inventory slot selection state.
+4. If any `useSelectedItem` commands were issued, runtime orchestration resolves a deterministic item-use attempt event for each command and stores the latest event in serialized world state.
+5. If an `interact` command was issued, one adjacent target is resolved through the interaction dispatcher; conversational turns may cross the LLM boundary, while door/object paths stay deterministic.
+6. Every animation frame renders the latest world state through the Pixi render port and prints JSON state in the debug panel.
 
 ## Architecture Documentation
 
@@ -193,7 +194,9 @@ Before opening a PR, ensure:
   - player marker moves one tile per input tick
   - movement is clamped within grid bounds
   - `player.position` changes in the JSON panel
-4. Press `E` when not adjacent to an NPC and confirm the interaction panel says no NPC is nearby.
+4. Press `1` while no inventory item is present and confirm `player.inventory.selectedItem` stays `null` in the JSON panel.
+5. Press `F` and confirm `lastItemUseAttemptEvent.result` becomes `no-selection` in the JSON panel.
+6. Press `E` when not adjacent to an interactable target and confirm no interaction opens.
 
 ## Resources
 

@@ -8,6 +8,7 @@ import {
   isPromiseLike,
 } from './interaction/interactionDispatcher';
 import { getActorConversationHistory } from './interaction/actorConversationThread';
+import { createDefaultItemUseResolver } from './interaction/itemUse';
 import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
@@ -51,6 +52,7 @@ const world = createWorld();
 const commandBuffer = createCommandBuffer();
 const llmClient = createGeminiLlmClient();
 const interactionDispatcher = createInteractionDispatcher({ llmClient });
+const itemUseResolver = createDefaultItemUseResolver();
 const outcomeOverlay = createOutcomeOverlay(outcomeOverlayHostElement);
 const viewportPauseOverlay = createViewportOverlay(viewportElement);
 const levelBriefingPanel = createLevelBriefingPanel(levelBriefingElement);
@@ -180,6 +182,14 @@ const runtimeController = createRuntimeController({
   world,
   commandBuffer,
   runInteractions: runInteractionIfRequested,
+  itemUseResolver,
+  onItemUseAttemptResolved: (event) => {
+    const currentState = world.getState();
+    world.resetToState({
+      ...currentState,
+      lastItemUseAttemptEvent: event,
+    });
+  },
 });
 
 const fixedTickDurationMs = 100;
@@ -201,7 +211,7 @@ const startRuntime = async (): Promise<void> => {
         .then((newState) => {
           world.resetToState(newState);
           levelUi.setSelectedLevel(levelId);
-          levelUi.setLevelObjective(newState.levelObjective);
+          levelUi.setLevelObjective(newState.levelObjective ?? newState.levelMetadata.goal);
           outcomeOverlay.hide();
           levelOutcomeShown = false;
         })
@@ -215,7 +225,7 @@ const startRuntime = async (): Promise<void> => {
       fetchAndLoadLevel(levelUrl)
         .then((newState) => {
           world.resetToState(newState);
-          levelUi.setLevelObjective(newState.levelObjective);
+          levelUi.setLevelObjective(newState.levelObjective ?? newState.levelMetadata.goal);
           outcomeOverlay.hide();
           levelOutcomeShown = false;
         })
@@ -241,7 +251,7 @@ const startRuntime = async (): Promise<void> => {
         levelUi.setSelectedLevel(defaultLevel.id);
         return fetchAndLoadLevel(`${LEVELS_BASE_URL}/${defaultLevel.id}.json`).then((newState) => {
           world.resetToState(newState);
-          levelUi.setLevelObjective(newState.levelObjective);
+          levelUi.setLevelObjective(newState.levelObjective ?? newState.levelMetadata.goal);
         });
       }
 

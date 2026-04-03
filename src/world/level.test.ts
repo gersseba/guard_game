@@ -26,6 +26,7 @@ describe('deserializeLevel', () => {
       position: { x: 2, y: 3 },
       inventory: {
         items: [],
+        selectedItem: null,
       },
       facingDirection: 'front',
     });
@@ -433,7 +434,7 @@ describe('starter level', () => {
     const level = validateLevelData(starterRaw);
     const state = deserializeLevel(level);
 
-    expect(state.levelObjective).toBe(level.objective);
+    expect(state.levelObjective).toBe(level.objective ?? level.goal);
   });
 
   it('has a 20×20 grid', () => {
