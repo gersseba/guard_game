@@ -45,6 +45,25 @@ Serializable optional directional sprite metadata:
 
 ### PlayerInventory
 - `items: InventoryItem[]`
+- `selectedItem?: SelectedInventoryItem | null`
+
+### SelectedInventoryItem
+- `slotIndex: number`
+- `itemId: string`
+
+References one selected inventory slot by index and item id. Invalid slot selection clears this field to `null`.
+
+### ItemUseAttemptResult
+`'no-selection' | 'no-target' | 'blocked' | 'success'`
+
+### ItemUseAttemptResultEvent
+- `tick: number`
+- `commandIndex: number`
+- `selectedItem: SelectedInventoryItem | null`
+- `result: ItemUseAttemptResult`
+- `target: { kind: 'door' | 'guard' | 'npc' | 'interactiveObject'; targetId: string } | null`
+
+Represents one deterministic selected-item use attempt resolved for a specific command index in a tick.
 
 ### Npc
 - `id: string`
@@ -103,12 +122,14 @@ Stores conversation history by actor id. The current conversational actors are g
 - `tick: number`
 - `grid: WorldGrid`
 - `levelMetadata: LevelMetadata` - narrative setup and goal for the current level
+- `levelObjective?: string` - explicit UI objective text (`levelMetadata.goal` remains fallback)
 - `player: Player`
 - `npcs: Npc[]`
 - `guards: Guard[]`
 - `doors: Door[]`
 - `interactiveObjects: InteractiveObject[]`
 - `actorConversationHistoryByActorId: ActorConversationHistoryByActorId`
+- `lastItemUseAttemptEvent?: ItemUseAttemptResultEvent | null` - latest resolved selected-item use attempt
 - `levelOutcome: 'win' | 'lose' | null`
 
 ## Actor and NPC Prompt Context Types
@@ -212,6 +233,7 @@ Required fields:
 - `doors: Array<{ id, displayName, x, y, doorState, outcome, spriteAssetPath?, spriteSet? }>`
 
 Optional fields:
+- `objective?: string` - explicit objective text (falls back to `goal` when omitted)
 - `npcs: Array<{ id, displayName, x, y, npcType, spriteAssetPath?, spriteSet?, instanceKnowledge?, instanceBehavior? }>`
 - `interactiveObjects: Array<...>` with the same object fields as `InteractiveObject`, but `x/y` instead of `position`
 
@@ -306,6 +328,8 @@ Defined in `src/interaction/objectInteraction.ts`:
 Defined in `src/world/types.ts`:
 - `{ type: 'move'; dx: number; dy: number }`
 - `{ type: 'interact' }`
+- `{ type: 'selectInventorySlot'; slotIndex: number }`
+- `{ type: 'useSelectedItem' }`
 
 ### CommandBuffer
 Defined in `src/input/commands.ts`:

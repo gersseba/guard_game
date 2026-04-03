@@ -6,6 +6,8 @@ The interaction layer resolves player-triggered interactions and routes them thr
 
 It supports both conversational interactions (guards/NPCs) and deterministic interactions (doors/interactive objects).
 
+It also defines the deterministic item-use resolver boundary used by runtime selected-item use commands.
+
 ## Responsibilities
 - Resolve one adjacent interaction target deterministically
 - Route target kinds to registered interaction handlers
@@ -61,6 +63,23 @@ Result dispatcher keeps main-loop side effects centralized and testable.
 This removes target-kind branching from `main.ts` and preserves behavior parity from pre-refactor logic.
 
 The runtime bridge and tests use the shared actor-neutral helper in `src/interaction/actorConversationThread.ts` to read and render conversation history.
+
+## Item-Use Resolver Boundary
+
+`createDefaultItemUseResolver()` in `src/interaction/itemUse.ts` provides deterministic resolution for `useSelectedItem` commands.
+
+Current behavior:
+- Reads `worldState.player.inventory.selectedItem`.
+- Emits one `ItemUseAttemptResultEvent` per `useSelectedItem` command, preserving the command index from the tick command list.
+- Returns `no-selection` when no selected item exists.
+- Returns `no-target` when an item is selected but no target-specific item-use rules exist yet.
+- Emits `target: null` in both current outcomes.
+
+Main-loop wiring in `src/main.ts` commits the latest emitted event to `worldState.lastItemUseAttemptEvent` via immutable `world.resetToState(...)`.
+
+LLM boundary note:
+- Item-use attempt resolution is deterministic and code-owned.
+- No LLM call is involved in item-use result determination.
 
 ## Conversation Pause Lifecycle
 
