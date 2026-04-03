@@ -49,11 +49,12 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 
 ### Frame Loop
 1. **Input Phase:** Keyboard input is captured and mapped to `WorldCommand` values, enqueued into `CommandBuffer`.
-2. **Tick Phase** (fixed 100ms): `runtimeController.stepSimulation()` is called. It drains the command buffer, gates commands based on current pause state and level outcome, then applies the resolved command set to world state via `world.applyCommands(commands)`. If the runtime is paused (a guard or NPC conversation is open), buffered commands are discarded and no world update or interaction dispatch occurs for that tick.
-3. **Interaction Dispatch:** If an `interact` command was issued and the runtime is not paused, `runInteractionIfRequested()` resolves one adjacent target and calls `interactionDispatcher.dispatch(...)`.
-4. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into main-loop side effects. Conversational open results synchronously call `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`. Door and interactive-object results stay local to world-state reset and level-outcome callbacks.
-5. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port. Character sprite assets are loaded and resolved to sprite/marker mode inside the render layer only. Separate DOM render utilities manage the chat modal, paused-viewport overlay, and level-outcome overlay.
-6. **Debug Phase:** Current JSON world state is serialized and printed to the debug panel.
+2. **Tick Phase** (fixed 100ms): `runtimeController.stepSimulation()` is called. It drains the command buffer, gates commands based on current pause state and level outcome, then applies the resolved command set to world state via `world.applyCommands(commands)`. This same step also captures every `useSelectedItem` command index from the drained tick list and, after command application, routes those use attempts through the deterministic item-use resolver boundary. If the runtime is paused (a guard or NPC conversation is open), buffered commands are discarded and no world update, item-use resolution, or interaction dispatch occurs for that tick.
+3. **Deterministic Use-Attempt Routing:** When `useSelectedItem` commands are present, `RuntimeController` calls the injected item-use resolver with the post-command `WorldState` and each original command index. `main.ts` commits the latest emitted `ItemUseAttemptResultEvent` back into serialized world state through `world.resetToState(...)`.
+4. **Interaction Dispatch:** If an `interact` command was issued and the runtime is not paused, `runInteractionIfRequested()` resolves one adjacent target and calls `interactionDispatcher.dispatch(...)`.
+5. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into main-loop side effects. Conversational open results synchronously call `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`. Door and interactive-object results stay local to world-state reset and level-outcome callbacks.
+6. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port. Character sprite assets are loaded and resolved to sprite/marker mode inside the render layer only. Separate DOM render utilities manage the chat modal, paused-viewport overlay, and level-outcome overlay.
+7. **Debug Phase:** Current JSON world state is serialized and printed to the debug panel.
 
 ```
 [Keyboard Input]
@@ -90,16 +91,23 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 - **Guarantee:** No game logic; only read and draw. Sprite load status maps and Pixi sprite instances are transient render concerns and are never written into `WorldState`.
 
 ### Interaction Layer
-- **Responsibility:**
-  - Route adjacent targets by kind using handler registries
-  - Preserve behavior parity between sync chat-open flow and async player-message flow
-  - Convert handler results into side-effect callbacks through result handlers
-- **Input:** Resolved adjacent target + current `WorldState` (+ optional player message for conversational turns).
-- **Output:** `InteractionHandlerResult` (or `Promise<InteractionHandlerResult>`).
-- **Guarantee:**
-  - Initial conversational open (`guard`/`npc` without player message) remains synchronous
-  - Conversational player-message turns remain asynchronous
-  - Door/object deterministic interactions remain synchronous and local
+Responsibilities:
+- Route adjacent targets by kind using handler registries
+- Preserve behavior parity between sync chat-open flow and async player-message flow
+- Provide deterministic item-use resolver boundaries for runtime-orchestrated selected-item use commands
+- Convert handler results into side-effect callbacks through result handlers
+
+Input:
+Resolved adjacent target + current `WorldState` (+ optional player message for conversational turns).
+
+Output:
+`InteractionHandlerResult` (or `Promise<InteractionHandlerResult>`).
+
+Guarantees:
+- Initial conversational open (`guard`/`npc` without player message) remains synchronous
+- Conversational player-message turns remain asynchronous
+- Selected-item use resolution remains synchronous, deterministic, and LLM-free
+- Door/object deterministic interactions remain synchronous and local
 
 ### Input Layer
 - **Responsibility:** Map keyboard input to game commands.
