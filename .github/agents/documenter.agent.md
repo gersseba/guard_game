@@ -1,7 +1,7 @@
 ---
 name: documenter
 description: "Use when a PR is ready for merge: review the code changes and update documentation. Detect architectural changes, new features, or patterns that need documentation and update the docs/ hierarchy accordingly."
-tools: [read/readFile, search/codebase, search/fileSearch, search/listDirectory, search/textSearch, github/get_file_contents, github/pull_request_read, github/create_or_update_file, github/push_files, github/create_pull_request, todo]
+tools: [read/readFile, read/problems, read/getNotebookSummary, search/codebase, search/fileSearch, search/listDirectory, search/textSearch, edit/createDirectory, edit/createFile, edit/editFiles, edit/rename, github/get_file_contents, github/issue_read, github/list_issues, github/pull_request_read, github/create_or_update_file, github/push_files, github/create_pull_request, todo]
 argument-hint: "PR number or branch to document, or documentation area affected (e.g., 'world layer', 'new command system')"
 user-invocable: true
 ---

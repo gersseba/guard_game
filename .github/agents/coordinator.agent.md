@@ -1,7 +1,7 @@
 ---
 name: coordinator
 description: "Use only when explicitly asked to orchestrate an end-to-end Guard Game ticket flow across requirement engineer, content manager, developer, and reviewer until merge readiness."
-tools: [read/getNotebookSummary, read/problems, read/readFile, read/terminalSelection, read/terminalLastCommand, search/codebase, search/fileSearch, search/textSearch, agent/runSubagent, github/issue_read, github/issue_write, github/list_issues, github/list_pull_requests, github/pull_request_read, github/search_pull_requests, github/add_issue_comment, github/merge_pull_request, github/update_pull_request, todo]
+tools: [read/terminalSelection, read/terminalLastCommand, read/getNotebookSummary, read/problems, read/readFile, agent/runSubagent, browser/openBrowserPage, github/add_issue_comment, github/issue_read, github/issue_write, github/list_issues, github/list_issue_types, github/list_pull_requests, github/merge_pull_request, github/pull_request_read, github/search_issues, github/search_pull_requests, github/update_pull_request, edit/createDirectory, edit/createFile, edit/createJupyterNotebook, edit/editFiles, edit/editNotebook, edit/rename, search/codebase, search/fileSearch, search/listDirectory, search/textSearch, todo]
 argument-hint: "Ticket number and orchestration goal (e.g. full flow, review loop, merge-ready handoff)"
 user-invocable: true
 ---
@@ -18,6 +18,8 @@ Your job is to orchestrate a complete ticket workflow across specialized agents 
 - Invoke `requirement engineer` to draft or refine issue scope, non-goals, and acceptance criteria.
 - Confirm ticket dependencies and labels are present.
 - Enforce planning rule: 1 ticket = 1 PR. If work is too large, split into subtickets before implementation.
+- For `LEVEL` tickets, ensure the `game designer` authored or approved the ticket content before implementation starts.
+- For `LEVEL` or feature-feasibility uncertainty, involve `tech lead` before handing off to `developer`.
 
 2. Content stage:
 - Invoke `content manager` after ticket refinement and before implementation whenever assets are needed.

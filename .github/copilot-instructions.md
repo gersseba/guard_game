@@ -68,6 +68,9 @@ All world state should be JSON-serializable and named clearly for future LLM rea
 - When uncertain about behavior, consult the GitHub issue first rather than inventing mechanics.
 - If GitHub issue details are missing or ambiguous, ask for clarification before proceeding.
 - Link your PR to the issue using "Closes #<number>" in the PR description.
+- Support ticket category `LEVEL` for level-design delivery authored by the game designer.
+- `LEVEL` tickets must include: level idea, a level JSON definition or concrete build directions, required assets, and any functional code changes required to support the level.
+- The game designer may collaborate directly with requirement engineer for new feature requests and with tech lead for feasibility and required change analysis.
 
 ## Definition of Done (Per Task)
 
