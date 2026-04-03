@@ -17,7 +17,13 @@
       "x": 5,
       "y": 10,
       "guardState": "patrolling",
-      "spriteAssetPath": "/assets/medieval_guard_spear.svg"
+      "spriteAssetPath": "/assets/medieval_guard_spear.svg",
+      "itemUseRules": {
+        "gift-token": {
+          "allowed": true,
+          "responseText": "A gift! How kind of you. You may pass."
+        }
+      }
     },
     {
       "id": "guard-2",
@@ -71,7 +77,13 @@
       },
       "idleMessage": "You crack open the crate and find emergency supplies.",
       "usedMessage": "The supply crate is already open and empty.",
-      "spriteAssetPath": "/assets/medieval_supply_crate_inspect.svg"
+      "spriteAssetPath": "/assets/medieval_supply_crate_inspect.svg",
+      "itemUseRules": {
+        "unlock-rune": {
+          "allowed": true,
+          "responseText": "The rune fits perfectly! The crate's lock clicks open."
+        }
+      }
     }
   ]
 }

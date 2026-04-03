@@ -200,6 +200,26 @@ const runtimeController = createRuntimeController({
       };
     }
 
+    // If a guard was affected by item-use success, mark it
+    if (event.affectedEntityType === 'guard' && event.affectedEntityId) {
+      updatedState = {
+        ...updatedState,
+        guards: updatedState.guards.map((guard) =>
+          guard.id === event.affectedEntityId ? { ...guard, guardState: 'alert' as const } : guard,
+        ),
+      };
+    }
+
+    // If an object was affected by item-use success, mark it as used
+    if (event.affectedEntityType === 'object' && event.affectedEntityId) {
+      updatedState = {
+        ...updatedState,
+        interactiveObjects: updatedState.interactiveObjects.map((obj) =>
+          obj.id === event.affectedEntityId ? { ...obj, state: 'used' as const } : obj,
+        ),
+      };
+    }
+
     world.resetToState(updatedState);
   },
 });

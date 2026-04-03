@@ -12,8 +12,11 @@ export interface ItemUseResolver {
 
 /**
  * Deterministic resolver for item-use attempts.
- * Implements door unlock resolution: correct item + locked door = success + doorUnlockedId.
- * Wrong item or no selection on required-item door = blocked with no unlock.
+ * Supports:
+ * - Door unlock: correct item + locked door = success + doorUnlockedId
+ * - Guard rules: matching rule + allowed = success with affectedEntityId/Type
+ * - Object rules: matching rule + allowed = success with affectedEntityId/Type
+ * Wrong item or unsupported target = blocked/no-rule with no mutation.
  */
 export const createDefaultItemUseResolver = (): ItemUseResolver => {
   return {
@@ -45,62 +48,165 @@ export const createDefaultItemUseResolver = (): ItemUseResolver => {
         };
       }
 
-      // Only doors support item-use for unlocking
-      if (adjacentTarget.kind !== 'door') {
-        return {
-          tick: worldState.tick,
-          commandIndex,
-          selectedItem,
-          result: 'no-target',
-          target: null,
-        };
+      // Handle door item-use (unlock)
+      if (adjacentTarget.kind === 'door') {
+        const door = adjacentTarget.target;
+
+        // Door doesn't require an item
+        if (!door.requiredItemId) {
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'no-target',
+            target: {
+              kind: 'door',
+              targetId: door.id,
+            },
+          };
+        }
+
+        // Door requires an item. Check if selected item matches.
+        const itemMatches = selectedItem.itemId === door.requiredItemId;
+
+        if (itemMatches) {
+          // Correct key: success!
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'success',
+            target: {
+              kind: 'door',
+              targetId: door.id,
+            },
+            doorUnlockedId: door.id,
+          };
+        } else {
+          // Wrong key: blocked
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'blocked',
+            target: {
+              kind: 'door',
+              targetId: door.id,
+            },
+          };
+        }
       }
 
-      const door = adjacentTarget.target;
+      // Handle guard item-use (rules)
+      if (adjacentTarget.kind === 'guard') {
+        const guard = adjacentTarget.target;
+        const rule = guard.itemUseRules?.[selectedItem.itemId];
 
-      // Door doesn't require an item
-      if (!door.requiredItemId) {
-        return {
-          tick: worldState.tick,
-          commandIndex,
-          selectedItem,
-          result: 'no-target',
-          target: {
-            kind: 'door',
-            targetId: door.id,
-          },
-        };
+        // No rule defined for this item on this guard
+        if (!rule) {
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'no-rule',
+            target: {
+              kind: 'guard',
+              targetId: guard.id,
+            },
+          };
+        }
+
+        // Rule exists: check if allowed
+        if (rule.allowed) {
+          // Rule allows use: success with affected entity
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'success',
+            target: {
+              kind: 'guard',
+              targetId: guard.id,
+            },
+            affectedEntityType: 'guard',
+            affectedEntityId: guard.id,
+            ruleResponseText: rule.responseText,
+          };
+        } else {
+          // Rule prohibits use: blocked
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'blocked',
+            target: {
+              kind: 'guard',
+              targetId: guard.id,
+            },
+            ruleResponseText: rule.responseText,
+          };
+        }
       }
 
-      // Door requires an item. Check if selected item matches.
-      const itemMatches = selectedItem.itemId === door.requiredItemId;
+      // Handle interactive object item-use (rules)
+      if (adjacentTarget.kind === 'interactiveObject') {
+        const obj = adjacentTarget.target;
+        const rule = obj.itemUseRules?.[selectedItem.itemId];
 
-      if (itemMatches) {
-        // Correct key: success!
-        return {
-          tick: worldState.tick,
-          commandIndex,
-          selectedItem,
-          result: 'success',
-          target: {
-            kind: 'door',
-            targetId: door.id,
-          },
-          doorUnlockedId: door.id,
-        };
-      } else {
-        // Wrong key: blocked
-        return {
-          tick: worldState.tick,
-          commandIndex,
-          selectedItem,
-          result: 'blocked',
-          target: {
-            kind: 'door',
-            targetId: door.id,
-          },
-        };
+        // No rule defined for this item on this object
+        if (!rule) {
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'no-rule',
+            target: {
+              kind: 'interactiveObject',
+              targetId: obj.id,
+            },
+          };
+        }
+
+        // Rule exists: check if allowed
+        if (rule.allowed) {
+          // Rule allows use: success with affected entity
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'success',
+            target: {
+              kind: 'interactiveObject',
+              targetId: obj.id,
+            },
+            affectedEntityType: 'object',
+            affectedEntityId: obj.id,
+            ruleResponseText: rule.responseText,
+          };
+        } else {
+          // Rule prohibits use: blocked
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'blocked',
+            target: {
+              kind: 'interactiveObject',
+              targetId: obj.id,
+            },
+            ruleResponseText: rule.responseText,
+          };
+        }
       }
+
+      // Unsupported target type for item-use
+      return {
+        tick: worldState.tick,
+        commandIndex,
+        selectedItem,
+        result: 'no-target',
+        target: null,
+      };
     },
   };
 };

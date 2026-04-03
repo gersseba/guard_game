@@ -34,7 +34,16 @@ export interface SelectedInventoryItem {
   itemId: string;
 }
 
-export type ItemUseAttemptResult = 'no-selection' | 'no-target' | 'blocked' | 'success';
+/**
+ * Deterministic item-use rule for guards or objects.
+ * Defines whether an item can be used and what response to provide.
+ */
+export interface ItemUseRule {
+  allowed: boolean;
+  responseText: string;
+}
+
+export type ItemUseAttemptResult = 'no-selection' | 'no-target' | 'blocked' | 'success' | 'no-rule';
 
 export interface ItemUseAttemptResultEvent {
   tick: number;
@@ -47,6 +56,12 @@ export interface ItemUseAttemptResultEvent {
   } | null;
   /** If a door was unlocked, this field contains the door ID */
   doorUnlockedId?: string;
+  /** Type of entity affected by successful item-use rule (guard or object) */
+  affectedEntityType?: 'guard' | 'object';
+  /** ID of entity affected by successful item-use rule */
+  affectedEntityId?: string;
+  /** Response text from the applied item-use rule */
+  ruleResponseText?: string;
 }
 
 export interface Player {
@@ -121,6 +136,8 @@ export interface Guard extends Interactable {
   instanceKnowledge?: string;
   /** Instance-specific behavior traits for this guard (overrides or extends type-level behavior). */
   instanceBehavior?: string;
+  /** Deterministic item-use rules: item ID → rule definition */
+  itemUseRules?: Record<string, ItemUseRule>;
 }
 
 /** A door that the player can pass through or be blocked by. */
@@ -150,6 +167,8 @@ export interface InteractiveObject extends Interactable {
   firstUseOutcome?: 'win' | 'lose';
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
+  /** Deterministic item-use rules: item ID → rule definition */
+  itemUseRules?: Record<string, ItemUseRule>;
 }
 
 export interface WorldGrid {
@@ -187,6 +206,8 @@ export interface LevelData {
     instanceKnowledge?: string;
     /** Instance-specific behavior traits for this guard. */
     instanceBehavior?: string;
+    /** Deterministic item-use rules: item ID → rule definition */
+    itemUseRules?: Record<string, ItemUseRule>;
   }>;
   doors: Array<{
     id: string;
@@ -234,6 +255,8 @@ export interface LevelData {
     firstUseOutcome?: 'win' | 'lose';
     spriteAssetPath?: string;
     spriteSet?: SpriteSet;
+    /** Deterministic item-use rules: item ID → rule definition */
+    itemUseRules?: Record<string, ItemUseRule>;
   }>;
 }
 

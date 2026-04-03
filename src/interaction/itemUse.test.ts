@@ -393,3 +393,361 @@ describe('itemUseResolver - door unlock', () => {
     });
   });
 });
+
+describe('itemUseResolver - guard item-use rules', () => {
+  const resolver = createDefaultItemUseResolver();
+
+  describe('guard allowed rules', () => {
+    it('returns success when guard has allowed rule for item', () => {
+      const guard: any = {
+        id: 'guard-1',
+        displayName: 'Gate Guard',
+        position: { x: 5, y: 6 },
+        guardState: 'idle',
+        itemUseRules: {
+          'gift-item': { allowed: true, responseText: 'Thank you, you may pass.' },
+        },
+      };
+
+      const worldState = createTestWorldState({
+        player: {
+          id: 'player-1',
+          displayName: 'Hero',
+          position: { x: 5, y: 5 },
+          inventory: {
+            items: [{ itemId: 'gift-item', displayName: 'Shiny Gift', sourceObjectId: 'obj-1', pickedUpAtTick: 50 }],
+            selectedItem: { slotIndex: 0, itemId: 'gift-item' },
+          },
+        },
+        guards: [guard],
+      });
+
+      const event = resolver.resolveItemUseAttempt({
+        worldState,
+        commandIndex: 0,
+      });
+
+      expect(event.result).toBe('success');
+      expect(event.target).toEqual({ kind: 'guard', targetId: 'guard-1' });
+      expect(event.affectedEntityType).toBe('guard');
+      expect(event.affectedEntityId).toBe('guard-1');
+      expect(event.ruleResponseText).toBe('Thank you, you may pass.');
+    });
+  });
+
+  describe('guard disallowed rules', () => {
+    it('returns blocked when guard rule disallows item', () => {
+      const guard: any = {
+        id: 'hostile-guard',
+        displayName: 'Hostile Guard',
+        position: { x: 5, y: 6 },
+        guardState: 'alert',
+        itemUseRules: {
+          'bomb': { allowed: false, responseText: 'You cannot use that here!' },
+        },
+      };
+
+      const worldState = createTestWorldState({
+        player: {
+          id: 'player-1',
+          displayName: 'Hero',
+          position: { x: 5, y: 5 },
+          inventory: {
+            items: [{ itemId: 'bomb', displayName: 'Bomb', sourceObjectId: 'obj-1', pickedUpAtTick: 50 }],
+            selectedItem: { slotIndex: 0, itemId: 'bomb' },
+          },
+        },
+        guards: [guard],
+      });
+
+      const event = resolver.resolveItemUseAttempt({
+        worldState,
+        commandIndex: 0,
+      });
+
+      expect(event.result).toBe('blocked');
+      expect(event.target).toEqual({ kind: 'guard', targetId: 'hostile-guard' });
+      expect(event.affectedEntityType).toBeUndefined();
+      expect(event.ruleResponseText).toBe('You cannot use that here!');
+    });
+  });
+
+  describe('guard no-rule scenarios', () => {
+    it('returns no-rule when guard has no rule for selected item', () => {
+      const guard: any = {
+        id: 'silent-guard',
+        displayName: 'Silent Guard',
+        position: { x: 5, y: 6 },
+        guardState: 'patrolling',
+        itemUseRules: {
+          'specific-item': { allowed: true, responseText: 'Only for this item' },
+        },
+      };
+
+      const worldState = createTestWorldState({
+        player: {
+          id: 'player-1',
+          displayName: 'Hero',
+          position: { x: 5, y: 5 },
+          inventory: {
+            items: [{ itemId: 'random-item', displayName: 'Random Item', sourceObjectId: 'obj-1', pickedUpAtTick: 50 }],
+            selectedItem: { slotIndex: 0, itemId: 'random-item' },
+          },
+        },
+        guards: [guard],
+      });
+
+      const event = resolver.resolveItemUseAttempt({
+        worldState,
+        commandIndex: 0,
+      });
+
+      expect(event.result).toBe('no-rule');
+      expect(event.target).toEqual({ kind: 'guard', targetId: 'silent-guard' });
+      expect(event.ruleResponseText).toBeUndefined();
+    });
+
+    it('returns no-rule when guard has no itemUseRules defined', () => {
+      const guard: any = {
+        id: 'plain-guard',
+        displayName: 'Plain Guard',
+        position: { x: 5, y: 6 },
+        guardState: 'idle',
+      };
+
+      const worldState = createTestWorldState({
+        player: {
+          id: 'player-1',
+          displayName: 'Hero',
+          position: { x: 5, y: 5 },
+          inventory: {
+            items: [{ itemId: 'any-item', displayName: 'Any Item', sourceObjectId: 'obj-1', pickedUpAtTick: 50 }],
+            selectedItem: { slotIndex: 0, itemId: 'any-item' },
+          },
+        },
+        guards: [guard],
+      });
+
+      const event = resolver.resolveItemUseAttempt({
+        worldState,
+        commandIndex: 0,
+      });
+
+      expect(event.result).toBe('no-rule');
+      expect(event.target).toEqual({ kind: 'guard', targetId: 'plain-guard' });
+    });
+  });
+});
+
+describe('itemUseResolver - object item-use rules', () => {
+  const resolver = createDefaultItemUseResolver();
+
+  describe('object allowed rules', () => {
+    it('returns success when object has allowed rule for item', () => {
+      const obj: any = {
+        id: 'magic-crate',
+        displayName: 'Magic Crate',
+        position: { x: 5, y: 6 },
+        objectType: 'supply-crate',
+        interactionType: 'use',
+        state: 'idle',
+        itemUseRules: {
+          'unlock-rune': { allowed: true, responseText: 'The crate glows and opens!' },
+        },
+      };
+
+      const worldState = createTestWorldState({
+        player: {
+          id: 'player-1',
+          displayName: 'Hero',
+          position: { x: 5, y: 5 },
+          inventory: {
+            items: [{ itemId: 'unlock-rune', displayName: 'Unlock Rune', sourceObjectId: 'obj-1', pickedUpAtTick: 50 }],
+            selectedItem: { slotIndex: 0, itemId: 'unlock-rune' },
+          },
+        },
+        interactiveObjects: [obj],
+      });
+
+      const event = resolver.resolveItemUseAttempt({
+        worldState,
+        commandIndex: 0,
+      });
+
+      expect(event.result).toBe('success');
+      expect(event.target).toEqual({ kind: 'interactiveObject', targetId: 'magic-crate' });
+      expect(event.affectedEntityType).toBe('object');
+      expect(event.affectedEntityId).toBe('magic-crate');
+      expect(event.ruleResponseText).toBe('The crate glows and opens!');
+    });
+  });
+
+  describe('object disallowed rules', () => {
+    it('returns blocked when object rule disallows item', () => {
+      const obj: any = {
+        id: 'sealed-crate',
+        displayName: 'Sealed Crate',
+        position: { x: 5, y: 6 },
+        objectType: 'supply-crate',
+        interactionType: 'use',
+        state: 'idle',
+        itemUseRules: {
+          'fire-rune': { allowed: false, responseText: 'The crate rejects the rune!' },
+        },
+      };
+
+      const worldState = createTestWorldState({
+        player: {
+          id: 'player-1',
+          displayName: 'Hero',
+          position: { x: 5, y: 5 },
+          inventory: {
+            items: [{ itemId: 'fire-rune', displayName: 'Fire Rune', sourceObjectId: 'obj-1', pickedUpAtTick: 50 }],
+            selectedItem: { slotIndex: 0, itemId: 'fire-rune' },
+          },
+        },
+        interactiveObjects: [obj],
+      });
+
+      const event = resolver.resolveItemUseAttempt({
+        worldState,
+        commandIndex: 0,
+      });
+
+      expect(event.result).toBe('blocked');
+      expect(event.target).toEqual({ kind: 'interactiveObject', targetId: 'sealed-crate' });
+      expect(event.affectedEntityType).toBeUndefined();
+      expect(event.ruleResponseText).toBe('The crate rejects the rune!');
+    });
+  });
+
+  describe('object no-rule scenarios', () => {
+    it('returns no-rule when object has no rule for selected item', () => {
+      const obj: any = {
+        id: 'picky-crate',
+        displayName: 'Picky Crate',
+        position: { x: 5, y: 6 },
+        objectType: 'supply-crate',
+        interactionType: 'use',
+        state: 'idle',
+        itemUseRules: {
+          'specific-rune': { allowed: true, responseText: 'This works!' },
+        },
+      };
+
+      const worldState = createTestWorldState({
+        player: {
+          id: 'player-1',
+          displayName: 'Hero',
+          position: { x: 5, y: 5 },
+          inventory: {
+            items: [{ itemId: 'wrong-rune', displayName: 'Wrong Rune', sourceObjectId: 'obj-1', pickedUpAtTick: 50 }],
+            selectedItem: { slotIndex: 0, itemId: 'wrong-rune' },
+          },
+        },
+        interactiveObjects: [obj],
+      });
+
+      const event = resolver.resolveItemUseAttempt({
+        worldState,
+        commandIndex: 0,
+      });
+
+      expect(event.result).toBe('no-rule');
+      expect(event.target).toEqual({ kind: 'interactiveObject', targetId: 'picky-crate' });
+      expect(event.ruleResponseText).toBeUndefined();
+    });
+
+    it('returns no-rule when object has no itemUseRules defined', () => {
+      const obj: any = {
+        id: 'basic-crate',
+        displayName: 'Basic Crate',
+        position: { x: 5, y: 6 },
+        objectType: 'supply-crate',
+        interactionType: 'inspect',
+        state: 'idle',
+      };
+
+      const worldState = createTestWorldState({
+        player: {
+          id: 'player-1',
+          displayName: 'Hero',
+          position: { x: 5, y: 5 },
+          inventory: {
+            items: [{ itemId: 'any-rune', displayName: 'Any Rune', sourceObjectId: 'obj-1', pickedUpAtTick: 50 }],
+            selectedItem: { slotIndex: 0, itemId: 'any-rune' },
+          },
+        },
+        interactiveObjects: [obj],
+      });
+
+      const event = resolver.resolveItemUseAttempt({
+        worldState,
+        commandIndex: 0,
+      });
+
+      expect(event.result).toBe('no-rule');
+      expect(event.target).toEqual({ kind: 'interactiveObject', targetId: 'basic-crate' });
+    });
+  });
+});
+
+describe('itemUseResolver - state persistence', () => {
+  it('guard and object item-use rules survive JSON serialization roundtrip', () => {
+    const guard: any = {
+      id: 'test-guard',
+      displayName: 'Test Guard',
+      position: { x: 5, y: 6 },
+      guardState: 'idle',
+      itemUseRules: {
+        'test-item': { allowed: true, responseText: 'Works!' },
+      },
+    };
+
+    const obj: any = {
+      id: 'test-object',
+      displayName: 'Test Object',
+      position: { x: 4, y: 4 },
+      objectType: 'supply-crate',
+      interactionType: 'use',
+      state: 'idle',
+      itemUseRules: {
+        'test-rune': { allowed: false, responseText: 'Nope!' },
+      },
+    };
+
+    const worldState: WorldState = {
+      tick: 100,
+      grid: { width: 10, height: 10, tileSize: 32 },
+      levelMetadata: {
+        name: 'Test Level',
+        premise: 'Persistence test',
+        goal: 'Verify rules survive',
+      },
+      player: {
+        id: 'player-1',
+        displayName: 'Hero',
+        position: { x: 5, y: 5 },
+        inventory: { items: [] },
+      },
+      npcs: [],
+      doors: [],
+      guards: [guard],
+      interactiveObjects: [obj],
+      actorConversationHistoryByActorId: {},
+      levelOutcome: null,
+    };
+
+    // Serialize and deserialize
+    const serialized = JSON.stringify(worldState);
+    const deserialized: WorldState = JSON.parse(serialized);
+
+    // Rules should persist
+    expect(deserialized.guards[0].itemUseRules).toEqual({
+      'test-item': { allowed: true, responseText: 'Works!' },
+    });
+    expect(deserialized.interactiveObjects[0].itemUseRules).toEqual({
+      'test-rune': { allowed: false, responseText: 'Nope!' },
+    });
+  });
+});

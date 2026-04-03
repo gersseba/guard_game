@@ -56,6 +56,12 @@ References one selected inventory slot by index and item id. Invalid slot select
 ### ItemUseAttemptResult
 `'no-selection' | 'no-target' | 'blocked' | 'success'`
 
+### ItemUseRule
+- `allowed: boolean` - Whether use of the item is permitted on this entity
+- `responseText: string` - Narrative response shown to player when rule is evaluated
+
+Deterministic item-use rule for guards or objects. Enables data-driven puzzle interactions without LLM authority over outcomes.
+
 ### ItemUseAttemptResultEvent
 - `tick: number`
 - `commandIndex: number`
@@ -85,6 +91,7 @@ Extends `Interactable`:
 - `spriteSet?: SpriteSet`
 - `instanceKnowledge?: string` - Instance-specific knowledge this guard has; included in prompt context output when set
 - `instanceBehavior?: string` - Instance-specific behavior traits for this guard; included in prompt context output when set
+- `itemUseRules?: Record<string, ItemUseRule>` - Deterministic item-use rules keyed by item ID. When player uses a matching item on this guard, the rule determines success/blocked outcome.
 
 ### Door
 Extends `Interactable`:
@@ -105,6 +112,10 @@ Extends `Interactable`:
 - `idleMessage?: string`
 - `usedMessage?: string`
 - `firstUseOutcome?: 'win' | 'lose'`
+- `itemUseRules?: Record<string, ItemUseRule>` - Deterministic item-use rules keyed by item ID. When player uses a matching item on this object, the rule determines success/blocked outcome. Successful use transitions object state to 'used'.
+- `affectedEntityType?: 'guard' | 'object'` - Type of entity affected by successful item-use rule (guard or object)
+- `affectedEntityId?: string` - ID of entity affected by successful item-use rule
+- `ruleResponseText?: string` - Response text from the applied item-use rule
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
 
