@@ -103,6 +103,23 @@ Required follow-up updates:
 - render consumption of world-facing token in `src/render/scene.ts`
 - regression tests in `src/world/world.test.ts`, `src/world/level.test.ts`, `src/render/scene.test.ts`, and `src/integration/riddleLevel.test.ts`
 
+## Example: Selected Inventory + Item-Use Attempt Event (Ticket #117)
+
+Added world fields:
+- `PlayerInventory.selectedItem?: { slotIndex: number; itemId: string } | null`
+- `WorldState.lastItemUseAttemptEvent?: ItemUseAttemptResultEvent | null`
+
+Why optional in type:
+- preserves compatibility for older serialized snapshots and fixtures while still allowing deterministic initialization in current runtime paths
+
+Required follow-up updates:
+- type updates in `src/world/types.ts`
+- deterministic default initialization in `src/world/state.ts` and `src/world/level.ts`
+- deterministic command handling in `src/world/world.ts` for `selectInventorySlot`
+- runtime command-indexed event emission in `src/runtimeController.ts` using an item-use resolver boundary
+- immutable event commit wiring in `src/main.ts`
+- regression tests in `src/world/world.test.ts`, `src/runtimeController.test.ts`, and `src/input/keyboard.test.ts`
+
 ## Checklist
 
 - [ ] Type changes are explicit and serializable

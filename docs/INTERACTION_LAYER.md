@@ -6,6 +6,8 @@ The interaction layer resolves player-triggered interactions and routes them thr
 
 It supports both conversational interactions (guards/NPCs) and deterministic interactions (doors/interactive objects).
 
+It also defines the deterministic item-use resolver boundary used by runtime selected-item use commands.
+
 ## Responsibilities
 - Resolve one adjacent interaction target deterministically
 - Route target kinds to registered interaction handlers
@@ -61,6 +63,29 @@ Result dispatcher keeps main-loop side effects centralized and testable.
 This removes target-kind branching from `main.ts` and preserves behavior parity from pre-refactor logic.
 
 The runtime bridge and tests use the shared actor-neutral helper in `src/interaction/actorConversationThread.ts` to read and render conversation history.
+
+## Item-Use Resolver Boundary
+
+`createDefaultItemUseResolver()` in `src/interaction/itemUse.ts` provides deterministic resolution for `useSelectedItem` commands.
+
+Current behavior:
+- Reads `worldState.player.inventory.selectedItem`.
+- Emits one `ItemUseAttemptResultEvent` per `useSelectedItem` command, preserving the command index from the tick command list.
+- Returns `no-selection` when no selected item exists.
+- Returns `no-target` when an item is selected but no adjacent target exists or the adjacent target doesn't accept item-use.
+- Implements **door unlock resolution**: when an adjacent door requires a specific item (`requiredItemId`):
+  - If selected item `itemId` matches `requiredItemId`, returns `result='success'` with `doorUnlockedId` set to the door id
+  - If selected item doesn't match, returns `result='blocked'` with no `doorUnlockedId`
+  - Door unlock state persists via `door.isUnlocked` flag (JSON-serializable)
+  - Once unlocked, door allows traversal and blocks are skipped in spatial rules
+- Emits target info (door/guard/npc/interactiveObject) for debugging and event logging.
+
+Main-loop wiring in `src/main.ts` commits the latest emitted event to `worldState.lastItemUseAttemptEvent` via immutable `world.resetToState(...)`. When `doorUnlockedId` is present, mutates the corresponding door to set `door.isUnlocked = true`.
+
+LLM boundary note:
+- Item-use attempt resolution is deterministic and code-owned.
+- No LLM call is involved in item-use result determination.
+- Door unlock rules are entirely code-determined; doors cannot be unlocked by player dialogue.
 
 ## Conversation Pause Lifecycle
 

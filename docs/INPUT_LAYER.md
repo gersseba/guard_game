@@ -30,6 +30,12 @@ Current key map:
 - `ArrowLeft` / `a` -> move left
 - `ArrowRight` / `d` -> move right
 - `e` -> interact
+- `1`..`9` -> select inventory slot `0`..`8`
+- `f` -> use selected inventory item
+
+Command semantics:
+- `selectInventorySlot` is deterministic state selection only; world applies bounds against current inventory length and clears selection when invalid.
+- `useSelectedItem` represents a use attempt signal; deterministic resolution is handled by runtime + interaction resolver wiring.
 
 The binding optionally accepts `isModalOpen()`, which lets the runtime suppress gameplay commands while the chat modal is visible.
 

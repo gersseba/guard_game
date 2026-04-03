@@ -15,6 +15,7 @@ The world layer owns deterministic, JSON-serializable state and validation/deser
 `WorldState` in `src/world/types.ts` includes:
 - `tick`
 - `grid`
+- `levelMetadata`
 - `levelObjective`
 - `player`
 - `npcs`
@@ -22,6 +23,7 @@ The world layer owns deterministic, JSON-serializable state and validation/deser
 - `doors`
 - `interactiveObjects`
 - `actorConversationHistoryByActorId`
+- `lastItemUseAttemptEvent`
 - `levelOutcome`
 
 All fields are serializable primitives, arrays, or plain objects.
@@ -44,16 +46,31 @@ Render consumes this token but does not author it.
 
 `player.inventory` is world-owned deterministic state with shape:
 - `items: Array<{ itemId, displayName, sourceObjectId, pickedUpAtTick }>`
+- `selectedItem: { slotIndex, itemId } | null` (optional in type for compatibility, initialized to `null` in current runtime)
 
 Deterministic rules:
 - New runtime state initializes `player.inventory.items` to `[]`.
 - Level deserialization also initializes `player.inventory.items` to `[]`.
+- New runtime state initializes `player.inventory.selectedItem` to `null`.
+- Level deserialization also initializes `player.inventory.selectedItem` to `null`.
+- `selectInventorySlot` chooses an item by index from current inventory, or clears selection when the index is invalid.
 - Inventory entries are only appended by deterministic interaction logic in the interaction layer.
+
+### Item-Use Attempt Event State
+
+`lastItemUseAttemptEvent` is a serializable world field that stores the latest deterministic selected-item use attempt result.
+
+Deterministic rules:
+- New runtime state initializes `lastItemUseAttemptEvent` to `null`.
+- Level deserialization also initializes `lastItemUseAttemptEvent` to `null`.
+- Runtime emits one event per `useSelectedItem` command using command index ordering within the tick.
+- Main-loop wiring commits each emitted event immutably, so the last one in a tick becomes the stored event.
 
 ## Level JSON Validation
 
 `validateLevelData()` in `src/world/level.ts` validates:
-- Required level metadata (`version`, `name`, `objective`, dimensions)
+- Required level metadata (`version`, `name`, `goal`, dimensions)
+- Optional level objective override (`objective`)
 - `player`, `guards`, and `doors`
 - Optional `npcs` - array of level-defined NPCs with required `id`, `displayName`, `x`, `y`, and `npcType` fields
 - Optional `interactiveObjects`
@@ -96,6 +113,9 @@ Deserialization now passes through both optional sprite forms:
 
 It also initializes player-facing state for loaded levels:
 - `player.facingDirection: 'front'`
+
+Objective mapping is deterministic:
+- `levelObjective` is set to `levelData.objective ?? levelData.goal`
 
 The world layer does not resolve directional variants. It preserves serializable metadata and deterministic orientation tokens only; render chooses final visual assets.
 

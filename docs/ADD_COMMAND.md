@@ -1,10 +1,10 @@
 # Add a Command
 
-This pattern describes how to add a new player action (WorldCommand).
+This pattern describes how to add a new player action (`WorldCommand`) in the current runtime architecture.
 
 ## Overview
 
-Commands represent player actions or system events that cause world state to change. Each command is applied deterministically during the world tick.
+Commands represent player actions that are buffered and then applied deterministically during the world tick.
 
 ## Steps
 
@@ -12,99 +12,93 @@ Commands represent player actions or system events that cause world state to cha
 Add a new command variant to `WorldCommand` in `src/world/types.ts`:
 
 ```typescript
-export type WorldCommand = 
-  | MoveForward
-  | MoveBackward
-  | TurnLeft
-  | TurnRight
-  | Interact
-  | Wait
-  | YourNewCommand; // Add here
-
-export interface YourNewCommand {
-  type: 'YOUR_NEW_COMMAND';
-  // Optional payload
-  targetId?: string;
-  metadata?: Record<string, unknown>;
-}
+export type WorldCommand =
+  | { type: 'move'; dx: number; dy: number }
+  | { type: 'interact' }
+  | { type: 'yourNewCommand'; payload?: string };
 ```
 
 ### 2. Map Input to Command
-Update the input layer in `src/input/commands.ts` to map keyboard (or other input) to your new command:
+Update keyboard mapping in `src/input/keyboard.ts` to emit your new command:
 
 ```typescript
-export function mapKeyboardToCommand(keyCode: string): WorldCommand | null {
-  switch (keyCode) {
-    case 'ArrowUp': return { type: 'MOVE_FORWARD' };
-    case 'ArrowDown': return { type: 'MOVE_BACKWARD' };
-    case 'ArrowLeft': return { type: 'TURN_LEFT' };
-    case 'ArrowRight': return { type: 'TURN_RIGHT' };
-    case 'Space': return { type: 'INTERACT' };
-    case 'YourKey': return { type: 'YOUR_NEW_COMMAND' }; // Add here
-    default: return null;
+const keyToCommandMap: Record<string, WorldCommand> = {
+  e: { type: 'interact' },
+  f: { type: 'useSelectedItem' },
+};
+
+export const mapKeyboardEventToWorldCommand = (key: string): WorldCommand | null => {
+  if (/^[1-9]$/.test(key)) {
+    return { type: 'selectInventorySlot', slotIndex: Number(key) - 1 };
   }
-}
+
+  return keyToCommandMap[key] ?? null;
+};
 ```
 
 ### 3. Apply Command in World
-Update `src/world/world.ts` to handle the new command in `applyCommands()`:
+Update `src/world/world.ts` to handle the command in world application logic:
 
 ```typescript
-applyCommands(state: WorldState, commands: WorldCommand[]): WorldState {
-  let newState = { ...state };
-  
-  for (const cmd of commands) {
-    if (cmd.type === 'MOVE_FORWARD') {
-      newState.player.position = advancePosition(
-        newState.player.position,
-        newState.player.orientation,
-        1
-      );
-    } else if (cmd.type === 'YOUR_NEW_COMMAND') {
-      // Apply your command logic here
-      newState = applyYourNewCommand(newState, cmd);
-    }
-    // ... other commands
+const applyCommand = (worldState: WorldState, command: WorldCommand): WorldState => {
+  if (command.type === 'selectInventorySlot') {
+    const selectedCandidate = worldState.player.inventory.items[command.slotIndex];
+    const selectedItem = selectedCandidate
+      ? { slotIndex: command.slotIndex, itemId: selectedCandidate.itemId }
+      : null;
+
+    return {
+      ...worldState,
+      player: {
+        ...worldState.player,
+        inventory: { ...worldState.player.inventory, selectedItem },
+      },
+    };
   }
-  
-  return newState;
-}
+
+  return worldState;
+};
 ```
 
 ### 4. (Optional) Add Rendering
-If your command changes the visual appearance:
+If your command produces an event consumed by runtime orchestration (without direct world mutation):
+- add a deterministic resolver boundary in `src/interaction/*`
+- wire it through `src/runtimeController.ts` dependency callbacks
+- commit resulting serializable event/state from `src/main.ts`
+
+If your command changes visual appearance through world state:
 - Update `src/render/scene.ts` to render any new state
 - Ensure render reflects world state after command is applied
 
 ### 5. Write Tests
-Add unit tests in `src/world/world.test.ts`:
+Add focused tests:
+- input mapping tests in `src/input/keyboard.test.ts`
+- world command determinism tests in `src/world/world.test.ts`
+- runtime orchestration tests in `src/runtimeController.test.ts` when command effects route through runtime callbacks
 
 ```typescript
-test('YOUR_NEW_COMMAND updates state correctly', () => {
-  const initial = createWorldState({ player: { /* ... */ } });
-  const command: YourNewCommand = { type: 'YOUR_NEW_COMMAND' };
-  const result = world.applyCommands(initial, [command]);
-  
-  expect(result.player.someField).toBe(expectedValue);
+test('selects valid inventory slot deterministically', () => {
+  // Arrange inventory with known item order
+  // Apply { type: 'selectInventorySlot', slotIndex: 1 }
+  // Assert selectedItem reflects slot 1 item id
 });
 
-test('YOUR_NEW_COMMAND is deterministic', () => {
-  const initial = createWorldState({});
-  const cmd = { type: 'YOUR_NEW_COMMAND' };
-  const result1 = world.applyCommands(initial, [cmd]);
-  const result2 = world.applyCommands(initial, [cmd]);
-  expect(result1).toEqual(result2);
+test('emits deterministic item-use event for each useSelectedItem command', () => {
+  // Enqueue multiple commands in one tick
+  // Step runtime controller
+  // Assert callback events include stable tick and commandIndex values
 });
 ```
 
 ## Checklist
 
 - [ ] Command type added to `WorldCommand` union in `src/world/types.ts`
-- [ ] Input mapping added to `src/input/commands.ts`
-- [ ] Command application logic added to `src/world/world.ts` → `applyCommands()`
+- [ ] Input mapping added to `src/input/keyboard.ts`
+- [ ] Command application logic added to `src/world/world.ts`
 - [ ] Unit tests written in `src/world/world.test.ts`
+- [ ] Runtime-controller tests added in `src/runtimeController.test.ts` when command uses callback/resolver boundaries
 - [ ] (Optional) Render updates in `src/render/scene.ts`
-- [ ] (Optional) Input layer tests in `src/input/keyboard.test.ts`
+- [ ] Input layer tests in `src/input/keyboard.test.ts`
 - [ ] State remains JSON-serializable
 - [ ] Command behavior is deterministic
 

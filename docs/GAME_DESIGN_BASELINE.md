@@ -12,6 +12,8 @@ Current playable loop:
 - Command set currently implemented:
   - move (Arrow keys or WASD)
   - interact (E)
+  - select inventory slot (1-9)
+  - use selected inventory item (F)
 - Movement is deterministic and grid-based:
   - Player facing updates from move direction even when movement is blocked.
   - Movement is blocked by out-of-bounds positions and occupied tiles (guards, doors, NPCs, interactive objects).
@@ -35,11 +37,12 @@ Implemented objective flow:
 
 Implemented systems:
 - World model:
-  - Serializable WorldState with tick, grid, levelObjective, entities, conversation history, and levelOutcome.
+  - Serializable WorldState with tick, grid, level metadata/objective, entities, conversation history, last item-use attempt event, and levelOutcome.
   - Deterministic command application and level deserialization.
   - Spatial validation at level load (in-bounds and no overlaps).
+  - Deterministic selected inventory slot state in player inventory (`selectedItem`).
 - Input:
-  - Keyboard mapping to world commands.
+  - Keyboard mapping to world commands, including inventory-slot selection and selected-item use.
   - Modal-aware command suppression.
 - Interaction:
   - Adjacent-target resolver with deterministic priority and tie-break.
@@ -53,6 +56,10 @@ Implemented systems:
   - Guard and NPC conversation pipeline:
     - First interact opens conversation context.
     - Player message turns call LLM and append actor-scoped conversation history.
+  - Item-use attempt resolver boundary:
+    - Runtime detects each `useSelectedItem` command in tick order.
+    - Resolver emits deterministic per-command result events (`no-selection` or `no-target` currently).
+    - Main loop commits latest event to `worldState.lastItemUseAttemptEvent`.
 - Runtime UI wiring:
   - Level picker and reset.
   - Level objective panel in runtime controls.
@@ -119,11 +126,11 @@ Design-level entity model in current implementation:
 
 Current constraints to design against:
 - No guard or npc autonomous movement; all non-player entities are static once level is loaded.
-- No inventory system, item pickup economy, or equip/use pipeline.
+- Inventory supports deterministic pickup plus selected-slot state and use-attempt signaling, but no applied use effects on world targets yet.
 - No combat, stealth detection, patrol simulation, or line-of-sight system.
 - No deterministic dialogue consequence system beyond text history capture.
 - Interactive object types are currently limited to supply-crate.
-- World command set is currently limited to move and interact.
+- Selected-item use outcomes are currently placeholder-level (`no-selection` / `no-target`) and do not yet mutate targets.
 - Level progression/meta-progression is not implemented; level selection/reset is manual through UI controls.
 - Actor world knowledge builder coverage is partial (guard and villager path only).
 
