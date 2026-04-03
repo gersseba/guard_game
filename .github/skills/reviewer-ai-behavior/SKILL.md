@@ -1,12 +1,12 @@
 ---
 name: reviewer-ai-behavior
-description: "Use when reviewing a PR labeled AI_BEHAVIOUR that changes agents, skills, instructions, prompts, or workflow customization files managed by the ai behavior adjuster."
+description: "Use when reviewing a PR labeled AI_BEHAVIOR that changes agents, skills, instructions, prompts, or workflow customization files managed by the ai behavior adjuster."
 ---
 
 # Reviewer AI Behavior
 
 ## Purpose
-Review PRs labeled `AI_BEHAVIOUR` that change agent, skill, instruction, prompt, or workflow customization files managed by the ai behavior adjuster. Verify the change is focused, internally consistent, and does not mix in runtime gameplay work.
+Review PRs labeled `AI_BEHAVIOR` that change agent, skill, instruction, prompt, or workflow customization files managed by the ai behavior adjuster. Verify the change is focused, internally consistent, and does not mix in runtime gameplay work.
 
 ## Review Checklist
 
@@ -42,7 +42,7 @@ Review PRs labeled `AI_BEHAVIOUR` that change agent, skill, instruction, prompt,
 
 ## Output Template
 - PR:
-- Label: AI_BEHAVIOUR
+- Label: AI_BEHAVIOR
 - Files changed:
 - Scope fit:
 - Consistency check:

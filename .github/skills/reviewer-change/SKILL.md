@@ -37,7 +37,7 @@ Review PRs labeled `CHANGE` that implement feature, logic, or content changes to
 - `INCOMPLETE` — Feature is half-implemented or lacks critical functionality for the stated scope
 - `AC_NOT_MET` — PR claims to meet ACs but implementation gaps remain
 - `CORRECT_BUT_DEFERRED` — Implementation is correct but intentionally defers some AC; used when deferral is explicit and acceptable
-- `MISLABELED` — Changes are only AI customization or refactoring work (should use AI_BEHAVIOUR/REFACTORING label)
+- `MISLABELED` — Changes are only AI customization or refactoring work (should use AI_BEHAVIOR/REFACTORING label)
 
 ## Output Template
 - PR:

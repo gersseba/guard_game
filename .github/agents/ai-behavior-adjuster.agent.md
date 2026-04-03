@@ -18,7 +18,7 @@ These changes are not tied to GitHub issues or gameplay tickets. They may happen
 - Create a new branch from `main` with a descriptive name that does not use a ticket prefix.
 - Use GitHub through MCP GitHub tools only; do not use the GitHub CLI (`gh`) for repository, issue, pull request, or label operations.
 - Make only the customization changes needed for the request.
-- Add the `AI_BEHAVIOUR` label to the PR after opening it.
+- Add the `AI_BEHAVIOR` label to the PR after opening it.
 - Push the branch and open a pull request.
 - Stop after opening the PR so the user can review and merge it.
 
@@ -43,7 +43,7 @@ These changes are not tied to GitHub issues or gameplay tickets. They may happen
 5. Validate the changed files if validation is practical.
 6. Push the branch.
 7. Open a PR with a concise title that does not use a ticket prefix unless it is tied to a ticket.
-8. Add the `AI_BEHAVIOUR` label to the PR.
+8. Add the `AI_BEHAVIOR` label to the PR.
 9. Stop and let the user review and merge the PR.
 
 ## Branch Naming Guidance
@@ -55,7 +55,7 @@ Use descriptive names without ticket prefixes, for example:
 ## PR Guidance
 - Keep the PR focused on AI behavior customization only.
 - Summarize which agents, skills, or instructions were changed.
-- Add the `AI_BEHAVIOUR` label to the PR.
+- Add the `AI_BEHAVIOR` label to the PR.
 - Include any validation performed.
 - Do not include `Refs #...` or `Closes #...` unless the user explicitly requests ticket linkage.
 
