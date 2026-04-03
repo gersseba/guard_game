@@ -47,6 +47,27 @@ const applyCommand = (worldState: WorldState, command: WorldCommand): WorldState
     };
   }
 
+  if (command.type === 'selectInventorySlot') {
+    const selectedCandidate = worldState.player.inventory.items[command.slotIndex];
+    const selectedItem = selectedCandidate
+      ? {
+          slotIndex: command.slotIndex,
+          itemId: selectedCandidate.itemId,
+        }
+      : null;
+
+    return {
+      ...worldState,
+      player: {
+        ...worldState.player,
+        inventory: {
+          ...worldState.player.inventory,
+          selectedItem,
+        },
+      },
+    };
+  }
+
   return worldState;
 };
 

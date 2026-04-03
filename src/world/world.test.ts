@@ -141,4 +141,72 @@ describe('createWorld', () => {
     expect(canMoveSpy).toHaveBeenCalledTimes(1);
     expect(canMoveSpy).toHaveBeenCalledWith(expect.any(Object), { x: 2, y: 1 });
   });
+
+  it('selects a valid inventory slot deterministically', () => {
+    const world = createWorld();
+    const baseState = world.getState();
+
+    world.resetToState({
+      ...baseState,
+      player: {
+        ...baseState.player,
+        inventory: {
+          ...baseState.player.inventory,
+          items: [
+            {
+              itemId: 'key-bronze',
+              displayName: 'Bronze Key',
+              sourceObjectId: 'crate-1',
+              pickedUpAtTick: 0,
+            },
+            {
+              itemId: 'gem-blue',
+              displayName: 'Blue Gem',
+              sourceObjectId: 'crate-2',
+              pickedUpAtTick: 0,
+            },
+          ],
+          selectedItem: null,
+        },
+      },
+    });
+
+    world.applyCommands([{ type: 'selectInventorySlot', slotIndex: 1 }]);
+
+    expect(world.getState().player.inventory.selectedItem).toEqual({
+      slotIndex: 1,
+      itemId: 'gem-blue',
+    });
+  });
+
+  it('clears selected inventory item when selecting an invalid slot index', () => {
+    const world = createWorld();
+    const baseState = world.getState();
+
+    world.resetToState({
+      ...baseState,
+      player: {
+        ...baseState.player,
+        inventory: {
+          ...baseState.player.inventory,
+          items: [
+            {
+              itemId: 'key-bronze',
+              displayName: 'Bronze Key',
+              sourceObjectId: 'crate-1',
+              pickedUpAtTick: 0,
+            },
+          ],
+          selectedItem: {
+            slotIndex: 0,
+            itemId: 'key-bronze',
+          },
+        },
+      },
+    });
+
+    world.applyCommands([{ type: 'selectInventorySlot', slotIndex: 9 }]);
+
+    expect(world.getState().player.inventory.selectedItem).toBeNull();
+  });
 });

@@ -18,6 +18,7 @@ export const createInitialWorldState = (): WorldState => ({
     position: { x: 1, y: 1 },
     inventory: {
       items: [],
+      selectedItem: null,
     },
     facingDirection: 'front',
   },

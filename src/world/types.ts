@@ -26,6 +26,25 @@ export interface InventoryItem {
 
 export interface PlayerInventory {
   items: InventoryItem[];
+  selectedItem: SelectedInventoryItem | null;
+}
+
+export interface SelectedInventoryItem {
+  slotIndex: number;
+  itemId: string;
+}
+
+export type ItemUseAttemptResult = 'no-selection' | 'no-target' | 'blocked' | 'success';
+
+export interface ItemUseAttemptResultEvent {
+  tick: number;
+  commandIndex: number;
+  selectedItem: SelectedInventoryItem | null;
+  result: ItemUseAttemptResult;
+  target: {
+    kind: 'door' | 'guard' | 'npc' | 'interactiveObject';
+    targetId: string;
+  } | null;
 }
 
 export interface Player {
@@ -230,6 +249,13 @@ export type WorldCommand =
     }
   | {
       type: 'interact';
+    }
+  | {
+      type: 'selectInventorySlot';
+      slotIndex: number;
+    }
+  | {
+      type: 'useSelectedItem';
     };
 
 export interface World {
