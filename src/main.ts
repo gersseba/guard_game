@@ -185,10 +185,22 @@ const runtimeController = createRuntimeController({
   itemUseResolver,
   onItemUseAttemptResolved: (event) => {
     const currentState = world.getState();
-    world.resetToState({
+    let updatedState = {
       ...currentState,
       lastItemUseAttemptEvent: event,
-    });
+    };
+
+    // If a door was unlocked, apply the unlock mutation
+    if (event.doorUnlockedId) {
+      updatedState = {
+        ...updatedState,
+        doors: updatedState.doors.map((door) =>
+          door.id === event.doorUnlockedId ? { ...door, isUnlocked: true } : door,
+        ),
+      };
+    }
+
+    world.resetToState(updatedState);
   },
 });
 
