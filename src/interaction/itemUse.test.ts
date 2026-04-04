@@ -68,7 +68,7 @@ describe('itemUseResolver', () => {
     expect(event.target).toBeNull();
   });
 
-  it('returns no-target when adjacent target is a door (door item-use is out of scope)', () => {
+  it('returns no-target with door target when adjacent door has no requiredItemId', () => {
     const worldState = createTestWorldState({
       player: {
         id: 'player-1',
@@ -95,7 +95,7 @@ describe('itemUseResolver', () => {
     });
 
     expect(event.result).toBe('no-target');
-    expect(event.target).toBeNull();
+    expect(event.target).toEqual({ kind: 'door', targetId: 'door-1' });
   });
 
   it('returns no-rule when guard has no matching itemUseRules entry', () => {

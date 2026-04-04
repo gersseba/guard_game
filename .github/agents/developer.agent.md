@@ -13,6 +13,7 @@ Your job is to implement GitHub issues for the Guard Game project in small, work
 - Read the target GitHub issue and acceptance criteria before writing code.
 - Implement code changes directly in this repository.
 - Use GitHub through MCP GitHub tools only; do not use the GitHub CLI (`gh`) for issue, branch, pull request, or label operations.
+- After merging an implementation PR, close the corresponding ticket immediately and verify it is in `Done`/`Completed` state.
 - Hand off AI behavior customization requests to the `ai behavior adjuster` agent instead of implementing them here.
 - Work in a highly structured way and explicitly use the workflow skills for each phase:
   - `plan`
@@ -92,7 +93,8 @@ If the user asks you to finish a PR, follow this exact sequence:
 2. If PR passes:
   - consider and apply non-blocking comment adjustments when they improve quality
   - merge the PR
-  - close the ticket as `Done`/`Completed` (the merged PR must be the ticket's only implementation PR)
+  - close the corresponding ticket as `Done`/`Completed` immediately after merge (the merged PR must be the ticket's only implementation PR)
+  - verify the ticket state after closing; if close/transition fails, retry and report the blocker
   - if this was a sub ticket, add a parent-ticket comment summarizing what changed and linking the merged PR
   - if this was the last open sub ticket under a parent ticket, run parent completion review and close parent only when review passes
   - fast-forward local `main`

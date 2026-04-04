@@ -51,9 +51,11 @@ export interface ItemUseAttemptResultEvent {
   selectedItem: SelectedInventoryItem | null;
   result: ItemUseAttemptResult;
   target: {
-    kind: 'guard' | 'npc' | 'interactiveObject';
+    kind: 'door' | 'guard' | 'npc' | 'interactiveObject';
     targetId: string;
   } | null;
+  /** If a door was unlocked via correct item-use, contains the door ID */
+  doorUnlockedId?: string;
   /** Type of entity affected by successful item-use rule (guard or object) */
   affectedEntityType?: 'guard' | 'object';
   /** ID of entity affected by successful item-use rule */
@@ -142,6 +144,10 @@ export interface Guard extends Interactable {
 export interface Door extends Interactable {
   doorState: 'open' | 'closed' | 'locked';
   outcome?: 'safe' | 'danger';
+  /** Item ID required to unlock this door (if set, door must be interacted with using this item) */
+  requiredItemId?: string;
+  /** Whether this door has been unlocked via item-use (persists unlock state; default: false) */
+  isUnlocked?: boolean;
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
 }
@@ -207,7 +213,9 @@ export interface LevelData {
     x: number;
     y: number;
     doorState: 'open' | 'closed' | 'locked';
-    outcome: 'safe' | 'danger';
+    outcome?: 'safe' | 'danger';
+    /** Item ID required to unlock this door */
+    requiredItemId?: string;
     spriteAssetPath?: string;
     spriteSet?: SpriteSet;
   }>;
