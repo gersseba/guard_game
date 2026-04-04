@@ -25,6 +25,7 @@ Your job is to orchestrate a complete ticket workflow across specialized agents 
 - Invoke `content manager` after ticket refinement and before implementation whenever assets are needed.
 - Require asset delivery as SVG by default.
 - Require `64x64` SVG assets for anything placed on the game grid unless the user explicitly approves another size.
+- For level tickets, require explicit NPC/object asset coverage: every NPC and interactive object used in the level must have a mapped asset in the handoff summary.
 - Confirm the asset handoff summary is available before invoking `developer`.
 
 3. Implementation stage:
@@ -50,6 +51,7 @@ Your job is to orchestrate a complete ticket workflow across specialized agents 
 7. Completion stage:
 - When PR is merge-ready and docs are updated, invoke `developer` to finish the PR flow.
 - Confirm merge result and local-main fast-forward status.
+- Confirm the corresponding ticket was closed as `Done`/`Completed` immediately after merge.
 - If the merged ticket is a sub ticket, ensure a parent-ticket status comment is added summarizing the change.
 - When the last sub ticket is merged, run parent-ticket completion review and transition parent to `Done` only if review passes.
 
