@@ -37,7 +37,40 @@ Command semantics:
 - `selectInventorySlot` is deterministic state selection only; world applies bounds against current inventory length and clears selection when invalid.
 - `useSelectedItem` represents a use attempt signal; deterministic resolution is handled by runtime + interaction resolver wiring.
 
-The binding optionally accepts `isModalOpen()`, which lets the runtime suppress gameplay commands while the chat modal is visible.
+### Keyboard Normalization Strategy
+
+`mapKeyboardEventToWorldCommand(key: string)` performs deterministic key normalization:
+- Input keys are case-normalized (lowercase) before lookup in the binding map
+- Arrow keys (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`) are used as-is from `event.key`
+- WASD keys (`w`, `a`, `s`, `d`) are available as lowercase alternatives for Arrow movement
+- Numeric keys `1`..`9` are matched directly for inventory slot selection
+- Unknown keys return `null` (mapped action exists but key is not recognized)
+
+**Arrow/WASD Parity:** Both arrow keys and WASD produce identical movement commands, enabling player preference and accessibility.
+
+Example:
+```typescript
+mapKeyboardEventToWorldCommand('W') -> null (uppercase W not in map)
+mapKeyboardEventToWorldCommand('w') -> { type: 'move', dx: 0, dy: -1 }
+mapKeyboardEventToWorldCommand('ArrowUp') -> { type: 'move', dx: 0, dy: -1 }
+mapKeyboardEventToWorldCommand('z') -> null (z not mapped)
+```
+
+### Modal-Aware Input Suppression
+
+The binding optionally accepts an `isModalOpen?: () => boolean` callback in `KeyboardBindingOptions`, which let the runtime suppress gameplay commands while UI modals are visible:
+
+```typescript
+bindKeyboardCommands(window, commandBuffer, {
+  isModalOpen: () => chatModal.isOpen(),
+});
+```
+
+**Suppression behavior:**
+- When `isModalOpen()` returns `true`, keyboard events that map to movement or interact commands return early and do not enqueue
+- The chat input component manages its own key event propagation separately; typing in chat input does not emit global keypresses
+- The callback provides runtime with control over modal state visibility without requiring the input layer to know which modal is open
+- Inventory selection keys (`1`..`9`) are *not* suppressed; inventory slot selection remains available while modals are visible for future interaction routing
 
 ## Conversation Pause Input Policy
 

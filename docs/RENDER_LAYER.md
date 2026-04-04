@@ -15,6 +15,7 @@ Implementation entry points:
 - [src/render/runtimeLayout.ts](../src/render/runtimeLayout.ts)
 - [src/render/levelUi.ts](../src/render/levelUi.ts)
 - [src/render/chatModal.ts](../src/render/chatModal.ts)
+- [src/render/inventoryOverlay.ts](../src/render/inventoryOverlay.ts)
 - [src/render/viewportOverlay.ts](../src/render/viewportOverlay.ts)
 - [src/render/outcomeOverlay.ts](../src/render/outcomeOverlay.ts)
 
@@ -86,6 +87,63 @@ Current behavior:
 4. `hide()` hides the overlay and removes `inert`.
 5. While visible, capture-phase listeners on the viewport block `focusin`, `pointerdown`, `pointerup`, `mousedown`, `mouseup`, and `click`, so paused viewport descendants cannot gain focus and world click handlers do not run.
 6. The scope is viewport-only. This utility does not gate global gameplay keyboard commands and does not make the rest of the runtime shell inert.
+
+## Inventory Overlay Component
+
+`createInventoryOverlay(hostElement, options)` in [src/render/inventoryOverlay.ts](../src/render/inventoryOverlay.ts) manages the player's inventory display as a pure DOM component without PixiJS rendering.
+
+### Grid Layout
+- **Grid dimensions:** 3 columns × 3 rows (9 slots total)
+- **Tile size:** 60×60 pixels
+- **Container:** Positioned fixed relative to the viewport using inline styles
+
+### Inventory Slot Structure
+
+Each inventory slot renders as a DOM `<div>` with `class="inventory-slot"`:
+- Background color indicates slot state (selected/unselected)
+- Slot index displayed as text inside the tile (0–8)
+- Slot id (itemId) available for tooltip display
+- Keyboard navigation via item numbers `1`..`9` (mapped to slots 0–8 by `selectInventorySlot` commands)
+
+### Tooltip System
+
+`positionTooltip(tooltip, x, y, tileId)` dynamically positions item tooltips with viewport awareness:
+- **Default position:** Below the hovered tile (x + 10px, y + tileSize + 10px)
+- **Viewport clipping detection:**
+  - If tooltip would overflow right edge: reposition to left of tile (x - width - 10px)
+  - If tooltip would overflow bottom edge: reposition above tile (y - height - 10px)
+- **Tooltip styling:** Fixed position, z-index 1001, dark background (#222), white text, max-width 150px
+- **Tooltip content:** Displays the item's `tileId` (used for debugging and item identification)
+
+### API
+
+`InventoryOverlay` interface:
+```typescript
+interface InventoryOverlay {
+  open(inventory: PlayerInventory): void;  // Render grid with current items
+  close(): void;                            // Hide overlay and cleanup
+}
+```
+
+**Lifecycle:**
+- `open(inventory)` is called when the player triggers inventory display via `isOpen` callback
+- Grid renders up to 9 items from `inventory.items`, with focused slot highlighting for selected items
+- `close()` cleans up event listeners and hides the overlay
+- The overlay remains mounted in the DOM; open/close controls visibility only
+
+### Event Handling
+
+- Keyboard input: `1`..`9` keys trigger `selectInventorySlot` commands (handled by global keyboard binding, not overlay)
+- Mouse hover: Shows item tooltip with viewport-aware positioning
+- Escape key: Handled by runtime close logic (not owned by overlay)
+- Click events: Not currently implemented; inventory is view-only in current design
+
+### Pause Semantics
+
+The inventory overlay does not pause gameplay directly. Pause state is managed externally by runtime logic:
+- If a conversational interaction is open (chat modal visible), the inventory remains accessible as a view-only reference
+- The overlay visibility is controlled by runtime callbacks, not by modal open state
+- Inventory slot selection remains available while any modal is visible
 
 ## Conversation Exit Controls
 

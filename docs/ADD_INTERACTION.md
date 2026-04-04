@@ -24,18 +24,23 @@ In `src/interaction/interactionDispatcher.ts`:
 - implement or extend the kind-specific handler
 - register it in the interaction registry
 - preserve timing parity:
-  - no `playerMessage` -> synchronous chat-open result
-  - with `playerMessage` -> asynchronous conversational result
+  - no `playerMessage` -> synchronous initial open result for action modal routing
+  - with `playerMessage` -> asynchronous conversational result for chat continuation
+
+**Modal Routing Behavior:**
+Conversational handlers return `isConversational: false` on initial open (no player message yet). The result dispatcher routes this to callbacks that open the action modal selector (Chat vs Inventory vs Back) or directly to the chat modal depending on runtime config.
 
 ### 4. Register result handler behavior
 In `src/interaction/interactionDispatcher.ts` result registry:
-- map conversational result kind to `onConversationStarted(...)`
+- map conversational result kind with `isConversational: false` to action modal open callback (if implemented) or directly to `onConversationStarted(...)` for backward compatibility
+- map conversational result kind with `isConversational: true` to `onConversationStarted(...)` for LLM response display
 - rely on `getConversationHistory(...)` for modal preload consistency
 
 ### 5. Keep main loop generic
 `src/main.ts` should not branch by target kind for interaction logic.
 - `runInteractionIfRequested()` dispatches once and forwards result to `resultDispatcher`
 - chat submit path resolves target by id and reuses dispatcher with `playerMessage`
+- action modal routing (if present) handles player choice to Chat/Inventory/Back without main-loop changes
 
 ### 6. Test
 - Unit tests in `src/interaction/*Interaction.test.ts`
@@ -93,13 +98,3 @@ Reference implementation:
 - `src/interaction/objectInteraction.ts`
 
 ## Checklist
-
-- [ ] Target kind chosen (conversational vs deterministic)
-- [ ] Types updated in `src/world/types.ts`
-- [ ] Level validation/deserialization updated in `src/world/level.ts`
-- [ ] Interaction handler registered in dispatcher
-- [ ] Result handler mapping registered
-- [ ] Runtime routing in `src/main.ts` remains generic (no new kind branch)
-- [ ] Deterministic and parity tests added/updated
-- [ ] Integration test verifies end-to-end interaction behavior
-- [ ] State remains JSON-serializable

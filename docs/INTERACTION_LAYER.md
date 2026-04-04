@@ -10,10 +10,31 @@ It also defines the deterministic item-use resolver boundary used by runtime sel
 
 ## Responsibilities
 - Resolve one adjacent interaction target deterministically
+- Classify targets as conversational or deterministic (action modal routing)
 - Route target kinds to registered interaction handlers
 - Keep deterministic interactions local and synchronous
 - Keep LLM-backed conversational turns behind the LLM boundary
 - Route normalized results through result handlers to main-loop side effects
+
+## Action Modal Routing
+
+**Action Modal Eligible Targets** are the classes of adjacent targets that open modal-based interaction flows:
+- `guard` (conversational via chat modal with LLM)
+- `npc` (conversational via chat modal with LLM)
+
+**Non-Modal Eligible Targets** are handled deterministically without modal presentation:
+- `door` (deterministic open/locked/safe/danger outcome)
+- `interactiveObject` (deterministic state transition and optional outcome)
+
+This classification enables the runtime to route interactions appropriately:
+1. If target is action-modal-eligible (guard/npc), the interaction dispatcher forwards to conversational handlers and result dispatcher opens chat modal on success.
+2. If target is deterministic (door/object), the interaction dispatcher handles locally and commits result-world-state mutations without opening any modal.
+
+**Type Guard Pattern:**
+
+`isActionModalEligibleTarget(target: AdjacentTarget): target is Extract<AdjacentTarget, { kind: 'guard' | 'npc' }>\`
+
+Useful for runtime branching when deciding whether to open the chat modal after interaction resolution.
 
 ## Target Resolution
 

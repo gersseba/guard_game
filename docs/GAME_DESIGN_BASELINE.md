@@ -24,7 +24,8 @@ Current playable loop:
 - Pause and outcome gating:
   - Opening a conversational interaction pauses simulation and clears pending input.
   - While paused, commands are drained and discarded each tick.
-  - While the chat modal is open, keyboard commands are suppressed.
+  - While modals are open (chat modal, inventory overlay), movement and interact commands are suppressed via `isModalOpen()` callback.
+  - Inventory slot selection commands (`1`..`9` keys) remain available while modals are open for future modal routing.
   - If levelOutcome is set, movement commands are ignored and interaction dispatch is blocked.
 
 Implemented objective flow:
@@ -42,8 +43,9 @@ Implemented systems:
   - Spatial validation at level load (in-bounds and no overlaps).
   - Deterministic selected inventory slot state in player inventory (`selectedItem`).
 - Input:
-  - Keyboard mapping to world commands, including inventory-slot selection and selected-item use.
-  - Modal-aware command suppression.
+  - Keyboard mapping to world commands with Arrow/WASD parity for movement and inventory-slot selection (`1`..`9`) and selected-item use.
+  - Deterministic key normalization (lowercase) for WASD keys, preserving Arrow key names.
+  - Modal-aware command suppression via runtime `isModalOpen()` callback (gates movement/interact, preserves slot selection).
 - Interaction:
   - Adjacent-target resolver with deterministic priority and tie-break.
   - Door interaction:
@@ -63,8 +65,10 @@ Implemented systems:
 - Runtime UI wiring:
   - Level picker and reset.
   - Level objective panel in runtime controls.
-  - World JSON state panel.
-  - Chat modal.
+  - World JSON with conversation history and LLM message handling.
+  - Inventory overlay: HTML/CSS 3×3 grid (9 slots) with tooltips, viewport-aware tooltip positioning, keyboard navigation via `1`..`9`.
+  - Pause overlay: grey viewport overlay added when conversational interaction is open; viewport pointer/focus blocking.
+  - Level outcome overlay: win/lose messaging.
   - Pause overlay and level outcome overlay.
 
 Level roster (manifest):
