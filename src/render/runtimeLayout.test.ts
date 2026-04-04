@@ -48,4 +48,11 @@ describe('runtime layout markup', () => {
 
     expect(markup).toContain('id="chat-modal-host"');
   });
+
+  it('includes action and inventory overlay hosts', () => {
+    const markup = getRuntimeLayoutMarkup();
+
+    expect(markup).toContain('id="action-modal-host"');
+    expect(markup).toContain('id="inventory-overlay-host"');
+  });
 });
