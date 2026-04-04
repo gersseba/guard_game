@@ -48,7 +48,7 @@
       "x": 8,
       "y": 9,
       "npcType": "archive_keeper",
-      "spriteAssetPath": "/assets/medieval_npc_villager.svg",
+      "spriteAssetPath": "/assets/medieval_npc_archivist.svg",
       "instanceKnowledge": "You are a keeper of records. You have studied the ancient texts about the western passage.",
       "instanceBehavior": "You speak with scholarly precision and always verify facts before stating them.",
       "riddleClue": {
@@ -63,7 +63,7 @@
       "x": 10,
       "y": 9,
       "npcType": "engineer",
-      "spriteAssetPath": "/assets/medieval_npc_villager.svg",
+      "spriteAssetPath": "/assets/medieval_npc_engineer.svg",
       "instanceKnowledge": "You maintain the gates. You know about both passages but choose to mislead travelers about them.",
       "instanceBehavior": "You are clever and enjoy wordplay and riddles. You like to mislead people for entertainment.",
       "riddleClue": {
@@ -78,7 +78,7 @@
       "x": 12,
       "y": 9,
       "npcType": "villager",
-      "spriteAssetPath": "/assets/medieval_npc_villager.svg",
+      "spriteAssetPath": "/assets/medieval_npc_gossip.svg",
       "instanceKnowledge": "You have heard rumors about both passages from travelers. You know the eastern gate leads to danger, and you voice this openly.",
       "instanceBehavior": "You are talkative and love sharing what you have learned from others. You speak your mind freely.",
       "riddleClue": {

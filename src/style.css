@@ -1,3 +1,325 @@
-import './style.css';
-// [...includes same imports as main.ts ...]
-// See feature/GG-126-inventory-overlay branch for full file
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #1f2937;
+  background: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 20%, #ffffff 0%, #f3f4f6 50%, #e5e7eb 100%);
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.guard-game-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.guard-game-header {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.guard-game-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.guard-game-header p {
+  margin: 0.35rem 0 0;
+  color: #4b5563;
+}
+
+.guard-game-main {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.guard-game-primary,
+.guard-game-secondary {
+  display: grid;
+  gap: 1rem;
+}
+
+.guard-game-primary {
+  grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr);
+}
+
+.guard-game-panel {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 0.9rem;
+  min-width: 0;
+}
+
+.guard-game-panel h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+
+.guard-game-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #9ca3af;
+  background: #0f172a;
+  min-height: 320px;
+}
+
+.guard-game-level-briefing {
+  min-height: 140px;
+}
+
+.guard-game-briefing {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.guard-game-briefing-label {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #374151;
+}
+
+.guard-game-briefing-copy {
+  margin: 0;
+  color: #111827;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.guard-game-level-controls,
+.guard-game-world-state {
+  width: 100%;
+}
+
+.guard-game-world-state {
+  margin: 0;
+  min-height: 180px;
+  max-height: 360px;
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  padding: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.level-ui {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.level-ui select,
+.level-ui button {
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+}
+
+.level-ui-objective-title {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.level-ui-objective-text {
+  margin: 0;
+  color: #111827;
+  line-height: 1.45;
+}
+
+.chat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  z-index: 1100;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.chat-modal {
+  width: min(680px, 100%);
+  max-height: min(88vh, 740px);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 0.75rem;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  padding: 0.8rem;
+}
+
+.chat-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-modal-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.chat-modal-close-btn,
+.chat-modal-send-btn,
+.action-modal-button {
+  border: 1px solid #9ca3af;
+  background: #f3f4f6;
+  color: #111827;
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  cursor: pointer;
+}
+
+.chat-modal-thread {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 0.75rem;
+  overflow-y: auto;
+  min-height: 180px;
+}
+
+.chat-bubble {
+  margin-bottom: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+}
+
+.chat-bubble-player {
+  background: #dbeafe;
+}
+
+.chat-bubble-assistant {
+  background: #e5e7eb;
+}
+
+.chat-bubble-text {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.chat-modal-loading {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.chat-modal-input-area {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.chat-modal-input {
+  border: 1px solid #9ca3af;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+}
+
+.action-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  z-index: 1120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.action-modal {
+  width: min(420px, 100%);
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.action-modal-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.action-modal-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.viewport-pause-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(31, 41, 55, 0.38);
+  pointer-events: auto;
+}
+
+.inventory-overlay {
+  font-family: inherit;
+}
+
+.inventory-tile {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inventory-tooltip {
+  font-family: inherit;
+}
+
+@media (max-width: 900px) {
+  .guard-game-main {
+    grid-template-columns: 1fr;
+  }
+
+  .guard-game-primary {
+    grid-template-columns: 1fr;
+  }
+
+  .guard-game-panel-briefing {
+    order: 2;
+  }
+
+  .guard-game-panel-viewport {
+    order: 1;
+  }
+
+  .guard-game-secondary {
+    order: 3;
+  }
+
+  .guard-game-viewport {
+    max-width: 100%;
+    min-height: 260px;
+  }
+
+  .action-modal-actions {
+    grid-template-columns: 1fr;
+  }
+}

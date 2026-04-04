@@ -1,4 +1,3 @@
-import { Container, Sprite, Text } from 'pixi.js';
 import type { PlayerInventory } from '../world/types';
 
 export interface InventoryOverlayOptions {
@@ -15,14 +14,6 @@ const GRID_ROWS = 3;
 const TILE_SIZE = 60;
 const TOOLTIP_OFFSET = 10;
 const TOOLTIP_MAX_WIDTH = 150;
-const OVERLAY_BACKGROUND_COLOR = 0x333333;
-const OVERLAY_BACKGROUND_ALPHA = 0.9;
-const TILE_BACKGROUND_COLOR = 0x222222;
-const TILE_SELECTED_COLOR = 0x4488ff;
-const TILE_EMPTY_COLOR = 0x1a1a1a;
-const TEXT_COLOR = 0xffffff;
-const TEXT_SIZE = 12;
-
 export const createInventoryOverlay = (
   hostElement: HTMLElement,
   options: InventoryOverlayOptions,
@@ -31,6 +22,7 @@ export const createInventoryOverlay = (
   let tooltipElement: HTMLDivElement | null = null;
   let isOpen = false;
   let focusedSlotIndex: number | null = null;
+  let disposeListeners: (() => void) | null = null;
 
   const createTooltip = (): HTMLDivElement => {
     const tooltip = document.createElement('div');
@@ -82,7 +74,7 @@ export const createInventoryOverlay = (
     tooltip.textContent = tileId;
   };
 
-  const renderGrid = (): void => {
+  const renderGrid = (): (() => void) | undefined => {
     if (!currentInventory) return;
 
     // Clear host
@@ -206,12 +198,6 @@ export const createInventoryOverlay = (
 
     // Set up keyboard navigation
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        close();
-        return;
-      }
-
       // Arrow key navigation
       let nextIndex = focusedSlotIndex ?? 0;
 
@@ -257,18 +243,14 @@ export const createInventoryOverlay = (
 
     window.addEventListener('keydown', onEscapeClose);
 
-    // Store cleanup function for disposal on close
     const previousCleanup = cleanup;
-    const dispose = (): void => {
+    disposeListeners = (): void => {
       previousCleanup?.();
       window.removeEventListener('keydown', onEscapeClose);
       if (tooltipElement) {
         tooltipElement.style.display = 'none';
       }
     };
-
-    // Store dispose function on window for cleanup
-    (window as any)._inventoryOverlayDispose = dispose;
   };
 
   const close = (): void => {
@@ -283,11 +265,9 @@ export const createInventoryOverlay = (
       tooltipElement.style.display = 'none';
     }
 
-    // Call dispose if it exists
-    const dispose = (window as any)._inventoryOverlayDispose;
-    if (dispose) {
-      dispose();
-      delete (window as any)._inventoryOverlayDispose;
+    if (disposeListeners) {
+      disposeListeners();
+      disposeListeners = null;
     }
 
     options.onClose();
