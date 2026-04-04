@@ -29,6 +29,8 @@ export const getRuntimeLayoutMarkup = (): string => {
     </main>
   </div>
   <div id="chat-modal-host"></div>
+  <div id="action-modal-host"></div>
+  <div id="inventory-overlay-host"></div>
   <div id="outcome-overlay-host"></div>
 `;
 };

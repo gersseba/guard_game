@@ -22,7 +22,9 @@ export const mapKeyboardEventToWorldCommand = (key: string): WorldCommand | null
     };
   }
 
-  return keyToCommandMap[key] ?? null;
+  const normalizedKey = key.length === 1 ? key.toLowerCase() : key;
+
+  return keyToCommandMap[normalizedKey] ?? null;
 };
 
 export interface KeyboardCommandInputBinding {

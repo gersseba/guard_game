@@ -3,6 +3,10 @@ import { createCommandBuffer } from './input/commands';
 import { bindKeyboardCommands } from './input/keyboard';
 import { resolveAdjacentTarget } from './interaction/adjacencyResolver';
 import {
+  createActionModalSession,
+  isActionModalEligibleTarget,
+} from './interaction/actionModalRouting';
+import {
   createInteractionDispatcher,
   createResultDispatcher,
   isPromiseLike,
@@ -13,11 +17,14 @@ import { createGeminiLlmClient } from './llm/client';
 import { createPixiRenderPort } from './render/scene';
 import { createLevelUi } from './render/levelUi';
 import { createLevelBriefingPanel } from './render/levelBriefing';
+import { createActionModal } from './render/actionModal';
 import { createChatModal } from './render/chatModal';
+import { createInventoryOverlay } from './render/inventoryOverlay';
 import { createOutcomeOverlay } from './render/outcomeOverlay';
 import { createViewportOverlay } from './render/viewportOverlay';
 import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
 import { createRuntimeController } from './runtimeController';
+import type { RuntimeActionModalSession, RuntimeController } from './runtimeController';
 import type { WorldCommand, WorldState, ConversationMessage } from './world/types';
 import { createWorld } from './world/world';
 import { fetchAndLoadLevel, fetchLevelManifest } from './world/levelLoader';
@@ -35,6 +42,8 @@ const levelBriefingElement = document.querySelector<HTMLElement>('#level-briefin
 const levelControlsElement = document.querySelector<HTMLElement>('#level-controls');
 const worldStateElement = document.querySelector<HTMLElement>('#world-state');
 const chatModalHostElement = document.querySelector<HTMLElement>('#chat-modal-host');
+const actionModalHostElement = document.querySelector<HTMLElement>('#action-modal-host');
+const inventoryOverlayHostElement = document.querySelector<HTMLElement>('#inventory-overlay-host');
 const outcomeOverlayHostElement = document.querySelector<HTMLElement>('#outcome-overlay-host');
 
 if (
@@ -43,6 +52,8 @@ if (
   !levelControlsElement ||
   !worldStateElement ||
   !chatModalHostElement ||
+  !actionModalHostElement ||
+  !inventoryOverlayHostElement ||
   !outcomeOverlayHostElement
 ) {
   throw new Error('Expected runtime shell elements to exist.');
@@ -56,6 +67,26 @@ const itemUseResolver = createDefaultItemUseResolver();
 const outcomeOverlay = createOutcomeOverlay(outcomeOverlayHostElement);
 const viewportPauseOverlay = createViewportOverlay(viewportElement);
 const levelBriefingPanel = createLevelBriefingPanel(levelBriefingElement);
+let runtimeController: RuntimeController;
+
+const openConversationForActionSession = (session: RuntimeActionModalSession): void => {
+  const currentWorldState = world.getState();
+  const target = interactionDispatcher.resolveConversationalTarget(currentWorldState, session.targetId);
+  if (!target) {
+    viewportPauseOverlay.hide();
+    return;
+  }
+
+  const dispatchResult = interactionDispatcher.dispatch(target, currentWorldState);
+  if (isPromiseLike(dispatchResult)) {
+    void dispatchResult.then((resolvedResult) => {
+      resultDispatcher.dispatch(resolvedResult);
+    });
+    return;
+  }
+
+  resultDispatcher.dispatch(dispatchResult);
+};
 
 /**
  * Chat modal instance with callbacks wired to game logic.
@@ -111,8 +142,39 @@ const chatModal = createChatModal(chatModalHostElement, {
   },
 });
 
-bindKeyboardCommands(window, commandBuffer, {
-  isModalOpen: () => chatModal.isOpen(),
+const actionModal = createActionModal(actionModalHostElement, {
+  onActionSelected(action): void {
+    const session = runtimeController.getCurrentActionModal();
+    if (!session) {
+      actionModal.close();
+      viewportPauseOverlay.hide();
+      return;
+    }
+
+    if (action === 'chat') {
+      actionModal.close();
+      openConversationForActionSession(session);
+      return;
+    }
+
+    if (action === 'inventory') {
+      actionModal.close();
+      runtimeController.openInventoryOverlay(session);
+      viewportPauseOverlay.show();
+      inventoryOverlay.open(world.getState().player.inventory);
+    }
+  },
+  onClose(): void {
+    runtimeController.closeActionModal();
+    viewportPauseOverlay.hide();
+  },
+});
+
+const inventoryOverlay = createInventoryOverlay(inventoryOverlayHostElement, {
+  onClose(): void {
+    runtimeController.closeInventoryOverlay();
+    viewportPauseOverlay.hide();
+  },
 });
 
 // Create result dispatcher with config that bridges interaction results to main loop state
@@ -166,6 +228,14 @@ const runInteractionIfRequested = (
     return;
   }
 
+  if (isActionModalEligibleTarget(adjacentTarget)) {
+    const session = createActionModalSession(adjacentTarget);
+    runtimeController.openActionModal(session);
+    viewportPauseOverlay.show();
+    actionModal.open(session.displayName);
+    return;
+  }
+
   // Dispatch interaction via unified dispatcher
   const dispatchResult = interactionDispatcher.dispatch(adjacentTarget, worldState);
   if (isPromiseLike(dispatchResult)) {
@@ -178,7 +248,7 @@ const runInteractionIfRequested = (
   resultDispatcher.dispatch(dispatchResult);
 };
 
-const runtimeController = createRuntimeController({
+runtimeController = createRuntimeController({
   world,
   commandBuffer,
   runInteractions: runInteractionIfRequested,
@@ -212,6 +282,10 @@ const runtimeController = createRuntimeController({
 
     world.resetToState(updatedState);
   },
+});
+
+bindKeyboardCommands(window, commandBuffer, {
+  isModalOpen: () => runtimeController.isPaused(),
 });
 
 const fixedTickDurationMs = 100;
