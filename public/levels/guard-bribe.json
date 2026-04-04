@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "name": "The Persuasive Bribe",
+  "premise": "A guard blocks the only passage through the old gate. Rumour has it they can be persuaded with enough coin.",
+  "goal": "Offer the gold coin to the guard and slip through the gate.",
+  "width": 20,
+  "height": 15,
+  "player": {
+    "x": 10,
+    "y": 12
+  },
+  "guards": [
+    {
+      "id": "gate-guard",
+      "displayName": "Gate Guard",
+      "x": 10,
+      "y": 7,
+      "guardState": "idle",
+      "itemUseRules": {
+        "gold-coin": {
+          "allowed": true,
+          "responseText": "A bribe? I suppose I didn't see anything. Move along."
+        },
+        "iron-key": {
+          "allowed": false,
+          "responseText": "What am I supposed to do with that? Step back."
+        }
+      }
+    }
+  ],
+  "doors": [
+    {
+      "id": "gate-exit",
+      "displayName": "Gate Exit",
+      "x": 10,
+      "y": 5,
+      "doorState": "open",
+      "outcome": "safe"
+    }
+  ],
+  "npcs": [],
+  "interactiveObjects": [
+    {
+      "id": "coin-pouch",
+      "displayName": "Traveller's Pouch",
+      "x": 10,
+      "y": 11,
+      "objectType": "supply-crate",
+      "interactionType": "inspect",
+      "state": "idle",
+      "pickupItem": {
+        "itemId": "gold-coin",
+        "displayName": "Gold Coin"
+      },
+      "idleMessage": "You find a pouch with a gleaming gold coin inside.",
+      "usedMessage": "The pouch is empty."
+    }
+  ]
+}

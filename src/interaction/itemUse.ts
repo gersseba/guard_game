@@ -47,6 +47,53 @@ export const createDefaultItemUseResolver = (): ItemUseResolver => {
         };
       }
 
+      // Handle door item-use (key-based unlock)
+      if (adjacentTarget.kind === 'door') {
+        const door = adjacentTarget.target;
+
+        // Door has no required item: item-use has no effect on this door
+        if (!door.requiredItemId) {
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'no-target',
+            target: {
+              kind: 'door',
+              targetId: door.id,
+            },
+          };
+        }
+
+        // Door requires an item. Check if selected item matches.
+        if (selectedItem.itemId === door.requiredItemId) {
+          // Correct key: unlock the door
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'success',
+            target: {
+              kind: 'door',
+              targetId: door.id,
+            },
+            doorUnlockedId: door.id,
+          };
+        } else {
+          // Wrong key: blocked
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'blocked',
+            target: {
+              kind: 'door',
+              targetId: door.id,
+            },
+          };
+        }
+      }
+
       // Handle guard item-use (rules)
       if (adjacentTarget.kind === 'guard') {
         const guard = adjacentTarget.target;
