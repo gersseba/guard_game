@@ -81,6 +81,7 @@ const handleSupplyCrateInteraction: InteractiveObjectTypeHandler = (
 
 const OBJECT_TYPE_HANDLERS: Record<InteractiveObject['objectType'], InteractiveObjectTypeHandler> = {
 	'supply-crate': handleSupplyCrateInteraction,
+	mechanism: handleSupplyCrateInteraction,
 };
 
 export const handleInteractiveObjectInteraction = (

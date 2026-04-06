@@ -153,7 +153,7 @@ export interface Door extends Interactable {
 }
 
 export interface InteractiveObject extends Interactable {
-  objectType: 'supply-crate';
+  objectType: 'supply-crate' | 'mechanism';
   interactionType: 'inspect' | 'use' | 'talk';
   state: 'idle' | 'used';
   pickupItem?: {
@@ -243,7 +243,7 @@ export interface LevelData {
     displayName: string;
     x: number;
     y: number;
-    objectType: 'supply-crate';
+    objectType: 'supply-crate' | 'mechanism';
     interactionType: 'inspect' | 'use' | 'talk';
     state: 'idle' | 'used';
     pickupItem?: {

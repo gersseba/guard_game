@@ -31,17 +31,26 @@ describe('starter level integration pipeline', () => {
     expect(worldState.guards).toHaveLength(2);
     expect(worldState.guards.find((guard) => guard.id === 'guard-1')?.position).toEqual({ x: 5, y: 10 });
     expect(worldState.guards.find((guard) => guard.id === 'guard-2')?.position).toEqual({ x: 10, y: 5 });
-    expect(worldState.guards.every((guard) => guard.spriteAssetPath === '/assets/medieval_guard_spear.svg')).toBe(
-      true,
-    );
+    expect(
+      worldState.guards.every(
+        (guard) =>
+          guard.spriteSet?.default === '/assets/medieval_guard_spear_front.svg' &&
+          guard.spriteSet?.away === '/assets/medieval_guard_spear_away.svg' &&
+          guard.spriteSet?.left === '/assets/medieval_guard_spear_left.svg' &&
+          guard.spriteSet?.right === '/assets/medieval_guard_spear_right.svg',
+      ),
+    ).toBe(true);
 
     expect(worldState.npcs).toHaveLength(1);
     expect(worldState.npcs[0].id).toBe('npc-villager-1');
-    expect(worldState.npcs[0].spriteAssetPath).toBe('/assets/medieval_npc_villager.svg');
+    expect(worldState.npcs[0].spriteSet?.default).toBe('/assets/medieval_npc_villager_front.svg');
 
     expect(worldState.doors).toHaveLength(2);
     expect(worldState.doors.find((door) => door.id === 'door-1')?.position).toEqual({ x: 4, y: 10 });
     expect(worldState.doors.find((door) => door.id === 'door-2')?.position).toEqual({ x: 10, y: 4 });
+    expect(worldState.doors.every((door) => door.spriteSet?.default === '/assets/medieval_door_wooden_closed.svg')).toBe(
+      true,
+    );
 
     expect(worldState.interactiveObjects).toHaveLength(1);
     expect(worldState.interactiveObjects.find((object) => object.id === 'crate-supplies')?.position).toEqual({

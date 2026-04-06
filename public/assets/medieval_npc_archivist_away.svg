@@ -1,15 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
-  <title id="title">Medieval NPC Archivist Front</title>
-  <desc id="desc">A scholarly archivist in a deep blue robe, facing forward.</desc>
+  <title id="title">Medieval NPC Archivist Away</title>
+  <desc id="desc">A scholarly archivist in a deep blue robe, facing away.</desc>
   <ellipse cx="32" cy="57" rx="14" ry="4" fill="#1f1a15" opacity="0.35"/>
-  <circle cx="32" cy="16" r="7" fill="#d4a47c" stroke="#2d1f14" stroke-width="2"/>
-  <rect x="27" y="12" width="10" height="2" rx="1" fill="#2d1f14"/>
-  <circle cx="29" cy="16" r="1" fill="#2d1f14"/>
-  <circle cx="35" cy="16" r="1" fill="#2d1f14"/>
-  <path d="M22 25c1-6 5-10 10-10s9 4 10 10v7H22z" fill="#2e4a6b" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="26" y="11" width="12" height="10" rx="3" fill="#b08060" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M22 24c1-5 5-9 10-9s9 4 10 9v8H22z" fill="#2e4a6b" stroke="#2d1f14" stroke-width="2"/>
   <path d="M21 32h22l-4 17H25z" fill="#365a7a" stroke="#2d1f14" stroke-width="2"/>
-  <rect x="19" y="32" width="6" height="14" rx="2" fill="#2e4a6b" stroke="#2d1f14" stroke-width="2"/>
-  <rect x="39" y="32" width="6" height="14" rx="2" fill="#2e4a6b" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="19" y="32" width="6" height="13" rx="2" fill="#2e4a6b" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="39" y="32" width="6" height="13" rx="2" fill="#2e4a6b" stroke="#2d1f14" stroke-width="2"/>
   <rect x="26" y="49" width="5" height="9" rx="2" fill="#2d1f14" stroke="#2d1f14" stroke-width="1.5"/>
   <rect x="33" y="49" width="5" height="9" rx="2" fill="#2d1f14" stroke="#2d1f14" stroke-width="1.5"/>
   <rect x="40" y="34" width="8" height="11" rx="2" fill="#e8dfc4" stroke="#2d1f14" stroke-width="1.5"/>

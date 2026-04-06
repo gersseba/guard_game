@@ -288,7 +288,8 @@ export function validateLevelData(input: unknown): LevelData {
         typeof interactiveObject['displayName'] !== 'string' ||
         typeof interactiveObject['x'] !== 'number' ||
         typeof interactiveObject['y'] !== 'number' ||
-        interactiveObject['objectType'] !== 'supply-crate' ||
+        (interactiveObject['objectType'] !== 'supply-crate' &&
+          interactiveObject['objectType'] !== 'mechanism') ||
         (interactiveObject['interactionType'] !== 'inspect' &&
           interactiveObject['interactionType'] !== 'use' &&
           interactiveObject['interactionType'] !== 'talk') ||

@@ -21,6 +21,8 @@ type LevelEntity = {
 };
 
 type LevelFile = {
+  guards?: LevelEntity[];
+  doors?: LevelEntity[];
   npcs?: LevelEntity[];
   interactiveObjects?: LevelEntity[];
 };
@@ -56,7 +58,7 @@ const collectEntityAssetPaths = (entity: LevelEntity): string[] => {
 };
 
 describe('level NPC/object asset coverage', () => {
-  it('ensures every NPC and interactive object has at least one valid existing asset path', () => {
+  it('ensures every guard, door, NPC, and interactive object has at least one valid existing asset path', () => {
     const manifestPath = resolve(repoRoot, 'public/levels/manifest.json');
     const manifest: LevelManifestEntry[] = JSON.parse(readFileSync(manifestPath, 'utf8'));
 
@@ -66,6 +68,34 @@ describe('level NPC/object asset coverage', () => {
     for (const entry of manifest) {
       const levelPath = resolve(repoRoot, `public/levels/${entry.id}.json`);
       const level: LevelFile = JSON.parse(readFileSync(levelPath, 'utf8'));
+
+      for (const guard of level.guards ?? []) {
+        const paths = collectEntityAssetPaths(guard);
+        if (paths.length === 0) {
+          missingCoverage.push(`level=${entry.id} guard=${guard.id}`);
+          continue;
+        }
+
+        for (const assetPath of paths) {
+          if (!assetPathExists(assetPath)) {
+            missingFiles.push(`level=${entry.id} guard=${guard.id} asset=${assetPath}`);
+          }
+        }
+      }
+
+      for (const door of level.doors ?? []) {
+        const paths = collectEntityAssetPaths(door);
+        if (paths.length === 0) {
+          missingCoverage.push(`level=${entry.id} door=${door.id}`);
+          continue;
+        }
+
+        for (const assetPath of paths) {
+          if (!assetPathExists(assetPath)) {
+            missingFiles.push(`level=${entry.id} door=${door.id} asset=${assetPath}`);
+          }
+        }
+      }
 
       for (const npc of level.npcs ?? []) {
         const paths = collectEntityAssetPaths(npc);

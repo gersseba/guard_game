@@ -17,7 +17,13 @@
       "x": 5,
       "y": 10,
       "guardState": "patrolling",
-      "spriteAssetPath": "/assets/medieval_guard_spear.svg",
+      "spriteSet": {
+        "default": "/assets/medieval_guard_spear_front.svg",
+        "front": "/assets/medieval_guard_spear_front.svg",
+        "away": "/assets/medieval_guard_spear_away.svg",
+        "left": "/assets/medieval_guard_spear_left.svg",
+        "right": "/assets/medieval_guard_spear_right.svg"
+      },
       "itemUseRules": {
         "gift-token": {
           "allowed": true,
@@ -31,7 +37,13 @@
       "x": 10,
       "y": 5,
       "guardState": "patrolling",
-      "spriteAssetPath": "/assets/medieval_guard_spear.svg"
+      "spriteSet": {
+        "default": "/assets/medieval_guard_spear_front.svg",
+        "front": "/assets/medieval_guard_spear_front.svg",
+        "away": "/assets/medieval_guard_spear_away.svg",
+        "left": "/assets/medieval_guard_spear_left.svg",
+        "right": "/assets/medieval_guard_spear_right.svg"
+      }
     }
   ],
   "doors": [
@@ -41,7 +53,10 @@
       "x": 4,
       "y": 10,
       "doorState": "closed",
-      "outcome": "safe"
+      "outcome": "safe",
+      "spriteSet": {
+        "default": "/assets/medieval_door_wooden_closed.svg"
+      }
     },
     {
       "id": "door-2",
@@ -49,7 +64,10 @@
       "x": 10,
       "y": 4,
       "doorState": "closed",
-      "outcome": "danger"
+      "outcome": "danger",
+      "spriteSet": {
+        "default": "/assets/medieval_door_wooden_closed.svg"
+      }
     }
   ],
   "npcs": [
@@ -59,7 +77,13 @@
       "x": 15,
       "y": 14,
       "npcType": "villager",
-      "spriteAssetPath": "/assets/medieval_npc_villager.svg"
+      "spriteSet": {
+        "default": "/assets/medieval_npc_villager_front.svg",
+        "front": "/assets/medieval_npc_villager_front.svg",
+        "away": "/assets/medieval_npc_villager_away.svg",
+        "left": "/assets/medieval_npc_villager_left.svg",
+        "right": "/assets/medieval_npc_villager_right.svg"
+      }
     }
   ],
   "interactiveObjects": [

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Medieval NPC Villager Left</title>
+  <desc id="desc">A village resident facing left in a simple tunic.</desc>
+  <ellipse cx="32" cy="57" rx="14" ry="4" fill="#1f1a15" opacity="0.35"/>
+  <path d="M36 16c0 4-3 7-7 7-4 0-7-3-7-7s3-7 7-7c4 0 7 3 7 7z" fill="#caa27f" stroke="#2d1f14" stroke-width="2"/>
+  <circle cx="28" cy="15" r="1" fill="#2d1f14"/>
+  <path d="M23 26c1-5 5-9 9-9 4 0 8 4 9 9v7H23z" fill="#6b513a" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M22 33h21l-3 16H25z" fill="#8a6a45" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="20" y="33" width="5" height="12" rx="2" fill="#6b513a" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="39" y="34" width="5" height="11" rx="2" fill="#6b513a" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="26" y="49" width="5" height="9" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="33" y="49" width="5" height="9" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="15" y="35" width="4" height="9" rx="2" fill="#91633c" stroke="#2d1f14" stroke-width="1.5"/>
+</svg>

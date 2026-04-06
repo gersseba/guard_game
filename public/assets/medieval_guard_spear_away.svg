@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Medieval Guard Spear Away</title>
+  <desc id="desc">An away-facing castle guard with spear and red tabard.</desc>
+  <ellipse cx="32" cy="57" rx="15" ry="4" fill="#1f1a15" opacity="0.35"/>
+  <rect x="26" y="12" width="12" height="10" rx="2" fill="#8f6a49" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M23 25c1-6 5-10 9-10s8 4 9 10v7H23z" fill="#6a6f76" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M22 32h20l-3 17H25z" fill="#7b3e32" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="20" y="33" width="5" height="13" rx="2" fill="#6a6f76" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="39" y="33" width="5" height="13" rx="2" fill="#6a6f76" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="25" y="49" width="5" height="9" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="34" y="49" width="5" height="9" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="45" y="10" width="3" height="44" rx="1" fill="#91633c" stroke="#2d1f14" stroke-width="1.5"/>
+  <path d="M46.5 7l4 6h-8z" fill="#aeb4bb" stroke="#2d1f14" stroke-width="1.5"/>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Medieval NPC Villager Away</title>
+  <desc id="desc">A village resident seen from behind, simple tunic.</desc>
+  <ellipse cx="32" cy="57" rx="14" ry="4" fill="#1f1a15" opacity="0.35"/>
+  <rect x="26" y="11" width="12" height="10" rx="3" fill="#b08060" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M23 24c1-5 5-9 9-9s8 4 9 9v7H23z" fill="#6b513a" stroke="#2d1f14" stroke-width="2"/>
+  <path d="M22 31h20l-3 18H25z" fill="#7a5c38" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="20" y="31" width="5" height="13" rx="2" fill="#6b513a" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="39" y="31" width="5" height="13" rx="2" fill="#6b513a" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="26" y="49" width="5" height="9" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="33" y="49" width="5" height="9" rx="2" fill="#4a3526" stroke="#2d1f14" stroke-width="2"/>
+</svg>

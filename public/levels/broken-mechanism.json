@@ -17,7 +17,10 @@
       "x": 15,
       "y": 7,
       "doorState": "open",
-      "outcome": "safe"
+      "outcome": "safe",
+      "spriteSet": {
+        "default": "/assets/medieval_door_wooden_closed.svg"
+      }
     }
   ],
   "npcs": [],
@@ -30,6 +33,7 @@
       "objectType": "supply-crate",
       "interactionType": "inspect",
       "state": "idle",
+      "spriteAssetPath": "/assets/medieval_supply_crate_inspect.svg",
       "pickupItem": {
         "itemId": "wrench",
         "displayName": "Iron Wrench"
@@ -42,9 +46,10 @@
       "displayName": "Door Mechanism",
       "x": 12,
       "y": 7,
-      "objectType": "supply-crate",
+      "objectType": "mechanism",
       "interactionType": "use",
       "state": "idle",
+      "spriteAssetPath": "/assets/medieval_mechanism_door.svg",
       "itemUseRules": {
         "wrench": {
           "allowed": true,

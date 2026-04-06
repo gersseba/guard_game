@@ -481,6 +481,31 @@ describe('validateLevelData', () => {
     );
   });
 
+  it('accepts mechanism interactive objects and preserves their sprite asset path', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      interactiveObjects: [
+        {
+          id: 'mechanism-1',
+          displayName: 'Mechanism',
+          x: 4,
+          y: 4,
+          objectType: 'mechanism',
+          interactionType: 'use',
+          state: 'idle',
+          spriteAssetPath: '/assets/medieval_mechanism_door.svg',
+        },
+      ],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevel(validated);
+
+    expect(state.interactiveObjects[0].objectType).toBe('mechanism');
+    expect(state.interactiveObjects[0].spriteAssetPath).toBe('/assets/medieval_mechanism_door.svg');
+  });
+
   it('throws when input is not an object', () => {
     expect(() => validateLevelData(null)).toThrowError('expected an object');
     expect(() => validateLevelData('string')).toThrowError('expected an object');

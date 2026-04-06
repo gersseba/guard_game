@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Medieval Door Mechanism</title>
+  <desc id="desc">A stone-mounted iron gear mechanism used to open a locked door.</desc>
+  <ellipse cx="32" cy="57" rx="18" ry="4" fill="#1f1a15" opacity="0.35"/>
+  <!-- stone base -->
+  <rect x="18" y="40" width="28" height="14" rx="3" fill="#7a7268" stroke="#2d1f14" stroke-width="2"/>
+  <rect x="22" y="44" width="20" height="6" rx="2" fill="#6a6258" stroke="#2d1f14" stroke-width="1.5"/>
+  <!-- main gear -->
+  <circle cx="32" cy="27" r="13" fill="#5a6068" stroke="#2d1f14" stroke-width="2"/>
+  <circle cx="32" cy="27" r="8" fill="#3e4448" stroke="#2d1f14" stroke-width="2"/>
+  <circle cx="32" cy="27" r="3" fill="#aeb4bb" stroke="#2d1f14" stroke-width="1.5"/>
+  <!-- gear teeth -->
+  <rect x="30" y="10" width="4" height="5" rx="1" fill="#5a6068" stroke="#2d1f14" stroke-width="1.5"/>
+  <rect x="30" y="39" width="4" height="5" rx="1" fill="#5a6068" stroke="#2d1f14" stroke-width="1.5"/>
+  <rect x="13" y="25" width="5" height="4" rx="1" fill="#5a6068" stroke="#2d1f14" stroke-width="1.5"/>
+  <rect x="46" y="25" width="5" height="4" rx="1" fill="#5a6068" stroke="#2d1f14" stroke-width="1.5"/>
+  <rect x="17" y="16" width="4" height="4" rx="1" fill="#5a6068" stroke="#2d1f14" stroke-width="1.5" transform="rotate(45 19 18)"/>
+  <rect x="43" y="16" width="4" height="4" rx="1" fill="#5a6068" stroke="#2d1f14" stroke-width="1.5" transform="rotate(45 45 18)"/>
+  <rect x="17" y="33" width="4" height="4" rx="1" fill="#5a6068" stroke="#2d1f14" stroke-width="1.5" transform="rotate(45 19 35)"/>
+  <rect x="43" y="33" width="4" height="4" rx="1" fill="#5a6068" stroke="#2d1f14" stroke-width="1.5" transform="rotate(45 45 35)"/>
+  <!-- lever arm -->
+  <rect x="31" y="24" width="14" height="3" rx="1" fill="#91633c" stroke="#2d1f14" stroke-width="1.5"/>
+  <circle cx="45" cy="25.5" r="3" fill="#aeb4bb" stroke="#2d1f14" stroke-width="1.5"/>
+  <!-- spoke lines -->
+  <line x1="32" y1="19" x2="32" y2="23" stroke="#aeb4bb" stroke-width="1.5"/>
+  <line x1="32" y1="31" x2="32" y2="35" stroke="#aeb4bb" stroke-width="1.5"/>
+  <line x1="25" y1="27" x2="29" y2="27" stroke="#aeb4bb" stroke-width="1.5"/>
+</svg>
