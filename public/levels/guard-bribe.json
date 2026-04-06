@@ -16,6 +16,9 @@
       "x": 10,
       "y": 7,
       "guardState": "idle",
+      "traits": {
+        "truthMode": "truth-teller"
+      },
       "spriteSet": {
         "default": "/assets/medieval_guard_shield_spear_front.svg",
         "front": "/assets/medieval_guard_shield_spear_front.svg",

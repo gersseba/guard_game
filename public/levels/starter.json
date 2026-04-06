@@ -17,6 +17,9 @@
       "x": 5,
       "y": 10,
       "guardState": "patrolling",
+      "traits": {
+        "truthMode": "truth-teller"
+      },
       "spriteSet": {
         "default": "/assets/medieval_guard_spear_front.svg",
         "front": "/assets/medieval_guard_spear_front.svg",
@@ -37,6 +40,9 @@
       "x": 10,
       "y": 5,
       "guardState": "patrolling",
+      "traits": {
+        "truthMode": "truth-teller"
+      },
       "spriteSet": {
         "default": "/assets/medieval_guard_spear_front.svg",
         "front": "/assets/medieval_guard_spear_front.svg",
