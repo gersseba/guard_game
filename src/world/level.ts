@@ -135,11 +135,16 @@ export function validateLevelData(input: unknown): LevelData {
       );
     }
     // honestyTrait is optional
-    if (guard['honestyTrait'] !== undefined) {
-      if (guard['honestyTrait'] !== 'truth-teller' && guard['honestyTrait'] !== 'liar') {
-        throw new Error(
-          `Invalid level data: guard at index ${i} has invalid honestyTrait (must be 'truth-teller' or 'liar')`,
-        );
+    // traits is optional — validate it's a plain string-valued object when present
+    if (guard['traits'] !== undefined) {
+      if (typeof guard['traits'] !== 'object' || guard['traits'] === null || Array.isArray(guard['traits'])) {
+        throw new Error(`Invalid level data: guard at index ${i} has invalid traits (must be a plain object when provided)`);
+      }
+      const rawTraits = guard['traits'] as Record<string, unknown>;
+      for (const [key, value] of Object.entries(rawTraits)) {
+        if (typeof value !== 'string') {
+          throw new Error(`Invalid level data: guard at index ${i} traits.${key} must be a string`);
+        }
       }
     }
 
@@ -425,7 +430,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       displayName: g.displayName,
       position: { x: g.x, y: g.y },
       guardState: g.guardState,
-      honestyTrait: g.honestyTrait,
+      ...(g.traits !== undefined ? { traits: g.traits } : {}),
       ...(g.spriteAssetPath !== undefined ? { spriteAssetPath: g.spriteAssetPath } : {}),
       ...(g.spriteSet !== undefined ? { spriteSet: g.spriteSet } : {}),
       ...(g.instanceKnowledge !== undefined ? { instanceKnowledge: g.instanceKnowledge } : {}),
