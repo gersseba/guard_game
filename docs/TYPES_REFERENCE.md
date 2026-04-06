@@ -58,6 +58,21 @@ Serializable optional directional sprite metadata:
 
 `default` is the deterministic base asset for missing directional keys.
 
+### GameEntity
+Base interface shared by all world entities. JSON-serializable.
+- `id: string`
+- `position: GridPosition`
+- `displayName: string`
+- `spriteSet?: SpriteSet`
+- `spriteAssetPath?: string`
+
+### EntityCapabilities
+Opt-in capability container for game entities. Omit a key if the entity lacks that capability.
+- `inventory?: { items: InventoryItem[] }` - Entity can carry items
+- `dialogue?: { threadId?: string }` - Entity participates in conversation threads
+- `patrol?: { path: GridPosition[] }` - Entity follows a patrol path
+- `lock?: { isLocked: boolean; requiredItemId?: string }` - Entity has a lock mechanism
+
 ### Player
 - `id: string`
 - `displayName: string`
@@ -114,7 +129,7 @@ Represents one deterministic selected-item use attempt resolved for a specific c
 - `instanceBehavior?: string` - Instance-specific behavior traits for this NPC; included in prompt context output when set
 
 ### Guard
-Extends `Interactable`:
+Extends `GameEntity`:
 - `guardState: 'idle' | 'patrolling' | 'alert'`
 - `honestyTrait?: 'truth-teller' | 'liar'`
 - `spriteAssetPath?: string`
@@ -124,7 +139,7 @@ Extends `Interactable`:
 - `itemUseRules?: Record<string, ItemUseRule>` - Deterministic item-use rules keyed by item ID. When player uses a matching item on this guard, the rule determines success/blocked outcome.
 
 ### Door
-Extends `Interactable`:
+Extends `GameEntity`:
 - `doorState: 'open' | 'closed' | 'locked'`
 - `outcome?: 'safe' | 'danger'`
 - `requiredItemId?: string` - Item id required to unlock this door via item-use. If set, door must be interacted with using this item before traversal is allowed.
@@ -134,7 +149,7 @@ Extends `Interactable`:
 - `spriteSet?: SpriteSet`
 
 ### InteractiveObject
-Extends `Interactable`:
+Extends `GameEntity`:
 - `objectType: 'supply-crate'`
 - `interactionType: 'inspect' | 'use' | 'talk'`
 - `state: 'idle' | 'used'`
