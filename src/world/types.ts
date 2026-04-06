@@ -95,14 +95,32 @@ export interface RiddleClueConstraint {
   constraint: string;
 }
 
-export interface Npc {
+/**
+ * Shared structural base for all game entities.
+ * All world entities share this common root. JSON-serializable.
+ */
+export interface GameEntity {
   id: string;
-  displayName: string;
   position: GridPosition;
+  displayName: string;
+  spriteSet?: SpriteSet;
+  spriteAssetPath?: string;
+}
+
+/**
+ * Opt-in capability container for game entities.
+ * Capabilities are typed sub-objects; omit a key if the entity lacks that capability.
+ */
+export interface EntityCapabilities {
+  inventory?: { items: InventoryItem[] };
+  dialogue?: { threadId?: string };
+  patrol?: { path: GridPosition[] };
+  lock?: { isLocked: boolean; requiredItemId?: string };
+}
+
+export interface Npc extends GameEntity {
   npcType: string;
   dialogueContextKey: string;
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
   /** Instance-specific knowledge this NPC has (overrides or extends type-level knowledge). */
   instanceKnowledge?: string;
   /** Instance-specific behavior traits for this NPC (overrides or extends type-level behavior). */
@@ -118,20 +136,11 @@ export interface ConversationMessage {
 
 export type ActorConversationHistoryByActorId = Record<string, ConversationMessage[]>;
 
-/** Shared base for all interactable world objects. JSON-serializable. */
-export interface Interactable {
-  id: string;
-  displayName: string;
-  position: GridPosition;
-}
-
 /** A guard entity that the player can interact with. */
-export interface Guard extends Interactable {
+export interface Guard extends GameEntity {
   guardState: 'idle' | 'patrolling' | 'alert';
   honestyTrait?: 'truth-teller' | 'liar';
   facingDirection?: SpriteDirection;
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
   /** Instance-specific knowledge this guard has (overrides or extends type-level knowledge). */
   instanceKnowledge?: string;
   /** Instance-specific behavior traits for this guard (overrides or extends type-level behavior). */
@@ -141,18 +150,16 @@ export interface Guard extends Interactable {
 }
 
 /** A door that the player can pass through or be blocked by. */
-export interface Door extends Interactable {
+export interface Door extends GameEntity {
   doorState: 'open' | 'closed' | 'locked';
   outcome?: 'safe' | 'danger';
   /** Item ID required to unlock this door (if set, door must be interacted with using this item) */
   requiredItemId?: string;
   /** Whether this door has been unlocked via item-use (persists unlock state; default: false) */
   isUnlocked?: boolean;
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
 }
 
-export interface InteractiveObject extends Interactable {
+export interface InteractiveObject extends GameEntity {
   objectType: 'supply-crate' | 'mechanism';
   interactionType: 'inspect' | 'use' | 'talk';
   state: 'idle' | 'used';
@@ -163,8 +170,6 @@ export interface InteractiveObject extends Interactable {
   idleMessage?: string;
   usedMessage?: string;
   firstUseOutcome?: 'win' | 'lose';
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
   /** Deterministic item-use rules: item ID → rule definition */
   itemUseRules?: Record<string, ItemUseRule>;
 }
