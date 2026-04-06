@@ -105,6 +105,10 @@ export interface GameEntity {
   displayName: string;
   spriteSet?: SpriteSet;
   spriteAssetPath?: string;
+  /** Open-ended behavioral traits bag, readable by LLM prompt builders. */
+  traits?: Record<string, string>;
+  /** Open-ended facts bag for arbitrary key/value data, readable by LLM prompt builders. */
+  facts?: Record<string, string | number | boolean>;
 }
 
 /**
@@ -139,7 +143,6 @@ export type ActorConversationHistoryByActorId = Record<string, ConversationMessa
 /** A guard entity that the player can interact with. */
 export interface Guard extends GameEntity {
   guardState: 'idle' | 'patrolling' | 'alert';
-  honestyTrait?: 'truth-teller' | 'liar';
   facingDirection?: SpriteDirection;
   /** Instance-specific knowledge this guard has (overrides or extends type-level knowledge). */
   instanceKnowledge?: string;
@@ -202,7 +205,8 @@ export interface LevelData {
     x: number;
     y: number;
     guardState: 'patrolling' | 'alert' | 'idle';
-    honestyTrait?: 'truth-teller' | 'liar';
+    /** Behavioral traits bag. Use traits.truthMode for guard honesty ('truth-teller' | 'liar'). */
+    traits?: Record<string, string>;
     spriteAssetPath?: string;
     spriteSet?: SpriteSet;
     /** Instance-specific knowledge this guard has. */
