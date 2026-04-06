@@ -1,4 +1,5 @@
 import type { PlayerInventory } from '../world/types';
+import { buildInventoryGridElement, GRID_COLS, GRID_ROWS, TILE_SIZE } from './inventoryGrid';
 
 export interface InventoryOverlayOptions {
   onClose(): void;
@@ -9,9 +10,6 @@ export interface InventoryOverlay {
   close(): void;
 }
 
-const GRID_COLS = 3;
-const GRID_ROWS = 3;
-const TILE_SIZE = 60;
 const TOOLTIP_OFFSET = 10;
 const TOOLTIP_MAX_WIDTH = 150;
 export const createInventoryOverlay = (
@@ -107,81 +105,43 @@ export const createInventoryOverlay = (
     header.style.marginTop = '-60px';
     overlay.appendChild(header);
 
-    // Create grid container
-    const gridContainer = document.createElement('div');
-    gridContainer.style.display = 'grid';
-    gridContainer.style.gridTemplateColumns = `repeat(${GRID_COLS}, ${TILE_SIZE}px)`;
-    gridContainer.style.gap = '8px';
+    // Build the shared 3×3 tile grid
+    const gridContainer = buildInventoryGridElement(currentInventory);
     gridContainer.style.padding = '20px';
     gridContainer.style.backgroundColor = 'rgba(34, 34, 34, 0.7)';
     gridContainer.style.borderRadius = '8px';
     gridContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.8)';
 
-    // Render each tile
-    for (let slotIndex = 0; slotIndex < GRID_COLS * GRID_ROWS; slotIndex++) {
-      const item = currentInventory.items[slotIndex];
-      const tile = document.createElement('div');
-      tile.className = 'inventory-tile';
-      tile.style.width = `${TILE_SIZE}px`;
-      tile.style.height = `${TILE_SIZE}px`;
-      tile.style.backgroundColor = item ? '#1a1a1a' : '#0d0d0d';
-      tile.style.border = '2px solid #444';
-      tile.style.borderRadius = '4px';
-      tile.style.display = 'flex';
-      tile.style.alignItems = 'center';
-      tile.style.justifyContent = 'center';
-      tile.style.cursor = 'pointer';
-      tile.style.transition = 'all 0.1s ease';
-      tile.style.fontSize = '12px';
-      tile.style.color = '#fff';
-      tile.style.userSelect = 'none';
-      tile.style.fontFamily = 'monospace';
-
-      // Highlight selected item
-      const isSelected =
-        currentInventory.selectedItem &&
-        currentInventory.selectedItem.slotIndex === slotIndex;
-      if (isSelected) {
-        tile.style.borderColor = '#4488ff';
-        tile.style.backgroundColor = '#1a2a4a';
-        tile.style.boxShadow = '0 0 8px rgba(68, 136, 255, 0.5)';
+    // Apply keyboard focus highlight
+    if (focusedSlotIndex !== null) {
+      const allTiles = gridContainer.querySelectorAll<HTMLElement>('.inventory-tile');
+      const focused = allTiles[focusedSlotIndex];
+      if (focused) {
+        focused.style.outline = '3px solid #88ff00';
+        focused.style.outlineOffset = '2px';
       }
+    }
 
-      // Highlight focused tile for keyboard nav
-      const isFocused = focusedSlotIndex === slotIndex;
-      if (isFocused) {
-        tile.style.outline = '3px solid #88ff00';
-        tile.style.outlineOffset = '2px';
-      }
+    // Attach tooltip listeners to filled tiles
+    const allTiles = gridContainer.querySelectorAll<HTMLElement>('.inventory-tile');
+    allTiles.forEach((tile, slotIndex) => {
+      const item = currentInventory!.items[slotIndex];
+      if (!item) return;
 
-      if (item) {
-        tile.textContent = item.itemId;
-
-        // Tooltip on hover
-        tile.addEventListener('mouseenter', () => {
-          if (tooltipElement) {
-            const rect = tile.getBoundingClientRect();
-            positionTooltip(tooltipElement, rect.left, rect.top, item.itemId);
-            tooltipElement.style.display = 'block';
-          }
-        });
-
-        tile.addEventListener('mouseleave', () => {
-          if (tooltipElement) {
-            tooltipElement.style.display = 'none';
-          }
-        });
-      }
-
-      // Click to select
-      tile.addEventListener('click', () => {
-        if (item) {
-          // This would normally dispatch a command, but for MVP we just highlight
+      tile.addEventListener('mouseenter', () => {
+        if (tooltipElement) {
+          const rect = tile.getBoundingClientRect();
+          positionTooltip(tooltipElement, rect.left, rect.top, item.itemId);
+          tooltipElement.style.display = 'block';
         }
       });
 
-      gridContainer.appendChild(tile);
-    }
+      tile.addEventListener('mouseleave', () => {
+        if (tooltipElement) {
+          tooltipElement.style.display = 'none';
+        }
+      });
+    });
 
     overlay.appendChild(gridContainer);
 

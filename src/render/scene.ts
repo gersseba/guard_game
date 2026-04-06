@@ -11,6 +11,7 @@ export interface PixiRenderTargets {
 
 interface RenderContext {
   app: Application;
+  viewport: HTMLElement;
   boundaryGraphics: Graphics;
   gridGraphics: Graphics;
   entityGraphics: Graphics;
@@ -341,7 +342,15 @@ const ensureCanvasSize = (
   context: RenderContext,
   worldState: WorldState,
 ): void => {
-  const { width: nextWidth, height: nextHeight } = measureViewport(worldState);
+  const { width: fallbackWidth, height: fallbackHeight } = measureViewport(worldState);
+  const tileSize = worldState.grid.tileSize;
+  const worldMaxWidth = worldState.grid.width * tileSize + EDGE_BAND_TILES * tileSize * 2;
+  const worldMaxHeight = worldState.grid.height * tileSize + EDGE_BAND_TILES * tileSize * 2;
+  const containerWidth = Math.floor(context.viewport.clientWidth);
+  const containerHeight = Math.floor(context.viewport.clientHeight);
+
+  const nextWidth = clamp(containerWidth || fallbackWidth, 1, worldMaxWidth);
+  const nextHeight = clamp(containerHeight || fallbackHeight, 1, worldMaxHeight);
 
   if (context.lastWidth === nextWidth && context.lastHeight === nextHeight) {
     return;
@@ -518,6 +527,7 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
 
   const context: RenderContext = {
     app,
+    viewport: targets.viewport,
     boundaryGraphics,
     gridGraphics,
     entityGraphics,

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { createInventoryOverlay } from './inventoryOverlay';
 import type { PlayerInventory } from '../world/types';
@@ -21,8 +22,8 @@ describe('inventory overlay', () => {
     const overlay = createInventoryOverlay(hostElement, { onClose: onCloseSpy });
     const inventory: PlayerInventory = {
       items: [
-        { slotIndex: 0, itemId: 'key-1' },
-        { slotIndex: 1, itemId: 'coin-5' },
+        { itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 },
+        { itemId: 'coin-5', displayName: 'Gold Coin', sourceObjectId: 'crate-2', pickedUpAtTick: 2 },
       ],
       selectedItem: { slotIndex: 0, itemId: 'key-1' },
     };
@@ -36,7 +37,7 @@ describe('inventory overlay', () => {
   it('highlights selected item with distinct styling', () => {
     const overlay = createInventoryOverlay(hostElement, { onClose: onCloseSpy });
     const inventory: PlayerInventory = {
-      items: [{ slotIndex: 0, itemId: 'key-1' }],
+      items: [{ itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 }],
       selectedItem: { slotIndex: 0, itemId: 'key-1' },
     };
 
@@ -44,13 +45,14 @@ describe('inventory overlay', () => {
 
     const tiles = hostElement.querySelectorAll('.inventory-tile');
     const firstTile = tiles[0] as HTMLElement;
-    expect(firstTile.style.borderColor).toContain('4488ff');
+    // jsdom normalises hex colours to rgb
+    expect(firstTile.style.borderColor).toMatch(/4488ff|rgb\(68,\s*136,\s*255\)/);
   });
 
   it('displays tooltip on tile hover', () => {
     const overlay = createInventoryOverlay(hostElement, { onClose: onCloseSpy });
     const inventory: PlayerInventory = {
-      items: [{ slotIndex: 0, itemId: 'key-1' }],
+      items: [{ itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 }],
       selectedItem: null,
     };
 

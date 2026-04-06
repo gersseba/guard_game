@@ -30,8 +30,8 @@ describe('createLevelUi', () => {
     expect(resetButton).not.toBeNull();
     expect(resetButton?.disabled).toBe(true);
 
-    const objectiveText = container.querySelector<HTMLElement>('.level-ui-objective-text');
-    expect(objectiveText?.textContent).toBe('Load a level to view its objective.');
+    const objectiveSection = container.querySelector<HTMLElement>('.level-ui-objective-title')?.parentElement;
+    expect(objectiveSection?.hidden).toBe(true);
   });
 
   it('keeps controls disabled when populated with an empty level list', () => {
@@ -103,14 +103,25 @@ describe('createLevelUi', () => {
     expect(onLevelSelect).not.toHaveBeenCalled();
   });
 
-  it('renders and updates objective text through handle updates', () => {
+  it('shows objective text when it differs from the level goal', () => {
     const handle = createLevelUi(container, { onLevelSelect, onReset });
 
-    handle.setLevelObjective('Talk to both guards and pick the safe door.');
+    handle.setLevelObjective('Talk to both guards and pick the safe door.', 'Choose the correct door.');
     const objectiveText = container.querySelector<HTMLElement>('.level-ui-objective-text');
-    expect(objectiveText?.textContent).toBe('Talk to both guards and pick the safe door.');
+    const objectiveSection = container.querySelector<HTMLElement>('.level-ui-objective-title')?.parentElement;
 
-    handle.setLevelObjective('Reach the west door.');
-    expect(objectiveText?.textContent).toBe('Reach the west door.');
+    expect(objectiveSection?.hidden).toBe(false);
+    expect(objectiveText?.textContent).toBe('Talk to both guards and pick the safe door.');
+  });
+
+  it('hides objective text when it duplicates the level goal', () => {
+    const handle = createLevelUi(container, { onLevelSelect, onReset });
+
+    handle.setLevelObjective('Reach the west door.', 'Reach the west door.');
+    const objectiveText = container.querySelector<HTMLElement>('.level-ui-objective-text');
+    const objectiveSection = container.querySelector<HTMLElement>('.level-ui-objective-title')?.parentElement;
+
+    expect(objectiveSection?.hidden).toBe(true);
+    expect(objectiveText?.textContent).toBe('');
   });
 });

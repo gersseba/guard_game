@@ -33,14 +33,26 @@ describe('runtime layout markup', () => {
     const markup = getRuntimeLayoutMarkup();
 
     expect(markup).toContain('id="level-briefing"');
+    expect(markup).toContain('id="inventory-panel"');
 
     const primaryIndex = markup.indexOf('class="guard-game-primary"');
     const briefingIndex = markup.indexOf('id="level-briefing"');
+    const inventoryIndex = markup.indexOf('id="inventory-panel"');
     const secondaryIndex = markup.indexOf('class="guard-game-secondary"');
 
     expect(primaryIndex).toBeGreaterThanOrEqual(0);
     expect(briefingIndex).toBeGreaterThan(primaryIndex);
+    expect(inventoryIndex).toBeGreaterThan(briefingIndex);
     expect(briefingIndex).toBeLessThan(secondaryIndex);
+    expect(inventoryIndex).toBeLessThan(secondaryIndex);
+  });
+
+  it('renders world state inside a collapsed details container by default', () => {
+    const markup = getRuntimeLayoutMarkup();
+
+    expect(markup).toContain('class="guard-game-world-state-details"');
+    expect(markup).toContain('class="guard-game-world-state-summary"');
+    expect(markup).not.toContain('class="guard-game-world-state-details" open');
   });
 
   it('includes a chat modal host element', () => {

@@ -509,11 +509,11 @@ describe('starter level', () => {
     expect(state.player.position).toEqual({ x: 10, y: 10 });
   });
 
-  it('includes objective text in runtime world state', () => {
+  it('does not project objective text into runtime world state', () => {
     const level = validateLevelData(starterRaw);
     const state = deserializeLevel(level);
 
-    expect(state.levelObjective).toBe(level.objective ?? level.goal);
+    expect(state.levelObjective).toBeUndefined();
   });
 
   it('has a 20×20 grid', () => {

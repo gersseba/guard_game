@@ -10,8 +10,11 @@ export interface LevelUiHandle {
   populateLevels(levels: LevelEntry[]): void;
   /** Reflect the currently active level id in the dropdown (without triggering onLevelSelect). */
   setSelectedLevel(levelId: string): void;
-  /** Display the active level objective text in the runtime controls area. */
-  setLevelObjective(objective: string): void;
+  /**
+   * Display the active level objective text in the runtime controls area.
+   * Hides the objective section when objective text is empty or duplicates the level goal.
+   */
+  setLevelObjective(objective: string | undefined, levelGoal?: string): void;
 }
 
 /**
@@ -46,7 +49,12 @@ export function createLevelUi(container: HTMLElement, callbacks: LevelUiCallback
 
   const objectiveText = document.createElement('p');
   objectiveText.className = 'level-ui-objective-text';
-  objectiveText.textContent = 'Load a level to view its objective.';
+  objectiveText.textContent = '';
+
+  const objectiveSection = document.createElement('div');
+  objectiveSection.hidden = true;
+  objectiveSection.appendChild(objectiveHeading);
+  objectiveSection.appendChild(objectiveText);
 
   select.addEventListener('change', () => {
     const selectedId = select.value;
@@ -62,9 +70,12 @@ export function createLevelUi(container: HTMLElement, callbacks: LevelUiCallback
   wrapper.appendChild(label);
   wrapper.appendChild(select);
   wrapper.appendChild(resetButton);
-  wrapper.appendChild(objectiveHeading);
-  wrapper.appendChild(objectiveText);
+  wrapper.appendChild(objectiveSection);
   container.appendChild(wrapper);
+
+  const normalize = (value: string | undefined): string => {
+    return value?.trim() ?? '';
+  };
 
   return {
     populateLevels(levels: LevelEntry[]): void {
@@ -98,8 +109,21 @@ export function createLevelUi(container: HTMLElement, callbacks: LevelUiCallback
       select.value = levelId;
     },
 
-    setLevelObjective(objective: string): void {
-      objectiveText.textContent = objective;
+    setLevelObjective(objective: string | undefined, levelGoal?: string): void {
+      const normalizedObjective = normalize(objective);
+      const normalizedGoal = normalize(levelGoal);
+      const shouldHideObjective =
+        normalizedObjective.length === 0 ||
+        (normalizedGoal.length > 0 && normalizedObjective === normalizedGoal);
+
+      if (shouldHideObjective) {
+        objectiveSection.hidden = true;
+        objectiveText.textContent = '';
+        return;
+      }
+
+      objectiveText.textContent = normalizedObjective;
+      objectiveSection.hidden = false;
     },
   };
 }

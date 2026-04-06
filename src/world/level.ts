@@ -364,7 +364,6 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       premise: levelData.premise,
       goal: levelData.goal,
     },
-    levelObjective: levelData.objective ?? levelData.goal,
     player: {
       id: 'player',
       displayName: 'Player',

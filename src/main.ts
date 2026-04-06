@@ -20,6 +20,7 @@ import { createLevelBriefingPanel } from './render/levelBriefing';
 import { createActionModal } from './render/actionModal';
 import { createChatModal } from './render/chatModal';
 import { createInventoryOverlay } from './render/inventoryOverlay';
+import { createInventoryPanel } from './render/inventoryPanel';
 import { createOutcomeOverlay } from './render/outcomeOverlay';
 import { createViewportOverlay } from './render/viewportOverlay';
 import { getRuntimeLayoutMarkup } from './render/runtimeLayout';
@@ -39,6 +40,7 @@ appElement.innerHTML = getRuntimeLayoutMarkup();
 
 const viewportElement = document.querySelector<HTMLElement>('#viewport');
 const levelBriefingElement = document.querySelector<HTMLElement>('#level-briefing');
+const inventoryPanelElement = document.querySelector<HTMLElement>('#inventory-panel');
 const levelControlsElement = document.querySelector<HTMLElement>('#level-controls');
 const worldStateElement = document.querySelector<HTMLElement>('#world-state');
 const chatModalHostElement = document.querySelector<HTMLElement>('#chat-modal-host');
@@ -49,6 +51,7 @@ const outcomeOverlayHostElement = document.querySelector<HTMLElement>('#outcome-
 if (
   !viewportElement ||
   !levelBriefingElement ||
+  !inventoryPanelElement ||
   !levelControlsElement ||
   !worldStateElement ||
   !chatModalHostElement ||
@@ -67,6 +70,7 @@ const itemUseResolver = createDefaultItemUseResolver();
 const outcomeOverlay = createOutcomeOverlay(outcomeOverlayHostElement);
 const viewportPauseOverlay = createViewportOverlay(viewportElement);
 const levelBriefingPanel = createLevelBriefingPanel(levelBriefingElement);
+const inventoryPanel = createInventoryPanel(inventoryPanelElement);
 let runtimeController: RuntimeController;
 
 const openConversationForActionSession = (session: RuntimeActionModalSession): void => {
@@ -317,7 +321,7 @@ const startRuntime = async (): Promise<void> => {
         .then((newState) => {
           world.resetToState(newState);
           levelUi.setSelectedLevel(levelId);
-          levelUi.setLevelObjective(newState.levelObjective ?? newState.levelMetadata.goal);
+          levelUi.setLevelObjective(newState.levelObjective, newState.levelMetadata.goal);
           outcomeOverlay.hide();
           levelOutcomeShown = false;
         })
@@ -331,7 +335,7 @@ const startRuntime = async (): Promise<void> => {
       fetchAndLoadLevel(levelUrl)
         .then((newState) => {
           world.resetToState(newState);
-          levelUi.setLevelObjective(newState.levelObjective ?? newState.levelMetadata.goal);
+          levelUi.setLevelObjective(newState.levelObjective, newState.levelMetadata.goal);
           outcomeOverlay.hide();
           levelOutcomeShown = false;
         })
@@ -357,7 +361,7 @@ const startRuntime = async (): Promise<void> => {
         levelUi.setSelectedLevel(defaultLevel.id);
         return fetchAndLoadLevel(`${LEVELS_BASE_URL}/${defaultLevel.id}.json`).then((newState) => {
           world.resetToState(newState);
-          levelUi.setLevelObjective(newState.levelObjective ?? newState.levelMetadata.goal);
+          levelUi.setLevelObjective(newState.levelObjective, newState.levelMetadata.goal);
         });
       }
 
@@ -379,6 +383,7 @@ const startRuntime = async (): Promise<void> => {
     const currentWorldState = world.getState();
     renderPort.render(currentWorldState);
     levelBriefingPanel.render(currentWorldState.levelMetadata);
+    inventoryPanel.render(currentWorldState.player.inventory);
     worldStateElement.textContent = JSON.stringify(currentWorldState, null, 2);
 
     if (currentWorldState.levelOutcome && !levelOutcomeShown) {
@@ -392,6 +397,7 @@ const startRuntime = async (): Promise<void> => {
   const initialWorldState = world.getState();
   renderPort.render(initialWorldState);
   levelBriefingPanel.render(initialWorldState.levelMetadata);
+  inventoryPanel.render(initialWorldState.player.inventory);
   worldStateElement.textContent = JSON.stringify(initialWorldState, null, 2);
   requestAnimationFrame(runFrame);
 };

@@ -19,7 +19,7 @@
   "guards": [
     {
       "id": "guard-truth",
-      "displayName": "Guard True",
+      "displayName": "Guard A",
       "x": 8,
       "y": 10,
       "guardState": "idle",
@@ -34,7 +34,7 @@
     },
     {
       "id": "guard-liar",
-      "displayName": "Guard False",
+      "displayName": "Guard B",
       "x": 12,
       "y": 10,
       "guardState": "idle",

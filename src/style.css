@@ -74,20 +74,33 @@ body {
   font-size: 1rem;
 }
 
+.guard-game-panel-subheading {
+  margin: 0.75rem 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .guard-game-viewport {
   position: relative;
   width: 100%;
-  max-width: 640px;
+  max-width: 100%;
   margin: 0 auto;
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid #9ca3af;
   background: #0f172a;
-  min-height: 320px;
+  min-height: 480px;
+}
+
+.guard-game-viewport canvas {
+  display: block;
 }
 
 .guard-game-level-briefing {
-  min-height: 140px;
+  min-height: 80px;
 }
 
 .guard-game-briefing {
@@ -115,8 +128,26 @@ body {
   width: 100%;
 }
 
+.guard-game-inventory-panel {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.guard-game-world-state-details {
+  width: 100%;
+}
+
+.guard-game-world-state-summary {
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.6rem;
+}
+
 .guard-game-world-state {
-  margin: 0;
+  margin: 0.35rem 0 0;
   min-height: 180px;
   max-height: 360px;
   overflow: auto;
@@ -315,8 +346,9 @@ body {
   }
 
   .guard-game-viewport {
+    width: 100%;
     max-width: 100%;
-    min-height: 260px;
+    min-height: 320px;
   }
 
   .action-modal-actions {

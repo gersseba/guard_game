@@ -7,6 +7,12 @@ export interface RuntimeConversationSession {
   actorId: string;
 }
 
+export interface RuntimeActionModalSession {
+  targetId: string;
+  targetKind: 'guard' | 'npc';
+  displayName: string;
+}
+
 export interface RuntimeControllerDependencies {
   world: Pick<World, 'getState' | 'applyCommands'>;
   commandBuffer: Pick<CommandBuffer, 'drain' | 'clear'>;
@@ -19,6 +25,11 @@ export interface RuntimeController {
   stepSimulation(): void;
   openConversation(actorId: string): void;
   closeConversation(): void;
+  openActionModal(session: RuntimeActionModalSession): void;
+  closeActionModal(): void;
+  getCurrentActionModal(): RuntimeActionModalSession | null;
+  openInventoryOverlay(session: RuntimeActionModalSession): void;
+  closeInventoryOverlay(): void;
   isPaused(): boolean;
   getCurrentInteraction(): RuntimeConversationSession | null;
 }
@@ -26,12 +37,13 @@ export interface RuntimeController {
 export const createRuntimeController = (
   dependencies: RuntimeControllerDependencies,
 ): RuntimeController => {
-  let paused = false;
+  let interactionMode: 'none' | 'conversation' | 'action-modal' | 'inventory' = 'none';
   let currentInteraction: RuntimeConversationSession | null = null;
+  let currentActionModal: RuntimeActionModalSession | null = null;
 
   return {
     stepSimulation(): void {
-      if (paused) {
+      if (interactionMode !== 'none') {
         dependencies.commandBuffer.drain();
         return;
       }
@@ -67,18 +79,48 @@ export const createRuntimeController = (
 
     openConversation(actorId: string): void {
       currentInteraction = { actorId };
-      paused = true;
+      currentActionModal = null;
+      interactionMode = 'conversation';
       dependencies.commandBuffer.clear();
     },
 
     closeConversation(): void {
       currentInteraction = null;
-      paused = false;
+      interactionMode = 'none';
+      dependencies.commandBuffer.clear();
+    },
+
+    openActionModal(session: RuntimeActionModalSession): void {
+      currentActionModal = session;
+      currentInteraction = null;
+      interactionMode = 'action-modal';
+      dependencies.commandBuffer.clear();
+    },
+
+    closeActionModal(): void {
+      currentActionModal = null;
+      interactionMode = 'none';
+      dependencies.commandBuffer.clear();
+    },
+
+    getCurrentActionModal(): RuntimeActionModalSession | null {
+      return currentActionModal;
+    },
+
+    openInventoryOverlay(session: RuntimeActionModalSession): void {
+      currentActionModal = session;
+      interactionMode = 'inventory';
+      dependencies.commandBuffer.clear();
+    },
+
+    closeInventoryOverlay(): void {
+      currentActionModal = null;
+      interactionMode = 'none';
       dependencies.commandBuffer.clear();
     },
 
     isPaused(): boolean {
-      return paused;
+      return interactionMode !== 'none';
     },
 
     getCurrentInteraction(): RuntimeConversationSession | null {
