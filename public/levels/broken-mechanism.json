@@ -39,7 +39,10 @@
         "displayName": "Iron Wrench"
       },
       "idleMessage": "Inside the dusty chest you find a heavy iron wrench.",
-      "usedMessage": "The chest is empty."
+      "usedMessage": "The chest is empty.",
+      "capabilities": {
+        "containsItems": true
+      }
     },
     {
       "id": "door-mechanism",
@@ -50,6 +53,11 @@
       "interactionType": "use",
       "state": "idle",
       "spriteAssetPath": "/assets/medieval_mechanism_door.svg",
+      "idleMessage": "A complex mechanical lock. It looks like it needs a tool.",
+      "usedMessage": "The mechanism is already repaired.",
+      "capabilities": {
+        "isActivatable": true
+      },
       "itemUseRules": {
         "wrench": {
           "allowed": true,
@@ -59,9 +67,7 @@
           "allowed": false,
           "responseText": "That won't work on this mechanism. You need a proper tool."
         }
-      },
-      "idleMessage": "A complex mechanical lock. It looks like it needs a tool.",
-      "usedMessage": "The mechanism is already repaired."
+      }
     }
   ]
 }

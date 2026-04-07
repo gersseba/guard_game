@@ -40,7 +40,10 @@
         "displayName": "Armory Key"
       },
       "idleMessage": "Inside the dusty crate you find a heavy iron key.",
-      "usedMessage": "The crate is empty."
+      "usedMessage": "The crate is empty.",
+      "capabilities": {
+        "containsItems": true
+      }
     }
   ]
 }

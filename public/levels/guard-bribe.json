@@ -67,7 +67,10 @@
         "displayName": "Gold Coin"
       },
       "idleMessage": "You find a pouch with a gleaming gold coin inside.",
-      "usedMessage": "The pouch is empty."
+      "usedMessage": "The pouch is empty.",
+      "capabilities": {
+        "containsItems": true
+      }
     }
   ]
 }
