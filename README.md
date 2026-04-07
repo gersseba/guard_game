@@ -176,6 +176,14 @@ Issues are tracked as GitHub issues instead of Jira. Each issue includes:
 
 ## Testing & Validation
 
+### CI Required Checks
+
+All pull requests targeting `main` must pass the GitHub Actions CI check before merge.
+
+- Required check name: `lint-build-test`
+- Required command order in CI: `npm ci`, `npm run lint`, `npm run build`, `npm run test`
+- CI runs on pull requests to `main` and on pushes to `main`
+
 Before opening a PR, ensure:
 - `npm run build` completes without errors
 - `npm run lint` passes without warnings
