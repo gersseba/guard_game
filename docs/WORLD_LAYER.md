@@ -70,6 +70,20 @@ Legacy `WorldCommand` objects (`move`, `selectInventorySlot`, `useSelectedItem`,
 
 All fields are serializable primitives, arrays, or plain objects.
 
+## Domain Class Foundation
+
+The world layer now includes a domain-class foundation in `src/world/entities/`:
+- base classes: `Entity`, `Actor`
+- specialized classes: `Npc`, `Item`, `Environment`, `WorldObject`
+- seam adapters: `dtoRuntimeSeams.ts` (`mapEntityDtoToRuntime`, `mapNpcDtoToRuntime`)
+
+These classes establish a typed DTO-to-runtime boundary for future incremental migration away from direct object-literal construction.
+
+Determinism/serialization contract remains unchanged:
+- `WorldState` is still plain JSON-serializable data
+- command application and interaction outcomes remain code-owned and deterministic
+- class instances are currently seam scaffolding and test-covered (`src/world/entities/dtoRuntimeSeams.test.ts`) rather than a runtime behavior pivot
+
 `actorConversationHistoryByActorId` stores chat history keyed by actor id. It remains JSON-serializable and actor-neutral even though the current conversational actors are guards and NPCs.
 
 ### Player Facing Direction State
