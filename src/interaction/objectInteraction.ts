@@ -12,10 +12,6 @@ export interface InteractiveObjectInteractionResult {
 	updatedWorldState: WorldState;
 }
 
-type InteractiveObjectTypeHandler = (
-	request: InteractiveObjectInteractionRequest,
-) => InteractiveObjectInteractionResult;
-
 const replaceInteractiveObjectInWorld = (
 	worldState: WorldState,
 	updatedObject: InteractiveObject,
@@ -24,8 +20,12 @@ const replaceInteractiveObjectInWorld = (
 		interactiveObject.id === updatedObject.id ? updatedObject : interactiveObject,
 	);
 
-const handleSupplyCrateInteraction: InteractiveObjectTypeHandler = (
-	request,
+/**
+ * Handles container interaction: reveals items from object.
+ * Triggered when object has capabilities.containsItems = true.
+ */
+const handleContainerInteraction = (
+	request: InteractiveObjectInteractionRequest,
 ): InteractiveObjectInteractionResult => {
 	const wasUsed = request.interactiveObject.state === 'used';
 	const pickupItem = request.interactiveObject.pickupItem;
@@ -79,14 +79,71 @@ const handleSupplyCrateInteraction: InteractiveObjectTypeHandler = (
 	};
 };
 
-const OBJECT_TYPE_HANDLERS: Record<InteractiveObject['objectType'], InteractiveObjectTypeHandler> = {
-	'supply-crate': handleSupplyCrateInteraction,
-	mechanism: handleSupplyCrateInteraction,
+/**
+ * Handles activatable object interaction: triggers an effect (e.g., mechanism activation).
+ * Triggered when object has capabilities.isActivatable = true.
+ */
+const handleActivationInteraction = (
+	request: InteractiveObjectInteractionRequest,
+): InteractiveObjectInteractionResult => {
+	const responseText =
+		request.interactiveObject.usedMessage ??
+		`You activate the ${request.interactiveObject.displayName}.`;
+
+	const updatedObject: InteractiveObject = {
+		...request.interactiveObject,
+		state: 'used',
+	};
+
+	const nextLevelOutcome =
+		request.worldState.levelOutcome ?? request.interactiveObject.firstUseOutcome ?? null;
+
+	const updatedWorldState: WorldState = {
+		...request.worldState,
+		interactiveObjects: replaceInteractiveObjectInWorld(request.worldState, updatedObject),
+		levelOutcome: nextLevelOutcome,
+	};
+
+	return {
+		objectId: request.interactiveObject.id,
+		responseText,
+		updatedWorldState,
+	};
 };
 
+/**
+ * Main dispatcher: routes object interaction based on declared capabilities.
+ * Checks capabilities flags in order and applies the matching handler.
+ */
+export const handleObjectInteraction = (
+	request: InteractiveObjectInteractionRequest,
+): InteractiveObjectInteractionResult => {
+	const { capabilities } = request.interactiveObject;
+
+	// Check for container capability first
+	if (capabilities?.containsItems) {
+		return handleContainerInteraction(request);
+	}
+
+	// Check for activation capability
+	if (capabilities?.isActivatable) {
+		return handleActivationInteraction(request);
+	}
+
+	// No recognized capabilities: inert object
+	return {
+		objectId: request.interactiveObject.id,
+		responseText: `${request.interactiveObject.displayName} cannot be interacted with.`,
+		updatedWorldState: request.worldState,
+	};
+};
+
+/**
+ * Deprecated: use handleObjectInteraction instead.
+ * Kept for temporary backward compatibility.
+ */
 export const handleInteractiveObjectInteraction = (
 	request: InteractiveObjectInteractionRequest,
 ): InteractiveObjectInteractionResult => {
-	const objectTypeHandler = OBJECT_TYPE_HANDLERS[request.interactiveObject.objectType];
-	return objectTypeHandler(request);
+	return handleObjectInteraction(request);
 };
