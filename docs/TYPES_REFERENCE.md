@@ -9,6 +9,9 @@ Source of truth:
 - `src/world/entities/npcs/Npc.ts`
 - `src/world/entities/npcs/GuardNpc.ts`
 - `src/world/entities/objects/WorldObject.ts`
+- `src/world/entities/objects/ContainerObject.ts`
+- `src/world/entities/objects/MechanismObject.ts`
+- `src/world/entities/objects/DoorObject.ts`
 - `src/world/entities/items/Item.ts`
 - `src/world/entities/environment/Environment.ts`
 - `src/world/entities/dtoRuntimeSeams.ts`
@@ -86,6 +89,19 @@ Extends `NpcInit` with guard-specialized constraints:
 Extends `EntityInit`:
 - `objectType: string`
 
+### WorldObjectInteractionRequest
+- `interactiveObject: InteractiveObject`
+- `player: Player`
+- `worldState: WorldState`
+
+Serializable input contract consumed by `WorldObject.interact(...)` implementations.
+
+### WorldObjectInteractionResult
+- `responseText: string`
+- `updatedWorldState: WorldState`
+
+Deterministic output contract returned by `WorldObject.interact(...)` implementations.
+
 ### ItemInit
 Extends `EntityInit`:
 - `itemType: string`
@@ -104,6 +120,12 @@ Alias of serializable `Guard` DTO used by the guard runtime seam adapter:
 - `type GuardDtoContract = Guard`
 
 Mapped by `mapGuardDtoToRuntime(dto)` to runtime `GuardNpc` while preserving guard JSON shape.
+
+### InteractiveObjectDtoContract
+Alias of serializable `InteractiveObject` DTO used by the world-object runtime seam adapter:
+- `type InteractiveObjectDtoContract = InteractiveObject`
+
+Mapped by `mapInteractiveObjectDtoToRuntime(dto)` to `ContainerObject`, `MechanismObject`, `DoorObject`, or `null` for inert/unsupported objects.
 
 ## World Types
 
@@ -231,23 +253,23 @@ Extends `GameEntity`:
 - `spriteSet?: SpriteSet`
 
 ### ObjectCapabilities
-Capability flags that drive object behavior through feature composition (not type branching):
+Capability flags that annotate object behavior capabilities:
 - `containsItems?: boolean` - Object contains items that can be inspected and picked up
 - `isActivatable?: boolean` - Object can be activated to trigger an effect (e.g., mechanism, lever)
 - `isLockable?: boolean` - Object has a lock mechanism (reserved for future use)
 
-Objects declare what they can do via capabilities. The interaction handler checks these flags in order and applies the matching effect. If no capabilities are present, the object is inert.
+Capabilities are consumed by runtime seam mapping for container and mechanism selection. Objects without a supported mapping remain inert.
 
 ### InteractiveObject
 Extends `GameEntity`:
-- `objectType: string` - Display label for the object type (e.g., "supply-crate", "mechanism", "decoration"). Not used for behavior routing; use only for UI context and LLM awareness. Previously used for type-based dispatch; now deprecated in favor of capabilities.
+- `objectType: string` - Object classification token (e.g., "supply-crate", "mechanism", "service-door", "decoration") used by runtime seam mapping alongside capabilities.
 - `interactionType: 'inspect' | 'use' | 'talk'`
 - `state: 'idle' | 'used'`
 - `pickupItem?: { itemId: string; displayName: string }` - Item available for pickup when this object is inspected (only used if capabilities.containsItems is true)
 - `idleMessage?: string` - Narrative response on first interaction
 - `usedMessage?: string` - Narrative response on subsequent interactions
 - `firstUseOutcome?: 'win' | 'lose'` - Level outcome triggered on first use (if any)
-- `capabilities?: ObjectCapabilities` - Feature flags that drive behavior via capability dispatch. If omitted or empty, object is inert.
+- `capabilities?: ObjectCapabilities` - Optional capability flags used by runtime seam mapping (for example container/mechanism classification).
 - `itemUseRules?: Record<string, ItemUseRule>` - Deterministic item-use rules keyed by item ID. When player uses a matching item on this object, the rule determines success/blocked outcome. Successful use transitions object state to 'used'.
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`

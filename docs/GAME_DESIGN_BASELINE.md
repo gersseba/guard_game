@@ -53,10 +53,11 @@ Implemented systems:
   - Door interaction:
     - Returns door state text.
     - Door outcome safe maps to win; danger maps to lose.
-  - Interactive object interaction (supply-crate):
-    - Sets object state to used.
-    - Returns idle/used response text.
-    - Can set levelOutcome from firstUseOutcome on first use.
+  - Interactive object interaction (polymorphic world-object runtime seam):
+    - DTOs are mapped at interaction time to runtime subclasses (`ContainerObject`, `MechanismObject`, `DoorObject`) and dispatched through abstract `WorldObject.interact(...)`.
+    - Container behavior preserves deterministic pickup exposure and object `idle -> used` state transition.
+    - Mechanism behavior preserves deterministic activation semantics and first-use outcome behavior.
+    - Door-like object behavior preserves deterministic `idle -> used` semantics and maps facts outcome (`safe`/`danger`) to level outcome when explicit `firstUseOutcome` is absent.
   - Guard and NPC conversation pipeline:
     - First interact opens conversation context.
     - Player message turns call LLM and append actor-scoped conversation history.
@@ -123,7 +124,10 @@ Design-level entity model in current implementation:
     - outcome safe maps to win.
     - outcome danger maps to lose.
 - Interactive object:
-  - Core fields: id, displayName, position, objectType (currently supply-crate), interactionType, state, idle/used messages, optional firstUseOutcome, optional sprite fields.
+  - Core fields: id, displayName, position, objectType, interactionType, state, idle/used messages, optional firstUseOutcome, optional sprite fields.
+  - Runtime interaction seam:
+    - `objectType` and `capabilities` are used to map to runtime object subclasses at interaction time.
+    - mapping currently supports container, mechanism, and door-like object semantics.
   - Deterministic outcome contract:
     - On first use, may set levelOutcome from firstUseOutcome if no existing outcome.
     - Subsequent uses keep used state and do not overwrite an existing levelOutcome.
@@ -135,7 +139,7 @@ Current constraints to design against:
 - Inventory supports deterministic pickup plus selected-slot state and use-attempt signaling, but no applied use effects on world targets yet.
 - No combat, stealth detection, patrol simulation, or line-of-sight system.
 - No deterministic dialogue consequence system beyond text history capture.
-- Interactive object types are currently limited to supply-crate.
+- Level validation still restricts serialized `interactiveObjects[].objectType` to `supply-crate`; broader object-type level-schema support is tracked separately from this interaction-layer runtime seam.
 - Selected-item use outcomes are currently placeholder-level (`no-selection` / `no-target`) and do not yet mutate targets.
 - Level progression/meta-progression is not implemented; level selection/reset is manual through UI controls.
 - Actor world knowledge builder coverage is partial (guard and villager path only).

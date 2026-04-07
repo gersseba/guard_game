@@ -193,14 +193,18 @@ The following timing guarantees are intentional and must remain stable:
 
 Related tests live in `src/interaction/interactionDispatcher.test.ts` under dispatch routing and result dispatcher timing parity cases.
 
-## Interactive Object Type Handling
+## Interactive Object Polymorphic Dispatch
 
-`src/interaction/objectInteraction.ts` provides object-type dispatch:
-- `OBJECT_TYPE_HANDLERS` maps `InteractiveObject['objectType']` to a handler
-- Current supported type: `supply-crate`
-- Handler reads instance fields (`idleMessage`, `usedMessage`, `firstUseOutcome`) while reusing shared object-type logic
+`src/interaction/objectInteraction.ts` now routes interactive objects through runtime class mapping:
+- `mapInteractiveObjectDtoToRuntime(...)` in `src/world/entities/dtoRuntimeSeams.ts` adapts JSON DTOs to a `WorldObject` subclass
+- `handleObjectInteraction(...)` calls `worldObject.interact(...)` for polymorphic behavior
+- current subclasses:
+  - `ContainerObject` (pickup/container behavior)
+  - `MechanismObject` (activation behavior)
+  - `DoorObject` (door-like object behavior with safe/danger fact fallback)
+- unsupported object DTOs map to `null` and remain inert through fallback behavior
 
-This allows multiple objects to share one behavior implementation while retaining per-instance outcomes/messages from level JSON.
+This keeps serialized `interactiveObjects` state unchanged while moving behavior branching out of the interaction module and into deterministic world-object subclasses.
 
 Pickup behavior is deterministic and code-owned:
 - if an interactive object has `pickupItem` and is interacted with in `idle` state, the item is added to `player.inventory.items`
@@ -221,6 +225,6 @@ See `src/interaction/guardInteraction.ts`, `src/interaction/npcInteraction.ts`, 
 - `src/interaction/interactionDispatcher.test.ts`: dispatch routing by kind, sync/async behavior parity, result dispatcher timing parity, door/object non-pause guarantee
 - `src/runtimeController.test.ts`: pause entry/exit lifecycle, command gating while paused, resume without command leak, level-outcome gating independent of pause state
 - `src/interaction/npcPromptContext.test.ts`: profile registry resolution, deterministic fallback, world knowledge builder registry keys, alias resolution (`archive_keeper → villager`), self-exclusion from `otherVillagers`, unknown-type `null` fallback, context shape determinism
-- `src/interaction/objectInteraction.test.ts`: object-type dispatcher behavior, first-use outcomes, repeat interactions
+- `src/interaction/objectInteraction.test.ts`: polymorphic object dispatch, first-use outcomes, repeat interactions
 - `src/integration/riddleLevel.test.ts`: end-to-end adjacent door resolution and deterministic outcome mapping
 - `src/interaction/adjacencyResolver.test.ts`: deterministic target resolution with interactive objects

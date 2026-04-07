@@ -76,14 +76,14 @@ All fields are serializable primitives, arrays, or plain objects.
 The world layer now includes a domain-class foundation in `src/world/entities/`:
 - base classes: `Entity`, `Actor`
 - specialized classes: `Npc`, `GuardNpc`, `Item`, `Environment`, `WorldObject`
-- seam adapters: `dtoRuntimeSeams.ts` (`mapEntityDtoToRuntime`, `mapNpcDtoToRuntime`, `mapGuardDtoToRuntime`)
+- seam adapters: `dtoRuntimeSeams.ts` (`mapEntityDtoToRuntime`, `mapNpcDtoToRuntime`, `mapGuardDtoToRuntime`, `mapInteractiveObjectDtoToRuntime`)
 
 These classes establish a typed DTO-to-runtime boundary for future incremental migration away from direct object-literal construction.
 
 Determinism/serialization contract remains unchanged:
 - `WorldState` is still plain JSON-serializable data
 - command application and interaction outcomes remain code-owned and deterministic
-- class instances are currently seam scaffolding and test-covered (`src/world/entities/dtoRuntimeSeams.test.ts`) rather than a runtime behavior pivot
+- guard and npc classes remain seam-focused, while interactive objects now use seam-mapped runtime subclasses for interaction polymorphism (`src/interaction/objectInteraction.ts`, `src/world/entities/objects/*.ts`)
 
 `actorConversationHistoryByActorId` stores chat history keyed by actor id. It remains JSON-serializable and actor-neutral even though the current conversational actors are guards and NPCs.
 
