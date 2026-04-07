@@ -3,6 +3,7 @@ import { createInitialWorldState } from '../world/state';
 import { MISSING_API_KEY_FALLBACK_TEXT, REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
 import { GUARD_PERSONA_CONTRACT } from './guardPromptContext';
 import { createGuardInteractionService, handleGuardInteraction } from './guardInteraction';
+import { GuardNpc } from '../world/entities/npcs/GuardNpc';
 import type { Guard, Player } from '../world/types';
 
 const player: Player = {
@@ -45,6 +46,22 @@ describe('handleGuardInteraction', () => {
     const first = handleGuardInteraction({ guard, player });
     const second = handleGuardInteraction({ guard, player });
     expect(first).toEqual(second);
+  });
+
+  it('preserves guard interaction behavior for GuardNpc runtime instances', () => {
+    const guard = new GuardNpc({
+      id: 'guard-runtime-1',
+      displayName: 'Runtime Guard',
+      position: { x: 2, y: 1 },
+      guardState: 'alert',
+    });
+
+    const result = handleGuardInteraction({ guard, player });
+
+    expect(result).toEqual({
+      guardId: 'guard-runtime-1',
+      responseText: 'Guard: Stop right there!',
+    });
   });
 });
 
