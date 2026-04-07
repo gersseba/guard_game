@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { Environment } from './environment/Environment';
 import { Item } from './items/Item';
-import { mapGuardDtoToRuntime, mapInteractiveObjectDtoToRuntime, mapNpcDtoToRuntime } from './dtoRuntimeSeams';
+import {
+  mapEnvironmentDtoToRuntime,
+  mapGuardDtoToRuntime,
+  mapInteractiveObjectDtoToRuntime,
+  mapInventoryItemDtoToRuntime,
+  mapLevelInteractiveObjectDtoToRuntime,
+  mapNpcDtoToRuntime,
+} from './dtoRuntimeSeams';
 import { GuardNpc } from './npcs/GuardNpc';
 import { Npc } from './npcs/Npc';
 import { ContainerObject } from './objects/ContainerObject';
 import { DoorObject } from './objects/DoorObject';
+import { InertObject } from './objects/InertObject';
 import { MechanismObject } from './objects/MechanismObject';
 
 describe('domain class foundation seams', () => {
@@ -26,9 +34,9 @@ describe('domain class foundation seams', () => {
     const npc = mapNpcDtoToRuntime({
       id: 'npc-1',
       displayName: 'Archivist',
-      position: { x: 5, y: 6 },
+      x: 5,
+      y: 6,
       npcType: 'archive_keeper',
-      dialogueContextKey: 'archive_keeper_intro',
       patrol: { path: [{ x: 5, y: 6 }, { x: 6, y: 6 }] },
     });
 
@@ -46,7 +54,7 @@ describe('domain class foundation seams', () => {
       displayName: 'Archivist',
       position: { x: 5, y: 6 },
       npcType: 'archive_keeper',
-      dialogueContextKey: 'archive_keeper_intro',
+      dialogueContextKey: 'npc_archive_keeper',
     });
   });
 
@@ -54,7 +62,8 @@ describe('domain class foundation seams', () => {
     const guard = mapGuardDtoToRuntime({
       id: 'guard-1',
       displayName: 'North Gate Guard',
-      position: { x: 3, y: 2 },
+      x: 3,
+      y: 2,
       guardState: 'idle',
       itemUseRules: {
         token: {
@@ -129,5 +138,53 @@ describe('domain class foundation seams', () => {
     expect(mechanismRuntime).toBeInstanceOf(MechanismObject);
     expect(doorRuntime).toBeInstanceOf(DoorObject);
     expect(inertRuntime).toBeNull();
+  });
+
+  it('maps level interactive object dto to a runtime class instance for world state storage', () => {
+    const runtimeObject = mapLevelInteractiveObjectDtoToRuntime({
+      id: 'obj-inert',
+      displayName: 'Statue',
+      x: 4,
+      y: 1,
+      objectType: 'decoration',
+      interactionType: 'inspect',
+      state: 'idle',
+    });
+
+    expect(runtimeObject).toBeInstanceOf(InertObject);
+    expect(JSON.parse(JSON.stringify(runtimeObject))).toEqual({
+      id: 'obj-inert',
+      displayName: 'Statue',
+      position: { x: 4, y: 1 },
+      objectType: 'decoration',
+      interactionType: 'inspect',
+      state: 'idle',
+    });
+  });
+
+  it('maps environment and inventory item DTOs to runtime class instances', () => {
+    const runtimeEnvironment = mapEnvironmentDtoToRuntime({
+      id: 'env-1',
+      displayName: 'Stone Wall',
+      x: 3,
+      y: 4,
+      isBlocking: true,
+    });
+
+    const runtimeItem = mapInventoryItemDtoToRuntime({
+      itemId: 'item-1',
+      displayName: 'Bronze Key',
+      sourceObjectId: 'crate-1',
+      pickedUpAtTick: 3,
+    });
+
+    expect(runtimeEnvironment).toBeInstanceOf(Environment);
+    expect(runtimeItem).toBeInstanceOf(Item);
+    expect(runtimeItem.toInventoryItem()).toEqual({
+      itemId: 'item-1',
+      displayName: 'Bronze Key',
+      sourceObjectId: 'crate-1',
+      pickedUpAtTick: 3,
+    });
   });
 });

@@ -88,6 +88,14 @@ Extends `NpcInit` with guard-specialized constraints:
 ### WorldObjectInit
 Extends `EntityInit`:
 - `objectType: string`
+- `interactionType: 'inspect' | 'use' | 'talk'`
+- `state: 'idle' | 'used'`
+- `pickupItem?: { itemId: string; displayName: string }`
+- `idleMessage?: string`
+- `usedMessage?: string`
+- `firstUseOutcome?: 'win' | 'lose'`
+- `capabilities?: ObjectCapabilities`
+- `itemUseRules?: Record<string, ItemUseRule>`
 
 ### WorldObjectInteractionRequest
 - `interactiveObject: InteractiveObject`
@@ -133,16 +141,38 @@ Extends `EntityInit`:
 Used by seam adapter contracts in `src/world/entities/dtoRuntimeSeams.ts`.
 
 ### GuardDtoContract
-Alias of serializable `Guard` DTO used by the guard runtime seam adapter:
-- `type GuardDtoContract = Guard`
+Alias of serializable level ingress guard DTO used by the guard runtime seam adapter:
+- `type GuardDtoContract = LevelGuardDto`
 
 Mapped by `mapGuardDtoToRuntime(dto)` to runtime `GuardNpc` while preserving guard JSON shape.
+
+### NpcDtoContract
+Alias of serializable level ingress NPC DTO used by the NPC runtime seam adapter:
+- `type NpcDtoContract = LevelNpcDto`
+
+Mapped by `mapNpcDtoToRuntime(dto)` to runtime `Npc` with deterministic `dialogueContextKey` derivation.
 
 ### InteractiveObjectDtoContract
 Alias of serializable `InteractiveObject` DTO used by the world-object runtime seam adapter:
 - `type InteractiveObjectDtoContract = InteractiveObject`
 
 Mapped by `mapInteractiveObjectDtoToRuntime(dto)` to `ContainerObject`, `MechanismObject`, `DoorObject`, or `null` for inert/unsupported objects.
+
+### LevelInteractiveObjectDtoContract
+Alias of serializable level ingress object DTO used at load time:
+- `type LevelInteractiveObjectDtoContract = LevelInteractiveObjectDto`
+
+Mapped by `mapLevelInteractiveObjectDtoToRuntime(dto)` to `ContainerObject`, `MechanismObject`, `DoorObject`, or `InertObject` for deterministic runtime storage.
+
+### EnvironmentDtoContract
+- `type EnvironmentDtoContract = LevelEnvironmentDto`
+
+Mapped by `mapEnvironmentDtoToRuntime(dto)` to runtime `Environment`.
+
+### ItemDtoContract
+- `type ItemDtoContract = InventoryItem`
+
+Mapped by `mapInventoryItemDtoToRuntime(dto)` to runtime `Item`.
 
 ## World Types
 
