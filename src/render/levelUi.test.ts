@@ -53,8 +53,8 @@ describe('createLevelUi', () => {
     const handle = createLevelUi(container, { onLevelSelect, onReset });
 
     handle.populateLevels([
-      { id: 'starter', name: 'Starter' },
-      { id: 'riddle', name: 'Riddle' },
+      { id: 'riddle', name: 'Two Guards' },
+      { id: 'training-yard', name: 'Training Yard' },
     ]);
 
     const select = container.querySelector<HTMLSelectElement>('#level-select');
@@ -63,15 +63,15 @@ describe('createLevelUi', () => {
     expect(select?.disabled).toBe(false);
     expect(resetButton?.disabled).toBe(false);
     expect(select?.options).toHaveLength(2);
-    expect(select?.options[0]?.value).toBe('starter');
-    expect(select?.options[0]?.textContent).toBe('Starter');
-    expect(select?.options[1]?.value).toBe('riddle');
-    expect(select?.options[1]?.textContent).toBe('Riddle');
+    expect(select?.options[0]?.value).toBe('riddle');
+    expect(select?.options[0]?.textContent).toBe('Two Guards');
+    expect(select?.options[1]?.value).toBe('training-yard');
+    expect(select?.options[1]?.textContent).toBe('Training Yard');
   });
 
   it('fires callbacks for level selection and reset', () => {
     const handle = createLevelUi(container, { onLevelSelect, onReset });
-    handle.populateLevels([{ id: 'starter', name: 'Starter' }]);
+    handle.populateLevels([{ id: 'riddle', name: 'Two Guards' }]);
 
     const select = container.querySelector<HTMLSelectElement>('#level-select');
     const resetButton = container.querySelector<HTMLButtonElement>('button');
@@ -80,11 +80,11 @@ describe('createLevelUi', () => {
       throw new Error('Expected level UI controls to exist');
     }
 
-    select.value = 'starter';
+    select.value = 'riddle';
     select.dispatchEvent(new Event('change'));
     resetButton.click();
 
-    expect(onLevelSelect).toHaveBeenCalledWith('starter');
+    expect(onLevelSelect).toHaveBeenCalledWith('riddle');
     expect(onLevelSelect).toHaveBeenCalledTimes(1);
     expect(onReset).toHaveBeenCalledTimes(1);
   });
@@ -92,8 +92,8 @@ describe('createLevelUi', () => {
   it('updates selected level without triggering onLevelSelect', () => {
     const handle = createLevelUi(container, { onLevelSelect, onReset });
     handle.populateLevels([
-      { id: 'starter', name: 'Starter' },
-      { id: 'riddle', name: 'Riddle' },
+      { id: 'riddle', name: 'Two Guards' },
+      { id: 'training-yard', name: 'Training Yard' },
     ]);
 
     handle.setSelectedLevel('riddle');

@@ -1,9 +1,4 @@
 [
-  { "id": "riddle", "name": "Two Guards" },
-  { "id": "starter", "name": "Starter" },
-  { "id": "three-sages-fork", "name": "Three Sages at the Fork" },
-  { "id": "key-armory", "name": "The Locked Armory" },
-  { "id": "guard-bribe", "name": "The Persuasive Bribe" },
-  { "id": "broken-mechanism", "name": "The Broken Mechanism" }
+  { "id": "riddle", "name": "Two Guards" }
 ]
 
