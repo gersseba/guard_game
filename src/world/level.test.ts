@@ -599,34 +599,34 @@ describe('starter level', () => {
   });
 });
 
-describe('honestyTrait field', () => {
-  it('accepts guards with honestyTrait: "truth-teller"', () => {
+describe('traits field', () => {
+  it('accepts guards with traits.truthMode: "truth-teller"', () => {
     const level: LevelData = {
       ...minimalLevel,
-      guards: [{ id: 'guard-1', displayName: 'Truthful', x: 5, y: 7, guardState: 'idle', honestyTrait: 'truth-teller' }],
+      guards: [{ id: 'guard-1', displayName: 'Truthful', x: 5, y: 7, guardState: 'idle', traits: { truthMode: 'truth-teller' } }],
       doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
     };
 
     const validated = validateLevelData(level);
     const state = deserializeLevel(validated);
 
-    expect(state.guards[0].honestyTrait).toBe('truth-teller');
+    expect(state.guards[0].traits?.truthMode).toBe('truth-teller');
   });
 
-  it('accepts guards with honestyTrait: "liar"', () => {
+  it('accepts guards with traits.truthMode: "liar"', () => {
     const level: LevelData = {
       ...minimalLevel,
-      guards: [{ id: 'guard-1', displayName: 'Lying', x: 5, y: 7, guardState: 'idle', honestyTrait: 'liar' }],
+      guards: [{ id: 'guard-1', displayName: 'Lying', x: 5, y: 7, guardState: 'idle', traits: { truthMode: 'liar' } }],
       doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
     };
 
     const validated = validateLevelData(level);
     const state = deserializeLevel(validated);
 
-    expect(state.guards[0].honestyTrait).toBe('liar');
+    expect(state.guards[0].traits?.truthMode).toBe('liar');
   });
 
-  it('accepts guards without honestyTrait field', () => {
+  it('accepts guards without traits field', () => {
     const level: LevelData = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Unknown', x: 5, y: 7, guardState: 'idle' }],
@@ -636,17 +636,27 @@ describe('honestyTrait field', () => {
     const validated = validateLevelData(level);
     const state = deserializeLevel(validated);
 
-    expect(state.guards[0].honestyTrait).toBeUndefined();
+    expect(state.guards[0].traits).toBeUndefined();
   });
 
-  it('rejects guards with invalid honestyTrait value', () => {
+  it('rejects guards with non-object traits value', () => {
     const bad = {
       ...minimalLevel,
-      guards: [{ id: 'guard-1', displayName: 'Bad', x: 5, y: 7, guardState: 'idle', honestyTrait: 'dishonest' as unknown }],
+      guards: [{ id: 'guard-1', displayName: 'Bad', x: 5, y: 7, guardState: 'idle', traits: 'dishonest' as unknown }],
       doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, doorState: 'open', outcome: 'safe' }],
     };
 
-    expect(() => validateLevelData(bad)).toThrowError('invalid honestyTrait');
+    expect(() => validateLevelData(bad)).toThrowError('invalid traits (must be a plain object when provided)');
+  });
+
+  it('rejects guards with non-string trait value', () => {
+    const bad = {
+      ...minimalLevel,
+      guards: [{ id: 'guard-1', displayName: 'Bad', x: 5, y: 7, guardState: 'idle', traits: { truthMode: 42 } as unknown }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('traits.truthMode must be a string');
   });
 
   it('rejects guards with non-string spriteAssetPath', () => {

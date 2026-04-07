@@ -65,6 +65,8 @@ Base interface shared by all world entities. JSON-serializable.
 - `displayName: string`
 - `spriteSet?: SpriteSet`
 - `spriteAssetPath?: string`
+- `traits?: Record<string, string>` - Open-ended behavioral traits bag, directly readable by LLM prompt builders. E.g. `{ truthMode: 'truth-teller' | 'liar' }` on guards.
+- `facts?: Record<string, string | number | boolean>` - Open-ended facts bag for arbitrary key/value data, directly readable by LLM prompt builders.
 
 ### EntityCapabilities
 Opt-in capability container for game entities. Omit a key if the entity lacks that capability.
@@ -131,7 +133,7 @@ Represents one deterministic selected-item use attempt resolved for a specific c
 ### Guard
 Extends `GameEntity`:
 - `guardState: 'idle' | 'patrolling' | 'alert'`
-- `honestyTrait?: 'truth-teller' | 'liar'`
+- `traits.truthMode?: 'truth-teller' | 'liar'` - Guard honesty mode, now stored in the shared `traits` bag. Defaults to `'truth-teller'` when absent.
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
 - `instanceKnowledge?: string` - Instance-specific knowledge this guard has; included in prompt context output when set

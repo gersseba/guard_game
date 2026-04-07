@@ -23,7 +23,7 @@
       "x": 8,
       "y": 10,
       "guardState": "idle",
-      "honestyTrait": "truth-teller",
+      "traits": { "truthMode": "truth-teller" },
       "spriteSet": {
         "default": "/assets/medieval_guard_shield_spear_front.svg",
         "front": "/assets/medieval_guard_shield_spear_front.svg",
@@ -38,7 +38,7 @@
       "x": 12,
       "y": 10,
       "guardState": "idle",
-      "honestyTrait": "liar",
+      "traits": { "truthMode": "liar" },
       "spriteSet": {
         "default": "/assets/medieval_guard_shield_spear_front.svg",
         "front": "/assets/medieval_guard_shield_spear_front.svg",

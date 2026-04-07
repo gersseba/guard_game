@@ -57,16 +57,16 @@ describe('riddle level integration pipeline', () => {
     });
   });
 
-  it('has guards with correct honestyTrait values', () => {
+  it('has guards with correct traits.truthMode values', () => {
     const worldState = createRiddleState();
 
     const truthGuard = worldState.guards.find((guard) => guard.id === 'guard-truth');
     expect(truthGuard).toBeDefined();
-    expect(truthGuard?.honestyTrait).toBe('truth-teller');
+    expect(truthGuard?.traits?.truthMode).toBe('truth-teller');
 
     const liarGuard = worldState.guards.find((guard) => guard.id === 'guard-liar');
     expect(liarGuard).toBeDefined();
-    expect(liarGuard?.honestyTrait).toBe('liar');
+    expect(liarGuard?.traits?.truthMode).toBe('liar');
   });
 
   it('has doors with correct outcome values', () => {

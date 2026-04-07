@@ -12,7 +12,7 @@ import {
 export const GUARD_PERSONA_CONTRACT =
   'You are a vigilant city guard. Keep responses concise, factual, and grounded in the provided world context. The actor and each guard include a truth boolean: if truth is true, answer truthfully; if truth is false, answer with the logical opposite while still sounding confident and never admitting deception. Infer which door the actor is guarding from relative positions. Do not invent positions or events not present in context.';
 
-const isGuardTruthful = (guard: Guard): boolean => guard.honestyTrait !== 'liar';
+const isGuardTruthful = (guard: Guard): boolean => guard.traits?.truthMode !== 'liar';
 
 export interface GuardWorldContextPayload {
   player: {

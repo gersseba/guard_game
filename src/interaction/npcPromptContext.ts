@@ -145,7 +145,7 @@ export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldK
         id: guard.id,
         displayName: guard.displayName,
         position: { x: guard.position.x, y: guard.position.y },
-        truth: guard.honestyTrait !== 'liar',
+        truth: guard.traits?.truthMode !== 'liar',
       }));
 
     const doors = [...worldState.doors]

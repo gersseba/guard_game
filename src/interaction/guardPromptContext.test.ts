@@ -17,14 +17,14 @@ describe('buildGuardWorldContextPayload', () => {
         displayName: 'South Guard',
         position: { x: 4, y: 8 },
         guardState: 'patrolling',
-        honestyTrait: 'liar',
+        traits: { truthMode: 'liar' },
       },
       {
         id: 'guard-1',
         displayName: 'North Guard',
         position: { x: 1, y: 0 },
         guardState: 'idle',
-        honestyTrait: 'truth-teller',
+        traits: { truthMode: 'truth-teller' },
       },
     ];
     worldState.doors = [
@@ -165,14 +165,14 @@ describe('guard truth encoding', () => {
       displayName: 'Truth Guard',
       position: { x: 1, y: 1 },
       guardState: 'idle' as const,
-      honestyTrait: 'truth-teller' as const,
+      traits: { truthMode: 'truth-teller' as const },
     };
     const liar = {
       id: 'g-liar',
       displayName: 'Liar Guard',
       position: { x: 2, y: 2 },
       guardState: 'idle' as const,
-      honestyTrait: 'liar' as const,
+      traits: { truthMode: 'liar' as const },
     };
     worldState.guards = [liar, truthTeller];
 
