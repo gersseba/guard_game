@@ -162,8 +162,18 @@ export interface Door extends GameEntity {
   isUnlocked?: boolean;
 }
 
+/**
+ * Capability flags define what an interactive object can do.
+ * Objects declare capabilities, and the interaction handler applies matching effects.
+ */
+export interface ObjectCapabilities {
+  containsItems?: boolean;
+  isActivatable?: boolean;
+  isLockable?: boolean;
+}
+
 export interface InteractiveObject extends GameEntity {
-  objectType: 'supply-crate' | 'mechanism';
+  objectType: string;
   interactionType: 'inspect' | 'use' | 'talk';
   state: 'idle' | 'used';
   pickupItem?: {
@@ -173,6 +183,8 @@ export interface InteractiveObject extends GameEntity {
   idleMessage?: string;
   usedMessage?: string;
   firstUseOutcome?: 'win' | 'lose';
+  /** Capability flags that drive behavior dispatch */
+  capabilities?: ObjectCapabilities;
   /** Deterministic item-use rules: item ID → rule definition */
   itemUseRules?: Record<string, ItemUseRule>;
 }
@@ -252,7 +264,7 @@ export interface LevelData {
     displayName: string;
     x: number;
     y: number;
-    objectType: 'supply-crate' | 'mechanism';
+    objectType: string;
     interactionType: 'inspect' | 'use' | 'talk';
     state: 'idle' | 'used';
     pickupItem?: {
@@ -264,6 +276,7 @@ export interface LevelData {
     firstUseOutcome?: 'win' | 'lose';
     spriteAssetPath?: string;
     spriteSet?: SpriteSet;
+    capabilities?: ObjectCapabilities;
     /** Deterministic item-use rules: item ID → rule definition */
     itemUseRules?: Record<string, ItemUseRule>;
   }>;
