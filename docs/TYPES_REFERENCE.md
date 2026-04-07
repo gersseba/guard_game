@@ -239,6 +239,19 @@ Extends `GameEntity`:
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
 
+### Environment
+- `id: string`
+- `displayName: string`
+- `position: GridPosition`
+- `isBlocking: boolean`
+
+Environment entities are world-level spatial entities only. They can block movement when `isBlocking` is true and are not interaction targets.
+
+### LevelData (environments excerpt)
+- `environments?: Array<{ id: string; displayName: string; x: number; y: number; isBlocking: boolean }>`
+
+Optional level schema section for environment entries. During deserialization, level coordinates (`x`, `y`) are mapped to runtime `position`.
+
 ### WorldGrid
 - `width: number`
 - `height: number`
@@ -263,6 +276,7 @@ Stores conversation history by actor id. The current conversational actors are g
 - `guards: Guard[]`
 - `doors: Door[]`
 - `interactiveObjects: InteractiveObject[]`
+- `environments?: Environment[]`
 - `actorConversationHistoryByActorId: ActorConversationHistoryByActorId`
 - `lastItemUseAttemptEvent?: ItemUseAttemptResultEvent | null` - latest resolved selected-item use attempt
 - `levelOutcome: 'win' | 'lose' | null`

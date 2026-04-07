@@ -64,6 +64,7 @@ Legacy `WorldCommand` objects (`move`, `selectInventorySlot`, `useSelectedItem`,
 - `guards`
 - `doors`
 - `interactiveObjects`
+- `environments`
 - `actorConversationHistoryByActorId`
 - `lastItemUseAttemptEvent`
 - `levelOutcome`
@@ -142,6 +143,7 @@ Deterministic rules:
 - `player`, `guards`, and `doors`
 - Optional `npcs` - array of level-defined NPCs with required `id`, `displayName`, `x`, `y`, and `npcType` fields
 - Optional `interactiveObjects`
+- Optional `environments` - array with required `id`, `displayName`, `x`, `y`, and `isBlocking` fields
 
 Sprite metadata contracts:
 - `spriteAssetPath?: string` remains optional for player, guards, doors, npcs, and interactive objects.
@@ -170,6 +172,10 @@ For `interactiveObjects`, validation enforces:
 - `state` in `idle | used`
 - optional `pickupItem` with non-empty string `itemId` and `displayName`
 - optional `firstUseOutcome` in `win | lose`
+
+For `environments`, validation enforces:
+- required identity/position fields
+- required `isBlocking: boolean`
 
 ## Deserialization
 
@@ -225,6 +231,12 @@ Interactive object instance fields deserialize directly:
 - `spriteAssetPath`
 - `spriteSet`
 
+Environment fields deserialize directly:
+- `id`
+- `displayName`
+- `position` (mapped from level `x`/`y`)
+- `isBlocking`
+
 This enables shared behavior per object type while preserving instance-specific text, outcomes, and asset metadata.
 
 ## Shipped Level Demonstrations
@@ -246,9 +258,9 @@ Movement commands also update immutable player-facing state in `src/world/world.
 
 ## Testing Strategy
 
-- `src/world/level.test.ts`: schema validation + deserialization coverage for `spriteAssetPath` and `spriteSet`, including player default `facingDirection` on load
+- `src/world/level.test.ts`: schema validation + deserialization coverage for `spriteAssetPath`, `spriteSet`, and optional `environments`, including player default `facingDirection` on load
 - `src/world/world.test.ts`: deterministic movement mapping from command intent to `player.facingDirection`, including blocked movement intent
 - `src/integration/riddleLevel.test.ts`: riddle-level sprite-set wiring assertions for player/guards/doors and player default `facingDirection`
-- `src/world/spatialRules.test.ts`: occupancy invariants
+- `src/world/spatialRules.test.ts`: occupancy invariants, environment blocking checks, and environment overlap validation
 
 Determinism rule remains unchanged: identical starting state + identical command/interaction sequence => identical resulting state.

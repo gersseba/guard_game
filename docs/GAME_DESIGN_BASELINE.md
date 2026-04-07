@@ -16,7 +16,7 @@ Current playable loop:
   - use selected inventory item (F)
 - Movement is deterministic and grid-based:
   - Player facing updates from move direction even when movement is blocked.
-  - Movement is blocked by out-of-bounds positions and occupied tiles (guards, doors, NPCs, interactive objects).
+  - Movement is blocked by out-of-bounds positions and occupied tiles (blocking environments, guards, locked doors, NPCs, interactive objects).
 - Interaction resolution is deterministic:
   - Interact only checks orthogonally adjacent targets.
   - Priority order when multiple targets are adjacent: guard, then door, then npc, then interactive object.
@@ -38,9 +38,9 @@ Implemented objective flow:
 
 Implemented systems:
 - World model:
-  - Serializable WorldState with tick, grid, level metadata/objective, entities, conversation history, last item-use attempt event, and levelOutcome.
+  - Serializable WorldState with tick, grid, level metadata/objective, entities (including optional environments), conversation history, last item-use attempt event, and levelOutcome.
   - Deterministic command application and level deserialization.
-  - Spatial validation at level load (in-bounds and no overlaps).
+  - Spatial validation at level load (in-bounds and no overlaps, including environments).
   - Deterministic selected inventory slot state in player inventory (`selectedItem`).
 - Input:
   - Keyboard mapping to world commands with Arrow/WASD parity for movement and inventory-slot selection (`1`..`9`) and selected-item use.
@@ -48,6 +48,7 @@ Implemented systems:
   - Modal-aware command suppression via runtime `isModalOpen()` callback (gates movement/interact, preserves slot selection).
 - Interaction:
   - Adjacent-target resolver with deterministic priority and tie-break.
+  - Environment entities are excluded from interaction target resolution.
   - Door interaction:
     - Returns door state text.
     - Door outcome safe maps to win; danger maps to lose.
