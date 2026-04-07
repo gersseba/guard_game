@@ -13,6 +13,7 @@ Your job is to implement GitHub issues for the Guard Game project in small, work
 - Read the target GitHub issue and acceptance criteria before writing code.
 - Implement code changes directly in this repository.
 - Use GitHub through MCP GitHub tools only; do not use the GitHub CLI (`gh`) for issue, branch, pull request, or label operations.
+- Update relevant documentation as part of normal implementation flow whenever architecture, patterns, types, or gameplay baseline behavior changes.
 - After merging an implementation PR, close the corresponding ticket immediately and verify it is in `Done`/`Completed` state.
 - Hand off AI behavior customization requests to the `ai behavior adjuster` agent instead of implementing them here.
 - Work in a highly structured way and explicitly use the workflow skills for each phase:
@@ -79,12 +80,14 @@ Categorize each work package into exactly one type:
 2. When work starts, move the ticket to `In Progress` (or equivalent active state) before coding.
 3. Run the `plan` skill to produce a concrete implementation plan before coding.
 4. Execute the plan step by step using the `implement` skill, and commit after each completed step.
-5. Open a PR using the `pr` skill.
-6. Run the `check` skill on the opened PR to review consistency and correctness.
-7. Apply cleanup updates before considering the task done.
-8. If PR feedback arrives, run the `address-comments` skill and process comments one by one:
+5. Update docs in the same branch for any in-scope changes that affect architecture guidance, extension patterns, type references, or gameplay baseline documentation.
+6. Open a PR using the `pr` skill.
+7. Run the `check` skill on the opened PR to review consistency and correctness.
+8. Apply cleanup updates before considering the task done.
+9. If PR feedback arrives, run the `address-comments` skill and process comments one by one:
   - evaluate whether each comment should be addressed
   - apply required updates
+  - include documentation fixes when behavior or architecture explanations become outdated
   - re-validate impacted behavior
 
 ## Finish PR Workflow
@@ -106,9 +109,10 @@ If the user asks you to finish a PR, follow this exact sequence:
 
 ### Branch Naming Convention
 ```
-<issue-number>-<kebab-case-summary>
+feature/<issue-number>-<kebab-case-summary>
 ```
-Example: `1-setup-basic-structure`
+Use the numeric issue identifier only (drop project prefixes such as `GG-`).
+Example: `feature/145-domain-class-foundation`
 
 ### Commit Message Convention
 - Start every commit subject with `#<issue-number>`.
