@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "Starter",
   "premise": "You are a town guard testing patrol routes around a guarded courtyard.",
   "goal": "Inspect nearby clues and choose the safe exit door.",

@@ -3,7 +3,7 @@ import { fetchAndLoadLevel, fetchLevelManifest } from './levelLoader';
 import type { LevelData } from './types';
 
 const minimalLevel: LevelData = {
-  version: 1,
+  version: 2,
   name: 'Test Level',
   premise: 'A deterministic test premise.',
   goal: 'Verify level loading behavior.',

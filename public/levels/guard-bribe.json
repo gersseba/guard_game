@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "The Persuasive Bribe",
   "premise": "A guard blocks the only passage through the old gate. Rumour has it they can be persuaded with enough coin.",
   "goal": "Offer the gold coin to the guard and slip through the gate.",

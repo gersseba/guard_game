@@ -20,11 +20,25 @@ type LevelEntity = {
   };
 };
 
+type LevelGuard = LevelEntity & {
+  traits?: {
+    truthMode?: string;
+  };
+};
+
+type LevelNpc = LevelEntity & {
+  npcType?: string;
+};
+
+type LevelInteractiveObject = LevelEntity & {
+  capabilities?: Record<string, boolean>;
+};
+
 type LevelFile = {
-  guards?: LevelEntity[];
+  guards?: LevelGuard[];
   doors?: LevelEntity[];
-  npcs?: LevelEntity[];
-  interactiveObjects?: LevelEntity[];
+  npcs?: LevelNpc[];
+  interactiveObjects?: LevelInteractiveObject[];
 };
 
 const repoRoot = resolve(__dirname, '../../');
@@ -70,6 +84,10 @@ describe('level NPC/object asset coverage', () => {
       const level: LevelFile = JSON.parse(readFileSync(levelPath, 'utf8'));
 
       for (const guard of level.guards ?? []) {
+        expect(guard.traits, `${entry.id}: guard ${guard.id} missing traits object`).toBeDefined();
+        expect(guard.traits?.truthMode, `${entry.id}: guard ${guard.id} missing traits.truthMode`).toBeDefined();
+        expect(typeof guard.traits?.truthMode, `${entry.id}: guard ${guard.id} traits.truthMode must be a string`).toBe('string');
+
         const paths = collectEntityAssetPaths(guard);
         if (paths.length === 0) {
           missingCoverage.push(`level=${entry.id} guard=${guard.id}`);
@@ -98,6 +116,9 @@ describe('level NPC/object asset coverage', () => {
       }
 
       for (const npc of level.npcs ?? []) {
+        expect(npc.npcType, `${entry.id}: npc ${npc.id} missing npcType`).toBeDefined();
+        expect(typeof npc.npcType, `${entry.id}: npc ${npc.id} npcType must be a string`).toBe('string');
+
         const paths = collectEntityAssetPaths(npc);
         if (paths.length === 0) {
           missingCoverage.push(`level=${entry.id} npc=${npc.id}`);
@@ -112,6 +133,8 @@ describe('level NPC/object asset coverage', () => {
       }
 
       for (const object of level.interactiveObjects ?? []) {
+        expect(object.capabilities, `${entry.id}: object ${object.id} missing capabilities`).toBeDefined();
+
         const paths = collectEntityAssetPaths(object);
         if (paths.length === 0) {
           missingCoverage.push(`level=${entry.id} object=${object.id}`);
