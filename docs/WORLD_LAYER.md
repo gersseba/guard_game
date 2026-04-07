@@ -148,16 +148,32 @@ Deterministic rules:
 
 ## Level JSON Validation
 
-`validateLevelData()` in `src/world/level.ts` validates:
-- Required level metadata (`version`, `name`, `goal`, dimensions)
-- Optional level objective override (`objective`)
-- `player`, `guards`, and `doors`
-- Optional `npcs` - array of level-defined NPCs with required `id`, `displayName`, `x`, `y`, and `npcType` fields
-- Optional `interactiveObjects`
-- Optional `environments` - array with required `id`, `displayName`, `x`, `y`, and `isBlocking` fields
+`validateLevelData()` in `src/world/level.ts` is the public façade. It delegates to domain-specific validators in `src/world/levelValidation/`:
+
+| Module | Responsibility |
+|---|---|
+| `validateHeader.ts` | `version`, `name`, `premise`, `goal`, `width`, `height` |
+| `validatePlayer.ts` | player `x`/`y`, optional `spriteAssetPath` and `spriteSet` |
+| `validateGuards.ts` | guards array: identity, position, guardState, traits, sprites, instance fields, itemUseRules |
+| `validateDoors.ts` | doors array: identity, position, doorState, outcome, requiredItemId, sprites |
+| `validateNpcs.ts` | npcs array: identity, position, npcType, patrol path bounds, triggers, inventory, riddleClue |
+| `validateObjects.ts` | interactiveObjects array: identity, position, objectType, interactionType, state, pickupItem, sprites, capabilities, itemUseRules |
+| `validateEnvironments.ts` | environments array: identity, position, isBlocking |
+| `shared.ts` | shared helper functions used across domain validators |
+
+`src/world/levelValidation/shared.ts` contains reusable cross-domain helpers:
+- `validateSpriteSet()` — enforces valid spriteSet object with at least one path
+- `validateItemUseRules()` — enforces allowed:boolean + responseText:string per rule
+- `validateObjectCapabilities()` — enforces known boolean capability flags
+- `validateGridPositionInBounds()` — enforces numeric x/y within grid dimensions
+- `validateTriggerEffect()` — enforces setFact + typed value
+- `validateNpcTriggers()` — enforces known trigger keys and delegates to validateTriggerEffect
+- `validateInventoryItems()` — enforces inventory item shape
 
 Validation boundary rule:
 - validation remains DTO-only and does not instantiate runtime classes
+
+To add validation for a new domain field: add it to the matching `src/world/levelValidation/` module. Add a new module for entirely new domains. Add shared utilities to `shared.ts` when they are used by two or more domain validators.
 
 Sprite metadata contracts:
 - `spriteAssetPath?: string` remains optional for player, guards, doors, npcs, and interactive objects.
@@ -193,7 +209,16 @@ For `environments`, validation enforces:
 
 ## Deserialization
 
-`deserializeLevel()` in `src/world/level.ts` maps level JSON into runtime entities and applies `validateSpatialLayout()` before returning state.
+`deserializeLevel()` in `src/world/level.ts` is the public façade. It delegates to domain-specific mapping helpers in `src/world/levelMapping/` and seam adapters in `src/world/entities/dtoRuntimeSeams.ts`:
+
+| Module | Responsibility |
+|---|---|
+| `levelMapping/mapPlayer.ts` | maps `LevelPlayerDto` to runtime `Player` |
+| `levelMapping/mapDoor.ts` | maps `LevelDoorDto` to runtime `Door` |
+| `levelMapping/mapNpcWithRiddleClue.ts` | maps `LevelNpcDto` to runtime `Npc` with resolved `mustStateDoorAs` |
+| `entities/dtoRuntimeSeams.ts` | maps guards, npcs, interactiveObjects, environments to runtime class instances |
+
+To add mapping for a new domain entity: add a mapping helper in `src/world/levelMapping/`, call it from `deserializeLevel()`, and add regression tests covering the new entity's shape.
 
 Deserialization boundary rule:
 - validated DTOs are mapped into runtime class instances via seam helpers
