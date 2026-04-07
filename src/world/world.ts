@@ -1,5 +1,6 @@
 import { createInitialWorldState } from './state';
 import { resolveIntent } from './intentResolver';
+import { tickNpcPatrols } from './npcTick';
 import type { Intent, World, WorldCommand, WorldState } from './types';
 
 const applyCommand = (worldState: WorldState, command: WorldCommand): WorldState => {
@@ -47,7 +48,8 @@ export const createWorld = (): World => {
   return {
     getState: () => worldState,
     applyCommands: (commands: WorldCommand[]) => {
-      const nextState = commands.reduce(applyCommand, worldState);
+      const stateAfterCommands = commands.reduce(applyCommand, worldState);
+      const nextState = tickNpcPatrols(stateAfterCommands);
       worldState = {
         ...nextState,
         tick: nextState.tick + 1,

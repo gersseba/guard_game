@@ -12,6 +12,10 @@ export interface LlmConversationMessage {
 
 export interface LlmResponse {
   text: string;
+  outcome?: {
+    giveItem?: string;
+    takeItem?: string;
+  };
 }
 
 export interface LlmClient {

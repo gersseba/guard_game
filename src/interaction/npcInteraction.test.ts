@@ -40,7 +40,11 @@ describe('createNpcInteractionService', () => {
     const parsedContext = JSON.parse(calledPrompt.context) as {
       actor: { id: string; npcType: string };
       npcProfile: { profileKey: string; personaContract: string };
-      npcInstance: { displayName: string; dialogueContextKey: string };
+      npcInstance: {
+        displayName: string;
+        dialogueContextKey: string;
+        patrolStatus: { isPatrolling: boolean };
+      };
       player: { id: string; displayName: string };
     };
     expect(parsedContext.actor).toEqual({ id: npc.id, npcType: npc.npcType });
@@ -49,6 +53,9 @@ describe('createNpcInteractionService', () => {
       displayName: npc.displayName,
       position: npc.position,
       dialogueContextKey: npc.dialogueContextKey,
+      patrolStatus: {
+        isPatrolling: false,
+      },
     });
     expect(parsedContext.player).toEqual({
       id: worldState.player.id,
@@ -248,5 +255,122 @@ describe('createNpcInteractionService', () => {
     expect(secondNpcPanelText).toBe('Player: Hello engineer\nNPC: Engineer response.');
     expect(secondNpcPanelText).not.toContain('Archivist response.');
     expect(firstNpcPanelText).not.toContain('Engineer response.');
+  });
+
+  it('applies onTalk trigger effect to npc facts after dialogue resolves', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({ text: 'I am now on alert.' }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      triggers: {
+        onTalk: {
+          setFact: 'alerted',
+          value: true,
+        },
+      },
+    };
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: worldState.player,
+      worldState: {
+        ...worldState,
+        npcs: [npc],
+      },
+      playerMessage: 'Status report?',
+    });
+
+    expect(result.updatedWorldState.npcs[0].facts).toEqual({
+      alerted: true,
+    });
+  });
+
+  it('moves giveItem outcome item from npc inventory to player inventory', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({ text: 'Take this key.', outcome: { giveItem: 'key-token' } }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      inventory: [
+        {
+          itemId: 'key-token',
+          displayName: 'Key Token',
+          sourceObjectId: 'npc-1',
+          pickedUpAtTick: 0,
+        },
+      ],
+    };
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: worldState.player,
+      worldState: {
+        ...worldState,
+        npcs: [npc],
+      },
+      playerMessage: 'Can you help me?',
+    });
+
+    expect(result.updatedWorldState.npcs[0].inventory).toEqual([]);
+    expect(result.updatedWorldState.player.inventory.items).toEqual([
+      {
+        itemId: 'key-token',
+        displayName: 'Key Token',
+        sourceObjectId: 'npc-1',
+        pickedUpAtTick: 0,
+      },
+    ]);
+  });
+
+  it('moves takeItem outcome item from player inventory to npc inventory', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({ text: 'I will hold on to this.', outcome: { takeItem: 'key-token' } }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      inventory: [],
+    };
+    const player = {
+      ...worldState.player,
+      inventory: {
+        ...worldState.player.inventory,
+        items: [
+          {
+            itemId: 'key-token',
+            displayName: 'Key Token',
+            sourceObjectId: 'object-1',
+            pickedUpAtTick: 1,
+          },
+        ],
+      },
+    };
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player,
+      worldState: {
+        ...worldState,
+        player,
+        npcs: [npc],
+      },
+      playerMessage: 'Can you take this?',
+    });
+
+    expect(result.updatedWorldState.player.inventory.items).toEqual([]);
+    expect(result.updatedWorldState.npcs[0].inventory).toEqual([
+      {
+        itemId: 'key-token',
+        displayName: 'Key Token',
+        sourceObjectId: 'object-1',
+        pickedUpAtTick: 1,
+      },
+    ]);
   });
 });
