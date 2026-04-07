@@ -292,4 +292,54 @@ describe('NPC instance fields in prompt context', () => {
     expect(parsed.instanceKnowledge).toBe('Village square floods in spring.');
     expect(parsed.instanceBehavior).toBe('Speaks slowly and carefully.');
   });
+
+  it('includes patrolStatus metadata when NPC has a patrol path', () => {
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      position: { x: 8, y: 3 },
+      patrol: {
+        path: [
+          { x: 8, y: 3 },
+          { x: 9, y: 3 },
+        ],
+      },
+    };
+
+    const parsed = JSON.parse(buildNpcPromptContext(npc, worldState.player, worldState)) as {
+      npcInstance: {
+        patrolStatus: {
+          isPatrolling: boolean;
+          pathLength: number;
+          currentPathIndex: number;
+        };
+      };
+    };
+
+    expect(parsed.npcInstance.patrolStatus).toEqual({
+      isPatrolling: true,
+      pathLength: 2,
+      currentPathIndex: 0,
+    });
+  });
+
+  it('includes activeFacts when NPC facts exist', () => {
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      facts: {
+        alerted: true,
+        trust: 3,
+      },
+    };
+
+    const parsed = JSON.parse(buildNpcPromptContext(npc, worldState.player, worldState)) as {
+      activeFacts?: Record<string, string | boolean | number>;
+    };
+
+    expect(parsed.activeFacts).toEqual({
+      alerted: true,
+      trust: 3,
+    });
+  });
 });

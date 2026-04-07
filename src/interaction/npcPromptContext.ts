@@ -235,6 +235,23 @@ export const buildNpcPromptContext = (npc: Npc, player: Player, worldState: Worl
     }
   }
 
+  const patrolPath = npc.patrol?.path ?? [];
+  const patrolPathIndex = patrolPath.findIndex(
+    (step) => step.x === npc.position.x && step.y === npc.position.y,
+  );
+  const patrolStatus =
+    patrolPath.length > 0
+      ? {
+          isPatrolling: true,
+          pathLength: patrolPath.length,
+          currentPathIndex: patrolPathIndex,
+        }
+      : {
+          isPatrolling: false,
+        };
+
+  const activeFacts = npc.facts && Object.keys(npc.facts).length > 0 ? npc.facts : undefined;
+
   return JSON.stringify({
     actor: {
       id: npc.id,
@@ -248,8 +265,10 @@ export const buildNpcPromptContext = (npc: Npc, player: Player, worldState: Worl
         y: npc.position.y,
       },
       dialogueContextKey: npc.dialogueContextKey,
+      patrolStatus,
     },
     ...(worldKnowledge !== null && { typeWorldKnowledge: worldKnowledge }),
+    ...(activeFacts !== undefined && { activeFacts }),
     ...(npc.instanceKnowledge !== undefined && { instanceKnowledge: npc.instanceKnowledge }),
     ...(npc.instanceBehavior !== undefined && { instanceBehavior: npc.instanceBehavior }),
     ...(riddleClueConstraint !== undefined && { riddleClueConstraint }),

@@ -2,6 +2,108 @@ import { REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
 import type { ConversationMessage, Npc, Player, WorldState } from '../world/types';
 import { buildNpcPromptContext } from './npcPromptContext';
 
+interface NpcInteractionOutcome {
+  giveItem?: string;
+  takeItem?: string;
+}
+
+const applyTalkTrigger = (npc: Npc): Npc => {
+  const talkTrigger = npc.triggers?.onTalk;
+  if (!talkTrigger) {
+    return npc;
+  }
+
+  return {
+    ...npc,
+    facts: {
+      ...(npc.facts ?? {}),
+      [talkTrigger.setFact]: talkTrigger.value,
+    },
+  };
+};
+
+const reindexSelectedSlotAfterRemoval = (
+  selectedItem: Player['inventory']['selectedItem'],
+  removedSlotIndex: number,
+): Player['inventory']['selectedItem'] => {
+  if (!selectedItem) {
+    return selectedItem;
+  }
+
+  if (selectedItem.slotIndex === removedSlotIndex) {
+    return null;
+  }
+
+  if (selectedItem.slotIndex > removedSlotIndex) {
+    return {
+      ...selectedItem,
+      slotIndex: selectedItem.slotIndex - 1,
+    };
+  }
+
+  return selectedItem;
+};
+
+const applyInventoryOutcome = (
+  npc: Npc,
+  player: Player,
+  outcome: NpcInteractionOutcome | undefined,
+): { npc: Npc; player: Player } => {
+  if (!outcome) {
+    return { npc, player };
+  }
+
+  const npcItems = [...(npc.inventory ?? [])];
+  const playerItems = [...player.inventory.items];
+  let selectedItem = player.inventory.selectedItem ?? null;
+  let npcInventoryChanged = false;
+  let playerInventoryChanged = false;
+
+  if (typeof outcome.giveItem === 'string') {
+    const npcItemIndex = npcItems.findIndex((item) => item.itemId === outcome.giveItem);
+    if (npcItemIndex >= 0) {
+      const [transferredItem] = npcItems.splice(npcItemIndex, 1);
+      playerItems.push(transferredItem);
+      npcInventoryChanged = true;
+      playerInventoryChanged = true;
+    }
+  }
+
+  if (typeof outcome.takeItem === 'string') {
+    const playerItemIndex = playerItems.findIndex((item) => item.itemId === outcome.takeItem);
+    if (playerItemIndex >= 0) {
+      const [transferredItem] = playerItems.splice(playerItemIndex, 1);
+      selectedItem = reindexSelectedSlotAfterRemoval(selectedItem, playerItemIndex);
+      npcItems.push(transferredItem);
+      npcInventoryChanged = true;
+      playerInventoryChanged = true;
+    }
+  }
+
+  const nextNpc = npcInventoryChanged
+    ? {
+        ...npc,
+        inventory: npcItems,
+      }
+    : npc;
+
+  const nextPlayer = playerInventoryChanged
+    ? {
+        ...player,
+        inventory: {
+          ...player.inventory,
+          items: playerItems,
+          selectedItem,
+        },
+      }
+    : player;
+
+  return {
+    npc: nextNpc,
+    player: nextPlayer,
+  };
+};
+
 export interface NpcInteractionRequest {
   npc: Npc;
   player: Player;
@@ -29,15 +131,16 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
     };
     const historyWithPlayerMessage = [...previousHistory, playerMessageRecord];
 
-    const assistantText = await llmClient
+    const llmResponse = await llmClient
       .complete({
         actorId: request.npc.id,
         context: buildNpcPromptContext(request.npc, request.player, request.worldState),
         playerMessage: request.playerMessage,
         conversationHistory: historyWithPlayerMessage,
       })
-      .then((llmResponse) => llmResponse.text)
-      .catch(() => REQUEST_FAILURE_FALLBACK_TEXT);
+      .catch(() => ({ text: REQUEST_FAILURE_FALLBACK_TEXT }));
+
+    const assistantText = llmResponse.text;
 
     const assistantMessageRecord: ConversationMessage = {
       role: 'assistant',
@@ -49,9 +152,26 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
       [request.npc.id]: [...historyWithPlayerMessage, assistantMessageRecord],
     };
 
-    const updatedWorldState: WorldState = {
+    const stateWithUpdatedHistory: WorldState = {
       ...request.worldState,
       actorConversationHistoryByActorId: updatedHistoryByActorId,
+    };
+
+    const npcFromWorldState =
+      stateWithUpdatedHistory.npcs.find((candidate) => candidate.id === request.npc.id) ?? request.npc;
+    const npcAfterTalkTrigger = applyTalkTrigger(npcFromWorldState);
+    const inventoryResult = applyInventoryOutcome(
+      npcAfterTalkTrigger,
+      stateWithUpdatedHistory.player,
+      llmResponse.outcome,
+    );
+
+    const updatedWorldState: WorldState = {
+      ...stateWithUpdatedHistory,
+      player: inventoryResult.player,
+      npcs: stateWithUpdatedHistory.npcs.map((npc) =>
+        npc.id === request.npc.id ? inventoryResult.npc : npc,
+      ),
     };
 
     return {
