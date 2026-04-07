@@ -59,6 +59,28 @@ const validateItemUseRules = (value: unknown, contextLabel: string): void => {
   }
 };
 
+const validateObjectCapabilities = (value: unknown, contextLabel: string): void => {
+  if (value === undefined) {
+    return;
+  }
+
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`Invalid level data: ${contextLabel} capabilities must be an object when provided`);
+  }
+
+  const rawCapabilities = value as Record<string, unknown>;
+  for (const [key, val] of Object.entries(rawCapabilities)) {
+    if (key !== 'containsItems' && key !== 'isActivatable' && key !== 'isLockable') {
+      throw new Error(`Invalid level data: ${contextLabel} capabilities has unknown key '${key}'`);
+    }
+    if (typeof val !== 'boolean') {
+      throw new Error(
+        `Invalid level data: ${contextLabel} capabilities.${key} must be a boolean when provided`,
+      );
+    }
+  }
+};
+
 /**
  * Validates that an unknown value conforms to the LevelData schema.
  * Throws a descriptive Error if any required field is missing or has an unexpected type/value.
@@ -293,15 +315,14 @@ export function validateLevelData(input: unknown): LevelData {
         typeof interactiveObject['displayName'] !== 'string' ||
         typeof interactiveObject['x'] !== 'number' ||
         typeof interactiveObject['y'] !== 'number' ||
-        (interactiveObject['objectType'] !== 'supply-crate' &&
-          interactiveObject['objectType'] !== 'mechanism') ||
+        typeof interactiveObject['objectType'] !== 'string' ||
         (interactiveObject['interactionType'] !== 'inspect' &&
           interactiveObject['interactionType'] !== 'use' &&
           interactiveObject['interactionType'] !== 'talk') ||
         (interactiveObject['state'] !== 'idle' && interactiveObject['state'] !== 'used')
       ) {
         throw new Error(
-          `Invalid level data: interactiveObject at index ${i} must have id, displayName, x, y, objectType, interactionType, and state`,
+          `Invalid level data: interactiveObject at index ${i} must have id, displayName, x, y, objectType (string), interactionType, and state`,
         );
       }
 
@@ -342,6 +363,10 @@ export function validateLevelData(input: unknown): LevelData {
 
       if (interactiveObject['spriteSet'] !== undefined) {
         validateSpriteSet(interactiveObject['spriteSet'], `interactiveObject at index ${i}`);
+      }
+
+      if (interactiveObject['capabilities'] !== undefined) {
+        validateObjectCapabilities(interactiveObject['capabilities'], `interactiveObject at index ${i}`);
       }
 
       if (interactiveObject['itemUseRules'] !== undefined) {
@@ -461,6 +486,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       firstUseOutcome: o.firstUseOutcome,
       spriteAssetPath: o.spriteAssetPath,
       spriteSet: o.spriteSet,
+      capabilities: o.capabilities,
       itemUseRules: o.itemUseRules,
     })),
     actorConversationHistoryByActorId: {},
