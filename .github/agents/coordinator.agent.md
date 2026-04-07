@@ -30,6 +30,7 @@ Your job is to orchestrate a complete ticket workflow across specialized agents 
 
 3. Implementation stage:
 - Invoke `developer` to implement one ticket with exactly one PR.
+- Require documentation updates to be included by `developer` in the same implementation flow when architecture, patterns, type references, or gameplay baseline behavior changes.
 - Ensure branch, validation, and PR creation are completed.
 - For parent/subticket workflows, transition parent ticket to `In Progress` when the first sub ticket starts.
 
@@ -37,19 +38,15 @@ Your job is to orchestrate a complete ticket workflow across specialized agents 
 - Invoke `reviewer` in single-PR mode for the active ticket PR.
 - Ensure reviewer posts a verdict comment to the PR.
 
-5. Documentation stage:
-- When review passes, invoke `documenter` to synchronize docs with code changes.
-- Documenter updates relevant layer guides, pattern docs, or type reference.
-- Documentation changes merge into the same PR or a separate docs PR as needed.
-
-6. Feedback loop:
+5. Feedback loop:
 - If reviewer identifies blocking findings, send the findings back to `developer` to address them.
+- If findings include stale or missing documentation, require `developer` to update docs before re-running `reviewer`.
 - If blocking findings include missing or inconsistent assets, invoke `content manager` before re-running `reviewer`.
 - Re-run `reviewer` after fixes.
 - Repeat until the PR is merge-ready or blocked by a user decision.
 
-7. Completion stage:
-- When PR is merge-ready and docs are updated, invoke `developer` to finish the PR flow.
+6. Completion stage:
+- When PR is merge-ready and required docs are included, invoke `developer` to finish the PR flow.
 - Confirm merge result and local-main fast-forward status.
 - Confirm the corresponding ticket was closed as `Done`/`Completed` immediately after merge.
 - If the merged ticket is a sub ticket, ensure a parent-ticket status comment is added summarizing the change.
