@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { Environment } from './environment/Environment';
 import { Item } from './items/Item';
-import { mapNpcDtoToRuntime } from './dtoRuntimeSeams';
+import { mapGuardDtoToRuntime, mapNpcDtoToRuntime } from './dtoRuntimeSeams';
+import { GuardNpc } from './npcs/GuardNpc';
 import { Npc } from './npcs/Npc';
 
 describe('domain class foundation seams', () => {
@@ -38,6 +39,41 @@ describe('domain class foundation seams', () => {
       position: { x: 5, y: 6 },
       npcType: 'archive_keeper',
       dialogueContextKey: 'archive_keeper_intro',
+    });
+  });
+
+  it('maps guard dto to GuardNpc runtime class with serializable guard shape', () => {
+    const guard = mapGuardDtoToRuntime({
+      id: 'guard-1',
+      displayName: 'North Gate Guard',
+      position: { x: 3, y: 2 },
+      guardState: 'idle',
+      itemUseRules: {
+        token: {
+          allowed: true,
+          responseText: 'Pass granted.',
+        },
+      },
+    });
+
+    expect(guard).toBeInstanceOf(GuardNpc);
+    expect(guard).toBeInstanceOf(Npc);
+    expect(guard.guardState).toBe('idle');
+    expect(guard.itemUseRules?.token).toEqual({
+      allowed: true,
+      responseText: 'Pass granted.',
+    });
+    expect(JSON.parse(JSON.stringify(guard))).toEqual({
+      id: 'guard-1',
+      displayName: 'North Gate Guard',
+      position: { x: 3, y: 2 },
+      guardState: 'idle',
+      itemUseRules: {
+        token: {
+          allowed: true,
+          responseText: 'Pass granted.',
+        },
+      },
     });
   });
 });

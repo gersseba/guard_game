@@ -7,6 +7,7 @@ Source of truth:
 - `src/world/entities/base/Entity.ts`
 - `src/world/entities/base/Actor.ts`
 - `src/world/entities/npcs/Npc.ts`
+- `src/world/entities/npcs/GuardNpc.ts`
 - `src/world/entities/objects/WorldObject.ts`
 - `src/world/entities/items/Item.ts`
 - `src/world/entities/environment/Environment.ts`
@@ -75,6 +76,12 @@ Extends `ActorInit`:
 - `instanceBehavior?: string`
 - `riddleClue?: RiddleClue`
 
+### GuardNpcInit
+Extends `NpcInit` with guard-specialized constraints:
+- omits `npcType`, `dialogueContextKey`, `patrol`, `triggers`, `inventory`, `riddleClue` from constructor input
+- `guardState: 'idle' | 'patrolling' | 'alert'`
+- `itemUseRules?: Record<string, ItemUseRule>`
+
 ### WorldObjectInit
 Extends `EntityInit`:
 - `objectType: string`
@@ -91,6 +98,12 @@ Extends `EntityInit`:
 - `fromDto(dto: TDto): TRuntime`
 
 Used by seam adapter contracts in `src/world/entities/dtoRuntimeSeams.ts`.
+
+### GuardDtoContract
+Alias of serializable `Guard` DTO used by the guard runtime seam adapter:
+- `type GuardDtoContract = Guard`
+
+Mapped by `mapGuardDtoToRuntime(dto)` to runtime `GuardNpc` while preserving guard JSON shape.
 
 ## World Types
 

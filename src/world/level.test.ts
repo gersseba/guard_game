@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import riddleJson from '../../public/levels/riddle.json';
 import { deserializeLevel, validateLevelData } from './level';
+import { GuardNpc } from './entities/npcs/GuardNpc';
 import * as spatialRules from './spatialRules';
 import type { LevelData } from './types';
 
@@ -191,6 +192,43 @@ describe('deserializeLevel', () => {
       default: '/assets/medieval_guard_shield_spear_front.svg',
       front: '/assets/medieval_guard_shield_spear_front.svg',
       away: '/assets/medieval_guard_shield_spear_away.svg',
+    });
+  });
+
+  it('instantiates guards as GuardNpc runtime classes with existing guard behavior fields', () => {
+    const state = deserializeLevel({
+      ...minimalLevel,
+      guards: [
+        {
+          id: 'guard-1',
+          displayName: 'North Guard',
+          x: 5,
+          y: 7,
+          guardState: 'patrolling',
+          traits: { truthMode: 'truth-teller' },
+          itemUseRules: {
+            token: {
+              allowed: true,
+              responseText: 'You may pass.',
+            },
+          },
+        },
+      ],
+    });
+
+    expect(state.guards[0]).toBeInstanceOf(GuardNpc);
+    expect(JSON.parse(JSON.stringify(state.guards[0]))).toEqual({
+      id: 'guard-1',
+      displayName: 'North Guard',
+      position: { x: 5, y: 7 },
+      guardState: 'patrolling',
+      traits: { truthMode: 'truth-teller' },
+      itemUseRules: {
+        token: {
+          allowed: true,
+          responseText: 'You may pass.',
+        },
+      },
     });
   });
 

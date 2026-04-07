@@ -1,5 +1,6 @@
 import type { Environment, GridPosition, LevelData, Npc, WorldState } from './types';
 import { validateSpatialLayout } from './spatialRules';
+import { mapGuardDtoToRuntime } from './entities/dtoRuntimeSeams';
 
 const DEFAULT_TILE_SIZE = 48;
 
@@ -623,18 +624,20 @@ export function deserializeLevel(levelData: LevelData): WorldState {
 
       return npc;
     }),
-    guards: levelData.guards.map((g) => ({
-      id: g.id,
-      displayName: g.displayName,
-      position: { x: g.x, y: g.y },
-      guardState: g.guardState,
-      ...(g.traits !== undefined ? { traits: g.traits } : {}),
-      ...(g.spriteAssetPath !== undefined ? { spriteAssetPath: g.spriteAssetPath } : {}),
-      ...(g.spriteSet !== undefined ? { spriteSet: g.spriteSet } : {}),
-      ...(g.instanceKnowledge !== undefined ? { instanceKnowledge: g.instanceKnowledge } : {}),
-      ...(g.instanceBehavior !== undefined ? { instanceBehavior: g.instanceBehavior } : {}),
-      ...(g.itemUseRules !== undefined ? { itemUseRules: g.itemUseRules } : {}),
-    })),
+    guards: levelData.guards.map((g) =>
+      mapGuardDtoToRuntime({
+        id: g.id,
+        displayName: g.displayName,
+        position: { x: g.x, y: g.y },
+        guardState: g.guardState,
+        ...(g.traits !== undefined ? { traits: g.traits } : {}),
+        ...(g.spriteAssetPath !== undefined ? { spriteAssetPath: g.spriteAssetPath } : {}),
+        ...(g.spriteSet !== undefined ? { spriteSet: g.spriteSet } : {}),
+        ...(g.instanceKnowledge !== undefined ? { instanceKnowledge: g.instanceKnowledge } : {}),
+        ...(g.instanceBehavior !== undefined ? { instanceBehavior: g.instanceBehavior } : {}),
+        ...(g.itemUseRules !== undefined ? { itemUseRules: g.itemUseRules } : {}),
+      }),
+    ),
     doors: levelData.doors.map((d) => ({
       id: d.id,
       displayName: d.displayName,

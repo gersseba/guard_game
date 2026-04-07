@@ -75,8 +75,8 @@ All fields are serializable primitives, arrays, or plain objects.
 
 The world layer now includes a domain-class foundation in `src/world/entities/`:
 - base classes: `Entity`, `Actor`
-- specialized classes: `Npc`, `Item`, `Environment`, `WorldObject`
-- seam adapters: `dtoRuntimeSeams.ts` (`mapEntityDtoToRuntime`, `mapNpcDtoToRuntime`)
+- specialized classes: `Npc`, `GuardNpc`, `Item`, `Environment`, `WorldObject`
+- seam adapters: `dtoRuntimeSeams.ts` (`mapEntityDtoToRuntime`, `mapNpcDtoToRuntime`, `mapGuardDtoToRuntime`)
 
 These classes establish a typed DTO-to-runtime boundary for future incremental migration away from direct object-literal construction.
 
@@ -220,6 +220,16 @@ NPCs from level JSON are transformed to runtime `Npc` objects with deterministic
 ```
 
 Deserialization remains deterministic: the same `npcType` always produces the same `dialogueContextKey`, enabling consistent LLM prompt context routing and reproducible conversation flows.
+
+### Guard Deserialization
+
+Guards from level JSON are transformed through `mapGuardDtoToRuntime` into runtime `GuardNpc` instances.
+
+The guard serialization contract remains stable for world state snapshots:
+- serialized shape still matches the existing `Guard` DTO fields (`id`, `displayName`, `position`, `guardState`, optional traits/sprite/instance fields, optional `itemUseRules`)
+- runtime-only NPC base fields used for inheritance (`npcType`, `dialogueContextKey`) are intentionally non-enumerable on `GuardNpc`, so JSON output parity is preserved
+
+This keeps interaction behavior and world-state JSON compatibility unchanged while introducing explicit runtime class specialization for guards.
 
 ### Interactive Object Deserialization
 
