@@ -13,6 +13,12 @@ export const isInBounds = (position: GridPosition, grid: WorldGrid): boolean =>
 export const getBlockingOccupants = (worldState: WorldState, position: GridPosition): SpatialEntity[] => {
   const blockers: SpatialEntity[] = [];
 
+  for (const environment of worldState.environments ?? []) {
+    if (environment.isBlocking && samePosition(environment.position, position)) {
+      blockers.push({ label: `environment:${environment.id}`, position: environment.position });
+    }
+  }
+
   for (const npc of worldState.npcs) {
     if (samePosition(npc.position, position)) {
       blockers.push({ label: `npc:${npc.id}`, position: npc.position });
@@ -48,6 +54,10 @@ export const canMovePlayerTo = (worldState: WorldState, target: GridPosition): b
 
 const collectSpatialEntities = (worldState: WorldState): SpatialEntity[] => [
   { label: `player:${worldState.player.id}`, position: worldState.player.position },
+  ...(worldState.environments ?? []).map((environment) => ({
+    label: `environment:${environment.id}`,
+    position: environment.position,
+  })),
   ...worldState.npcs.map((npc) => ({ label: `npc:${npc.id}`, position: npc.position })),
   ...worldState.interactiveObjects.map((interactiveObject) => ({
     label: `interactiveObject:${interactiveObject.id}`,

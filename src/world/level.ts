@@ -1,4 +1,4 @@
-import type { GridPosition, LevelData, Npc, WorldState } from './types';
+import type { Environment, GridPosition, LevelData, Npc, WorldState } from './types';
 import { validateSpatialLayout } from './spatialRules';
 
 const DEFAULT_TILE_SIZE = 48;
@@ -506,6 +506,30 @@ export function validateLevelData(input: unknown): LevelData {
     }
   }
 
+  if (raw['environments'] !== undefined) {
+    if (!Array.isArray(raw['environments'])) {
+      throw new Error('Invalid level data: environments must be an array');
+    }
+
+    for (let i = 0; i < (raw['environments'] as unknown[]).length; i++) {
+      const environment = (raw['environments'] as unknown[])[i] as Record<string, unknown>;
+
+      if (
+        typeof environment !== 'object' ||
+        environment === null ||
+        typeof environment['id'] !== 'string' ||
+        typeof environment['displayName'] !== 'string' ||
+        typeof environment['x'] !== 'number' ||
+        typeof environment['y'] !== 'number' ||
+        typeof environment['isBlocking'] !== 'boolean'
+      ) {
+        throw new Error(
+          `Invalid level data: environment at index ${i} must have id, displayName, x, y, and isBlocking`,
+        );
+      }
+    }
+  }
+
   return raw as unknown as LevelData;
 }
 
@@ -638,6 +662,14 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       capabilities: o.capabilities,
       itemUseRules: o.itemUseRules,
     })),
+    environments: (levelData.environments ?? []).map(
+      (environment): Environment => ({
+        id: environment.id,
+        displayName: environment.displayName,
+        position: { x: environment.x, y: environment.y },
+        isBlocking: environment.isBlocking,
+      }),
+    ),
     actorConversationHistoryByActorId: {},
     lastItemUseAttemptEvent: null,
     levelOutcome: null,

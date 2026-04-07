@@ -113,6 +113,24 @@ When authoring new levels, keep `grid.width === width`, `grid.height === height`
 - `state`: `idle | used`
 - `capabilities` is required by coverage checks.
 
+### environments
+
+```json
+{
+  "id": "wall-1",
+  "displayName": "Stone Wall",
+  "x": 6,
+  "y": 7,
+  "isBlocking": true
+}
+```
+
+- `environments` is an optional top-level array.
+- Each environment entry requires `id`, `displayName`, `x`, `y`, and `isBlocking`.
+- `isBlocking: true` blocks movement into that tile.
+- Environments participate in overlap validation with all other world entities.
+- Environments are spatial-only and are not valid interaction targets.
+
 ### player
 
 Runtime field:

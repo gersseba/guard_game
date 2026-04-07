@@ -202,6 +202,13 @@ export interface InteractiveObject extends GameEntity {
   itemUseRules?: Record<string, ItemUseRule>;
 }
 
+export interface Environment {
+  id: string;
+  displayName: string;
+  position: GridPosition;
+  isBlocking: boolean;
+}
+
 export interface WorldGrid {
   width: number;
   height: number;
@@ -296,6 +303,13 @@ export interface LevelData {
     /** Deterministic item-use rules: item ID → rule definition */
     itemUseRules?: Record<string, ItemUseRule>;
   }>;
+  environments?: Array<{
+    id: string;
+    displayName: string;
+    x: number;
+    y: number;
+    isBlocking: boolean;
+  }>;
 }
 
 export interface WorldState {
@@ -308,6 +322,7 @@ export interface WorldState {
   guards: Guard[];
   doors: Door[];
   interactiveObjects: InteractiveObject[];
+  environments?: Environment[];
   actorConversationHistoryByActorId: ActorConversationHistoryByActorId;
   lastItemUseAttemptEvent?: ItemUseAttemptResultEvent | null;
   levelOutcome: 'win' | 'lose' | null;

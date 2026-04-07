@@ -29,6 +29,33 @@ describe('spatialRules', () => {
     expect(canMovePlayerTo(worldState, { x: 8, y: 3 })).toBe(false);
   });
 
+  it('treats blocking environments as movement blockers and ignores non-blocking environments', () => {
+    const worldState = createInitialWorldState();
+    const withEnvironments = {
+      ...worldState,
+      environments: [
+        {
+          id: 'wall-1',
+          displayName: 'Stone Wall',
+          position: { x: 2, y: 1 },
+          isBlocking: true,
+        },
+        {
+          id: 'grass-1',
+          displayName: 'Tall Grass',
+          position: { x: 3, y: 1 },
+          isBlocking: false,
+        },
+      ],
+    };
+
+    expect(canMovePlayerTo(withEnvironments, { x: 2, y: 1 })).toBe(false);
+    expect(canMovePlayerTo(withEnvironments, { x: 3, y: 1 })).toBe(true);
+    expect(getBlockingOccupants(withEnvironments, { x: 2, y: 1 }).map((blocker) => blocker.label)).toEqual([
+      'environment:wall-1',
+    ]);
+  });
+
   it('validates a non-overlapping in-bounds layout', () => {
     const worldState = createInitialWorldState();
 
@@ -62,6 +89,25 @@ describe('spatialRules', () => {
 
     expect(() => validateSpatialLayout(overlapping)).toThrowError(
       `Invalid world layout: overlapping coordinates at (${worldState.player.position.x}, ${worldState.player.position.y}) between player:${worldState.player.id} and npc:${worldState.npcs[0].id}`,
+    );
+  });
+
+  it('includes environments in overlap validation', () => {
+    const worldState = createInitialWorldState();
+    const withOverlappingEnvironment = {
+      ...worldState,
+      environments: [
+        {
+          id: 'wall-1',
+          displayName: 'Stone Wall',
+          position: { ...worldState.player.position },
+          isBlocking: true,
+        },
+      ],
+    };
+
+    expect(() => validateSpatialLayout(withOverlappingEnvironment)).toThrowError(
+      `Invalid world layout: overlapping coordinates at (${worldState.player.position.x}, ${worldState.player.position.y}) between player:${worldState.player.id} and environment:wall-1`,
     );
   });
 });

@@ -46,6 +46,7 @@ export const createInitialWorldState = (): WorldState => ({
       spriteAssetPath: '/assets/medieval_supply_crate_inspect.svg',
     },
   ],
+  environments: [],
   actorConversationHistoryByActorId: {},
   lastItemUseAttemptEvent: null,
   levelOutcome: null,
