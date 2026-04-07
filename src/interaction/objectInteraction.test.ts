@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { handleObjectInteraction } from './objectInteraction';
-import type { InteractiveObject, ObjectCapabilities, Player, WorldState } from '../world/types';
+import type { InteractiveObject, Player, WorldState } from '../world/types';
 
 const player: Player = {
   id: 'player-1',

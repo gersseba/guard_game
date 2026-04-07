@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bindKeyboardCommands, mapKeyboardEventToWorldCommand } from './keyboard';
+import { bindKeyboardCommands } from './keyboard';
 import { createCommandBuffer } from './commands';
+
+type KeyboardListener = (event: KeyboardEvent) => void;
 
 const createKeyboardTarget = (): {
   target: Window;
@@ -9,12 +11,12 @@ const createKeyboardTarget = (): {
   const listeners = new Set<(event: KeyboardEvent) => void>();
 
   const target = {
-    addEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {
+    addEventListener: (_type: string, listener: KeyboardListener) => {
       if (typeof listener === 'function') {
         listeners.add(listener as (event: KeyboardEvent) => void);
       }
     },
-    removeEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {
+    removeEventListener: (_type: string, listener: KeyboardListener) => {
       if (typeof listener === 'function') {
         listeners.delete(listener as (event: KeyboardEvent) => void);
       }

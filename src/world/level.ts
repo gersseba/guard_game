@@ -1,4 +1,4 @@
-import type { GridPosition, LevelData, WorldState } from './types';
+import type { GridPosition, LevelData, Npc, WorldState } from './types';
 import { validateSpatialLayout } from './spatialRules';
 
 const DEFAULT_TILE_SIZE = 48;
@@ -541,7 +541,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       ...(levelData.player.spriteSet !== undefined ? { spriteSet: levelData.player.spriteSet } : {}),
     },
     npcs: (levelData.npcs ?? []).map((n) => {
-      const npc = {
+      const npc: Npc = {
         id: n.id,
         displayName: n.displayName,
         position: { x: n.x, y: n.y },
@@ -569,7 +569,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
           : {}),
         ...(n.instanceKnowledge !== undefined ? { instanceKnowledge: n.instanceKnowledge } : {}),
         ...(n.instanceBehavior !== undefined ? { instanceBehavior: n.instanceBehavior } : {}),
-      } as any;
+      };
 
       // Add riddleClue if present, computing mustStateDoorAs
       if (n.riddleClue !== undefined) {
