@@ -59,6 +59,22 @@ const makeInertObject = (
   ...overrides,
 });
 
+const makeDoorLikeObject = (
+  id: string,
+  state: InteractiveObject['state'],
+  overrides: Partial<InteractiveObject> = {},
+): InteractiveObject => ({
+  id,
+  displayName: 'Service Door',
+  position: { x: 2, y: 3 },
+  objectType: 'service-door',
+  interactionType: 'use',
+  state,
+  idleMessage: 'You open the service door.',
+  usedMessage: 'The service door is already open.',
+  ...overrides,
+});
+
 const createWorldState = (...interactiveObjects: InteractiveObject[]): WorldState => ({
   tick: 0,
   grid: { width: 10, height: 10, tileSize: 32 },
@@ -238,6 +254,90 @@ describe('handleObjectInteraction', () => {
       });
 
       expect(result.responseText).toBe('The mechanism is already activated.');
+      expect(result.updatedWorldState.levelOutcome).toBeNull();
+    });
+
+    it('uses polymorphic mechanism dispatch for mechanism objectType even without capabilities flags', () => {
+      const mechanism = makeActivatableObject('mechanism-polymorphic', 'idle', {
+        capabilities: undefined,
+      });
+      const worldState = createWorldState(mechanism);
+
+      const result = handleObjectInteraction({
+        interactiveObject: mechanism,
+        player,
+        worldState,
+      });
+
+      expect(result.responseText).toBe('The device has been activated.');
+      expect(result.updatedWorldState.interactiveObjects[0].state).toBe('used');
+    });
+  });
+
+  describe('door-like interactive objects', () => {
+    it('uses door-object polymorphism and maps safe/danger facts to level outcome when explicit firstUseOutcome is absent', () => {
+      const safeDoorObject = makeDoorLikeObject('door-object-safe', 'idle', {
+        facts: {
+          outcome: 'safe',
+        },
+      });
+
+      const safeResult = handleObjectInteraction({
+        interactiveObject: safeDoorObject,
+        player,
+        worldState: createWorldState(safeDoorObject),
+      });
+
+      expect(safeResult.responseText).toBe('You open the service door.');
+      expect(safeResult.updatedWorldState.levelOutcome).toBe('win');
+      expect(safeResult.updatedWorldState.interactiveObjects[0].state).toBe('used');
+
+      const dangerDoorObject = makeDoorLikeObject('door-object-danger', 'idle', {
+        facts: {
+          outcome: 'danger',
+        },
+      });
+
+      const dangerResult = handleObjectInteraction({
+        interactiveObject: dangerDoorObject,
+        player,
+        worldState: createWorldState(dangerDoorObject),
+      });
+
+      expect(dangerResult.updatedWorldState.levelOutcome).toBe('lose');
+    });
+
+    it('prioritizes explicit firstUseOutcome over door-like facts outcome', () => {
+      const doorObject = makeDoorLikeObject('door-object-explicit', 'idle', {
+        firstUseOutcome: 'lose',
+        facts: {
+          outcome: 'safe',
+        },
+      });
+
+      const result = handleObjectInteraction({
+        interactiveObject: doorObject,
+        player,
+        worldState: createWorldState(doorObject),
+      });
+
+      expect(result.updatedWorldState.levelOutcome).toBe('lose');
+    });
+
+    it('does not retrigger door-like fact outcome after first interaction', () => {
+      const doorObject = makeDoorLikeObject('door-object-repeat', 'used', {
+        facts: {
+          outcome: 'safe',
+        },
+      });
+
+      const result = handleObjectInteraction({
+        interactiveObject: doorObject,
+        player,
+        worldState: createWorldState(doorObject),
+      });
+
+      expect(result.responseText).toBe('The service door is already open.');
       expect(result.updatedWorldState.levelOutcome).toBeNull();
     });
   });
