@@ -68,6 +68,29 @@ describe('itemUseResolver', () => {
     expect(event.target).toBeNull();
   });
 
+  it('returns no-selection when selected slot metadata does not match inventory item id', () => {
+    const worldState = createTestWorldState({
+      player: {
+        id: 'player-1',
+        displayName: 'Hero',
+        position: { x: 5, y: 5 },
+        inventory: {
+          items: [{ itemId: 'gift-token', displayName: 'Gift Token', sourceObjectId: 'obj-1', pickedUpAtTick: 10 }],
+          selectedItem: { slotIndex: 0, itemId: 'wrong-item-id' },
+        },
+      },
+    });
+
+    const event = resolver.resolveItemUseAttempt({
+      worldState,
+      commandIndex: 1,
+    });
+
+    expect(event.result).toBe('no-selection');
+    expect(event.selectedItem).toBeNull();
+    expect(event.target).toBeNull();
+  });
+
   it('returns no-target with door target when adjacent door has no requiredItemId', () => {
     const worldState = createTestWorldState({
       player: {

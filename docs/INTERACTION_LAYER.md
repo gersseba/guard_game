@@ -91,8 +91,10 @@ The runtime bridge and tests use the shared actor-neutral helper in `src/interac
 
 Current behavior:
 - Reads `worldState.player.inventory.selectedItem`.
+- Verifies selected slot metadata against the actual inventory DTO using the runtime `Item` model before applying rules.
 - Emits one `ItemUseAttemptResultEvent` per `useSelectedItem` command, preserving the command index from the tick command list.
 - Returns `no-selection` when no selected item exists.
+- Returns `no-selection` when selected metadata points to a missing slot or mismatched `itemId`.
 - Returns `no-target` when an item is selected but no adjacent target exists or the adjacent target doesn't accept item-use.
 - Emits target info (door/guard/npc/interactiveObject) for debugging and event logging.
 
@@ -210,6 +212,7 @@ Pickup behavior is deterministic and code-owned:
 - if an interactive object has `pickupItem` and is interacted with in `idle` state, the item is added to `player.inventory.items`
 - pickup entries include `sourceObjectId` and `pickedUpAtTick` to keep state auditable and replay-friendly
 - repeated interactions on the same object instance cannot duplicate pickup entries
+- pickup, give, and take transfers use the shared runtime `Item` contract and convert back to serializable `InventoryItem` DTOs at the world-state boundary
 - no LLM call participates in pickup rule enforcement
 
 ## LLM Boundary

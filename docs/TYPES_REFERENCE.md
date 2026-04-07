@@ -103,8 +103,25 @@ Serializable input contract consumed by `WorldObject.interact(...)` implementati
 Deterministic output contract returned by `WorldObject.interact(...)` implementations.
 
 ### ItemInit
-Extends `EntityInit`:
-- `itemType: string`
+- `itemId: string`
+- `displayName: string`
+- `sourceObjectId: string`
+- `pickedUpAtTick: number`
+
+Runtime constructor contract for the item domain model used in inventory and transfer flows.
+
+### PickupItemDescriptor
+- `sourceObjectId: string`
+- `pickedUpAtTick: number`
+- `pickupItem: { itemId: string; displayName: string }`
+
+Deterministic input contract for converting world pickup descriptors into `Item` instances.
+
+### ItemTransferResult
+- `item: Item | null`
+- `remainingItems: InventoryItem[]`
+
+Deterministic transfer result contract used for NPC/player give/take flows.
 
 ### EnvironmentInit
 Extends `EntityInit`:
@@ -188,6 +205,8 @@ Optional trigger hooks for deterministic NPC state updates.
 - `displayName: string`
 - `sourceObjectId: string`
 - `pickedUpAtTick: number`
+
+Serializable DTO shape. Runtime item logic is modeled by `Item` in `src/world/entities/items/Item.ts`, with explicit conversion helpers (`fromInventoryItem`, `fromPickup`, `toInventoryItem`) to keep JSON boundaries intact.
 
 ### PlayerInventory
 - `items: InventoryItem[]`
