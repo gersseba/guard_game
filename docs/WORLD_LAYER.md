@@ -10,6 +10,48 @@ The world layer owns deterministic, JSON-serializable state and validation/deser
 - Derive player-facing direction from movement intent as deterministic world data
 - Keep world state independent from rendering and LLM infrastructure
 
+## Intent Pipeline
+
+The **Intent Pipeline** provides a unified, source-agnostic mechanism for all actors (player, NPC, scripted) to request state changes.
+
+### Intent Model
+
+`Intent` in `src/world/types.ts` has the structure:
+```typescript
+interface Intent {
+  actorId: string;
+  type: IntentType;  // 'move' | 'wait' | 'interact'
+  payload?: {
+    direction?: 'up' | 'down' | 'left' | 'right';
+    targetId?: string;
+    delta?: { dx: number; dy: number };  // backward compatibility for arbitrary movement
+  };
+}
+```
+
+### Intent Resolution
+
+`resolveIntent()` in `src/world/intentResolver.ts` is the deterministic handler that processes intents:
+
+1. **Move Intent** — calls `resolveMoveIntent()`
+   - Accepts movement via cardinal direction or arbitrary delta vector
+   - Applies collision checking using `canMovePlayerTo()` from spatial rules
+   - Returns updated `WorldState` with player position (if valid) and updated facing direction
+   - Even when movement is blocked, facing direction updates to represent player intent
+
+2. **Wait Intent** — no-op; returns state unchanged
+   - Used by NPCs for scheduled delays or explicit pause points
+
+3. **Interact Intent** — currently a no-op (interaction logic remains in `interaction/ layer`)
+   - Routed through separate `interactionDispatcher` path
+   - Exists here for future unified interaction pipeline
+
+### Command-to-Intent Bridge
+
+Legacy `WorldCommand` objects (`move`, `selectInventorySlot`, `useSelectedItem`, `interact`) flow through the world layer via `applyCommands()` and `applyCommand()`. Move commands are converted to Intent format and resolved through `resolveIntent()`, preserving all existing tests and behavior while routing new actor actions through the unified pipeline.
+
+**Future Work:** As the system evolves, direct Intent-based input (from LLM, NPC schedulers, etc.) will bypass the WorldCommand bridge entirely.
+
 ## Current Deterministic State Model
 
 `WorldState` in `src/world/types.ts` includes:
