@@ -6,8 +6,13 @@ Guard Game enforces strict layer separation to support deterministic world updat
 
 ```
 /src
-  /world               - Deterministic world model (state, command application, ticks)
-/world/entities      - Domain class foundation and DTO-to-runtime seam mappings
+       /world               - Deterministic world model (state, command application, ticks)
+              /entities          - Runtime domain classes + DTO-to-runtime seam mappings
+                     /base            - Entity/Actor base classes
+                     /npcs            - Npc/GuardNpc runtime classes
+                     /objects         - WorldObject polymorphic hierarchy
+                     /items           - Item lifecycle helpers
+                     /environment     - Environment runtime class
   /render              - PixiJS rendering port plus DOM overlays for viewport pause, chat, and outcomes
   /interaction         - Interaction dispatch + result routing across target kinds
   /input               - Input command buffering and keyboard mapping
@@ -27,6 +32,11 @@ All game state changes are deterministic and command-driven. There are no random
 All world state must serialize to JSON. This enables LLM systems to reason about game state, and allows debugging via inspection in the browser console.
 
 **Implication:** Avoid circular references, functions, or non-serializable objects in `WorldState` and related types.
+
+### DTO/Runtime Boundary
+Level JSON ingress/egress remains DTO-shaped (`src/world/types.ts`). During deserialization, DTOs are mapped into runtime classes via `src/world/entities/dtoRuntimeSeams.ts`.
+
+**Implication:** Runtime classes can enforce structure and polymorphism, while serialized `WorldState` keeps stable JSON contracts for tests, debugging, and LLM context.
 
 ### Layer Isolation
 - Game logic lives in the world model only.
