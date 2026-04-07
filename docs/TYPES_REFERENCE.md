@@ -249,7 +249,7 @@ Serializable DTO shape. Runtime item logic is modeled by `Item` in `src/world/en
 References one selected inventory slot by index and item id. Invalid slot selection clears this field to `null`.
 
 ### ItemUseAttemptResult
-`'no-selection' | 'no-target' | 'blocked' | 'success'`
+`'no-selection' | 'no-target' | 'blocked' | 'success' | 'no-rule'`
 
 ### ItemUseRule
 - `allowed: boolean` - Whether use of the item is permitted on this entity
@@ -296,7 +296,6 @@ Extends `GameEntity`:
 - `doorState: 'open' | 'closed' | 'locked'`
 - `outcome?: 'safe' | 'danger'`
 - `requiredItemId?: string` - Item id required to unlock this door via item-use. If set, door must be interacted with using this item before traversal is allowed.
-- `consumeOnUse?: boolean` - Whether the required item should be consumed when used to unlock (default: false)
 - `isUnlocked?: boolean` - Whether this door has been unlocked via item-use. Once set to true, door allows traversal regardless of doorState. Persists through world state serialization (default: false).
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
@@ -335,6 +334,27 @@ Environment entities are world-level spatial entities only. They can block movem
 - `environments?: Array<{ id: string; displayName: string; x: number; y: number; isBlocking: boolean }>`
 
 Optional level schema section for environment entries. During deserialization, level coordinates (`x`, `y`) are mapped to runtime `position`.
+
+## Subclass Extension Guidelines
+
+### Adding a New NPC Subclass
+1. Keep serializable data in `src/world/types.ts` (`LevelNpcDto` / `Npc`) and avoid runtime-only fields at DTO boundaries.
+2. Implement subclass behavior in `src/world/entities/npcs`.
+3. Add deterministic mapping in `mapNpcDtoToRuntime` (or adjacent seam helper).
+4. Preserve JSON parity (`JSON.parse(JSON.stringify(instance))`) for world snapshots.
+5. Add tests for class instantiation and deterministic behavior impact.
+
+### Adding a New Interactive Object Subclass
+1. Keep object DTO shape serializable in `LevelInteractiveObjectDto` / `InteractiveObject`.
+2. Implement subclass in `src/world/entities/objects`.
+3. Route deterministic classification in `mapInteractiveObjectDtoToRuntime` and level-load mapping in `mapLevelInteractiveObjectDtoToRuntime`.
+4. Ensure object interaction outcomes are deterministic and local to world/interaction layers.
+5. Add tests for polymorphic mapping, state transitions, and serialized shape parity.
+
+### Adding Environment Variants
+1. Keep runtime variants under `src/world/entities/environment` while preserving serializable `Environment` shape.
+2. Map DTOs in `mapEnvironmentDtoToRuntime`.
+3. Verify blocking behavior through `canMovePlayerTo` / `getBlockingOccupants` tests.
 
 ### WorldGrid
 - `width: number`

@@ -80,6 +80,17 @@ The world layer now includes a domain-class foundation in `src/world/entities/`:
 
 These classes establish a typed DTO-to-runtime boundary for future incremental migration away from direct object-literal construction.
 
+### DTO vs Runtime Class Boundary
+
+- **DTO boundary:** `LevelData` and nested `Level*Dto` shapes in `src/world/types.ts` define file/network JSON contracts.
+- **Runtime boundary:** `src/world/entities/*` classes provide constructor guarantees, polymorphic behavior hooks, and explicit conversion helpers.
+- **Seam boundary:** `src/world/entities/dtoRuntimeSeams.ts` is the only place that should map DTO shapes into runtime classes.
+
+Boundary invariants:
+- Validation (`validateLevelData`) remains DTO-only.
+- Deserialization (`deserializeLevel`) performs DTO-to-runtime mapping, then spatial validation.
+- Runtime class instances must remain enumerable/serializable so `JSON.stringify(worldState)` stays stable.
+
 Determinism/serialization contract remains unchanged:
 - `WorldState` remains JSON-serializable data
 - command application and interaction outcomes remain code-owned and deterministic
@@ -255,6 +266,26 @@ Environment fields deserialize directly:
 - `isBlocking`
 
 This enables shared behavior per object type while preserving instance-specific text, outcomes, and asset metadata.
+
+## Subclass Extension Guidelines
+
+When adding a new world subclass, keep changes localized and deterministic:
+
+1. Add/extend DTO shape in `src/world/types.ts` only if new serializable data is required.
+2. Implement runtime subclass under `src/world/entities/npcs` or `src/world/entities/objects`.
+3. Wire DTO-to-runtime mapping in `src/world/entities/dtoRuntimeSeams.ts`.
+4. Keep deterministic behavior in world/interaction layers; render only consumes resulting state.
+5. Add/adjust tests for seam mapping, serialized runtime shape parity, and deterministic behavior.
+
+NPC-specific checklist:
+- Ensure `npcType` mapping remains deterministic.
+- Keep `dialogueContextKey` derivation stable for prompt routing.
+- Preserve optional instance fields (`instanceKnowledge`, `instanceBehavior`) as serializable strings.
+
+Object-specific checklist:
+- Map object classification deterministically (capabilities/objectType to subclass).
+- Keep state transitions (`idle`/`used`) and item transfer behavior deterministic.
+- Ensure first-use outcomes and item-use rules remain data-driven and LLM-independent.
 
 ## Shipped Level Demonstrations
 
