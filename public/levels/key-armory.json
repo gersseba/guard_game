@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "The Locked Armory",
   "premise": "A locked armory holds the supplies you need. You spotted a key in an old crate nearby.",
   "goal": "Find the key, unlock the armory door, and step through to safety.",

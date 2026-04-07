@@ -184,8 +184,12 @@ export function validateLevelData(input: unknown): LevelData {
 
   const raw = input as Record<string, unknown>;
 
-  if (raw['version'] !== 1) {
-    throw new Error('Invalid level data: version must be 1');
+  if (raw['version'] === undefined) {
+    throw new Error('Level format version is missing. Expected version 2.');
+  }
+
+  if (raw['version'] !== 2) {
+    throw new Error(`Level format version ${raw['version']} is not supported. Expected version 2.`);
   }
 
   if (typeof raw['name'] !== 'string' || raw['name'].trim() === '') {

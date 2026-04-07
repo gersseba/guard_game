@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "The Broken Mechanism",
   "premise": "An ancient door mechanism is jammed. The corridor beyond holds your escape, but only the right tool can fix the mechanism.",
   "goal": "Find the iron wrench and repair the mechanism to open the path forward.",

@@ -173,7 +173,7 @@ describe('starter level integration pipeline', () => {
   describe('instanceKnowledge and instanceBehavior full pipeline', () => {
     it('propagates instanceKnowledge and instanceBehavior from level JSON through deserializeLevel into prompt context', () => {
       const levelWithInstanceFields = {
-        version: 1,
+        version: 2,
         name: 'Instance Fields Test',
         premise: 'A deterministic fixture for instance fields.',
         goal: 'Confirm instance fields propagate to prompt context.',

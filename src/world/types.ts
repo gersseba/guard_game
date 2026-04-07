@@ -216,7 +216,7 @@ export interface LevelMetadata {
 
 /** Flat JSON representation of a level file (public/levels/*.json). Version-stamped for future migrations. */
 export interface LevelData {
-  version: 1;
+  version: number;
   name: string;
   premise: string;
   goal: string;

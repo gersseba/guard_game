@@ -5,7 +5,7 @@ import * as spatialRules from './spatialRules';
 import type { LevelData } from './types';
 
 const minimalLevel: LevelData = {
-  version: 1,
+  version: 2,
   name: 'Test Level',
   premise: 'A deterministic test premise.',
   goal: 'Reach the safe test door.',
@@ -277,7 +277,7 @@ describe('deserializeLevel', () => {
   });
 
   it('preserves the schema version field in the input (does not discard it)', () => {
-    const level: LevelData = { ...minimalLevel, version: 1 };
+    const level: LevelData = { ...minimalLevel, version: 2 };
     // The function consumes version; ensure it still accepts it without error
     const state = deserializeLevel(level);
 
@@ -339,9 +339,15 @@ describe('validateLevelData', () => {
     expect(result).toEqual(minimalLevel);
   });
 
-  it('throws when version is not 1', () => {
-    const bad = { ...minimalLevel, version: 2 };
-    expect(() => validateLevelData(bad)).toThrowError('version must be 1');
+  it('throws when version is missing', () => {
+    const bad = { ...minimalLevel } as Record<string, unknown>;
+    delete bad.version;
+    expect(() => validateLevelData(bad)).toThrowError('Level format version is missing. Expected version 2.');
+  });
+
+  it('throws when version is not 2', () => {
+    const bad = { ...minimalLevel, version: 1 };
+    expect(() => validateLevelData(bad)).toThrowError('Level format version 1 is not supported. Expected version 2.');
   });
 
   it('throws when name is an empty string', () => {
