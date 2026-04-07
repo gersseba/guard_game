@@ -17,8 +17,9 @@ Guard Game enforces strict layer separation to support deterministic world updat
   /interaction         - Interaction dispatch + result routing across target kinds
   /input               - Input command buffering and keyboard mapping
   /llm                 - LLM client boundary and context generation stubs
-  runtimeController.ts - Runtime orchestration: simulation pause/resume and conversation gating
-  main.ts              - Runtime bootstrap and frame/tick loop
+  /runtime             - Runtime composition modules (bootstrap app, loop, level orchestration, modal + interaction bridges)
+  runtimeController.ts - Runtime simulation coordinator: pause/resume and command drain semantics
+  main.ts              - Thin bootstrap shell that invokes runtime composition root
 ```
 
 ## Design Principles
@@ -79,6 +80,14 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 6. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port. Character sprite assets are loaded and resolved to sprite/marker mode inside the render layer only. Separate DOM render utilities manage the chat modal, inventory overlay, paused-viewport overlay, and level-outcome overlay.
 
 7. **Debug Phase:** Current JSON world state is serialized and printed to the debug panel.
+
+Runtime composition entry points:
+- `src/main.ts`: validates `#app` and starts the runtime app.
+- `src/runtime/createRuntimeApp.ts`: composition root that wires world, runtime controller, render ports, interaction bridge, modal coordinator, and level orchestration.
+- `src/runtime/fixedTickLoop.ts`: fixed-timestep simulation loop + per-frame render callback.
+- `src/runtime/interactionResultBridge.ts`: interaction dispatch/result routing and conversation send bridge.
+- `src/runtime/modalCoordinator.ts`: chat/action/inventory modal lifecycle and viewport pause overlay semantics.
+- `src/runtime/levelLoadOrchestration.ts`: level manifest/default selection plus load/reset flows.
 
 ```
 [Keyboard Input]
