@@ -150,19 +150,25 @@ Extends `GameEntity`:
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
 
+### ObjectCapabilities
+Capability flags that drive object behavior through feature composition (not type branching):
+- `containsItems?: boolean` - Object contains items that can be inspected and picked up
+- `isActivatable?: boolean` - Object can be activated to trigger an effect (e.g., mechanism, lever)
+- `isLockable?: boolean` - Object has a lock mechanism (reserved for future use)
+
+Objects declare what they can do via capabilities. The interaction handler checks these flags in order and applies the matching effect. If no capabilities are present, the object is inert.
+
 ### InteractiveObject
 Extends `GameEntity`:
-- `objectType: 'supply-crate'`
+- `objectType: string` - Display label for the object type (e.g., "supply-crate", "mechanism", "decoration"). Not used for behavior routing; use only for UI context and LLM awareness. Previously used for type-based dispatch; now deprecated in favor of capabilities.
 - `interactionType: 'inspect' | 'use' | 'talk'`
 - `state: 'idle' | 'used'`
-- `pickupItem?: { itemId: string; displayName: string }`
-- `idleMessage?: string`
-- `usedMessage?: string`
-- `firstUseOutcome?: 'win' | 'lose'`
+- `pickupItem?: { itemId: string; displayName: string }` - Item available for pickup when this object is inspected (only used if capabilities.containsItems is true)
+- `idleMessage?: string` - Narrative response on first interaction
+- `usedMessage?: string` - Narrative response on subsequent interactions
+- `firstUseOutcome?: 'win' | 'lose'` - Level outcome triggered on first use (if any)
+- `capabilities?: ObjectCapabilities` - Feature flags that drive behavior via capability dispatch. If omitted or empty, object is inert.
 - `itemUseRules?: Record<string, ItemUseRule>` - Deterministic item-use rules keyed by item ID. When player uses a matching item on this object, the rule determines success/blocked outcome. Successful use transitions object state to 'used'.
-- `affectedEntityType?: 'guard' | 'object'` - Type of entity affected by successful item-use rule (guard or object)
-- `affectedEntityId?: string` - ID of entity affected by successful item-use rule
-- `ruleResponseText?: string` - Response text from the applied item-use rule
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
 
