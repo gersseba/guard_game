@@ -7,6 +7,7 @@ Guard Game enforces strict layer separation to support deterministic world updat
 ```
 /src
   /world               - Deterministic world model (state, command application, ticks)
+/world/entities      - Domain class foundation and DTO-to-runtime seam mappings
   /render              - PixiJS rendering port plus DOM overlays for viewport pause, chat, and outcomes
   /interaction         - Interaction dispatch + result routing across target kinds
   /input               - Input command buffering and keyboard mapping
@@ -129,7 +130,7 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 - **Responsibility:** Maintain deterministic game state and apply commands.
 - **Input:** `WorldCommand[]` from the input buffer.
 - **Output:** Updated `WorldState`.
-- **Guarantee:** Same commands always produce same state.
+- **Guarantee:** Same commands always produce same state. Runtime domain classes under `src/world/entities` are construction/mapping helpers only and do not change deterministic command semantics.
 
 ### Render Layer
 - **Responsibility:** Translate world state into visual representation.

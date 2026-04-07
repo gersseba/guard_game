@@ -4,6 +4,13 @@ This document tracks the core serializable types and selected transient runtime 
 
 Source of truth:
 - `src/world/types.ts`
+- `src/world/entities/base/Entity.ts`
+- `src/world/entities/base/Actor.ts`
+- `src/world/entities/npcs/Npc.ts`
+- `src/world/entities/objects/WorldObject.ts`
+- `src/world/entities/items/Item.ts`
+- `src/world/entities/environment/Environment.ts`
+- `src/world/entities/dtoRuntimeSeams.ts`
 - `src/interaction/npcPromptContext.ts`
 - `src/interaction/objectInteraction.ts`
 - `src/interaction/adjacencyResolver.ts`
@@ -39,6 +46,51 @@ type ActionModalEligibleTarget = Extract<AdjacentTarget, { kind: 'guard' | 'npc'
 Used by runtime to distinguish between:
 - **Eligible:** Targets that open action modal (guards, NPCs)
 - **Ineligible:** Targets handled deterministically (doors, objects)
+
+## World Domain Runtime-Class Seams
+
+These interfaces and classes provide a typed construction seam between serializable DTOs in `src/world/types.ts` and runtime class instances in `src/world/entities/`.
+
+### EntityInit
+- `id: string`
+- `position: GridPosition`
+- `displayName: string`
+- `spriteAssetPath?: string`
+- `spriteSet?: SpriteSet`
+- `traits?: Record<string, string>`
+- `facts?: Record<string, string | number | boolean>`
+
+### ActorInit
+Extends `EntityInit`:
+- `facingDirection?: SpriteDirection`
+
+### NpcInit
+Extends `ActorInit`:
+- `npcType: string`
+- `dialogueContextKey: string`
+- `patrol?: { path: Array<{ x: number; y: number }> }`
+- `triggers?: NpcTriggers`
+- `inventory?: InventoryItem[]`
+- `instanceKnowledge?: string`
+- `instanceBehavior?: string`
+- `riddleClue?: RiddleClue`
+
+### WorldObjectInit
+Extends `EntityInit`:
+- `objectType: string`
+
+### ItemInit
+Extends `EntityInit`:
+- `itemType: string`
+
+### EnvironmentInit
+Extends `EntityInit`:
+- `isBlocking: boolean`
+
+### DtoToRuntimeAdapter<TDto, TRuntime>
+- `fromDto(dto: TDto): TRuntime`
+
+Used by seam adapter contracts in `src/world/entities/dtoRuntimeSeams.ts`.
 
 ## World Types
 
