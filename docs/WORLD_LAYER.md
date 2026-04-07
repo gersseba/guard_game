@@ -69,21 +69,21 @@ Legacy `WorldCommand` objects (`move`, `selectInventorySlot`, `useSelectedItem`,
 - `lastItemUseAttemptEvent`
 - `levelOutcome`
 
-All fields are serializable primitives, arrays, or plain objects.
+All fields remain JSON-serializable; some collections are now backed by runtime class instances with enumerable data fields.
 
 ## Domain Class Foundation
 
 The world layer now includes a domain-class foundation in `src/world/entities/`:
 - base classes: `Entity`, `Actor`
 - specialized classes: `Npc`, `GuardNpc`, `Item`, `Environment`, `WorldObject`
-- seam adapters: `dtoRuntimeSeams.ts` (`mapEntityDtoToRuntime`, `mapNpcDtoToRuntime`, `mapGuardDtoToRuntime`, `mapInteractiveObjectDtoToRuntime`)
+- seam adapters: `dtoRuntimeSeams.ts` (`mapEntityDtoToRuntime`, `mapNpcDtoToRuntime`, `mapGuardDtoToRuntime`, `mapInteractiveObjectDtoToRuntime`, `mapLevelInteractiveObjectDtoToRuntime`, `mapEnvironmentDtoToRuntime`, `mapInventoryItemDtoToRuntime`)
 
 These classes establish a typed DTO-to-runtime boundary for future incremental migration away from direct object-literal construction.
 
 Determinism/serialization contract remains unchanged:
-- `WorldState` is still plain JSON-serializable data
+- `WorldState` remains JSON-serializable data
 - command application and interaction outcomes remain code-owned and deterministic
-- guard and npc classes remain seam-focused, while interactive objects now use seam-mapped runtime subclasses for interaction polymorphism (`src/interaction/objectInteraction.ts`, `src/world/entities/objects/*.ts`)
+- NPCs, guards, interactive objects, environments, and loaded NPC inventory items are instantiated through explicit DTO-to-runtime seam mappers in deserialization
 
 `actorConversationHistoryByActorId` stores chat history keyed by actor id. It remains JSON-serializable and actor-neutral even though the current conversational actors are guards and NPCs.
 
@@ -145,6 +145,9 @@ Deterministic rules:
 - Optional `interactiveObjects`
 - Optional `environments` - array with required `id`, `displayName`, `x`, `y`, and `isBlocking` fields
 
+Validation boundary rule:
+- validation remains DTO-only and does not instantiate runtime classes
+
 Sprite metadata contracts:
 - `spriteAssetPath?: string` remains optional for player, guards, doors, npcs, and interactive objects.
 - `spriteSet?: SpriteSet` is now optional for player, guards, doors, npcs, and interactive objects.
@@ -167,7 +170,7 @@ For `npcs`, validation enforces:
 
 For `interactiveObjects`, validation enforces:
 - required identity/position fields
-- `objectType` currently restricted to `supply-crate`
+- `objectType` as a string domain token
 - `interactionType` in `inspect | use | talk`
 - `state` in `idle | used`
 - optional `pickupItem` with non-empty string `itemId` and `displayName`
@@ -180,6 +183,10 @@ For `environments`, validation enforces:
 ## Deserialization
 
 `deserializeLevel()` in `src/world/level.ts` maps level JSON into runtime entities and applies `validateSpatialLayout()` before returning state.
+
+Deserialization boundary rule:
+- validated DTOs are mapped into runtime class instances via seam helpers
+- JSON ingress/egress boundaries remain DTO-shaped; class instances are not required at file I/O boundaries
 
 Deserialization now passes through both optional sprite forms:
 - `spriteAssetPath`
@@ -233,7 +240,7 @@ This keeps interaction behavior and world-state JSON compatibility unchanged whi
 
 ### Interactive Object Deserialization
 
-Interactive object instance fields deserialize directly:
+Interactive object DTOs are mapped through runtime `WorldObject` subclasses (`ContainerObject`, `MechanismObject`, `DoorObject`, `InertObject`) while preserving instance fields:
 - `pickupItem`
 - `idleMessage`
 - `usedMessage`

@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchAndLoadLevel, fetchLevelManifest } from './levelLoader';
+import { Environment } from './entities/environment/Environment';
+import { Item } from './entities/items/Item';
+import { Npc } from './entities/npcs/Npc';
+import { InertObject } from './entities/objects/InertObject';
 import type { LevelData } from './types';
 
 const minimalLevel: LevelData = {
@@ -32,7 +36,46 @@ afterEach(() => {
 
 describe('fetchAndLoadLevel', () => {
   it('fetches a URL, validates, and returns a WorldState', async () => {
-    mockFetch(minimalLevel);
+    mockFetch({
+      ...minimalLevel,
+      npcs: [
+        {
+          id: 'npc-1',
+          displayName: 'Archivist',
+          x: 2,
+          y: 4,
+          npcType: 'archive_keeper',
+          inventory: [
+            {
+              itemId: 'token',
+              displayName: 'Token',
+              sourceObjectId: 'npc-1',
+              pickedUpAtTick: 0,
+            },
+          ],
+        },
+      ],
+      interactiveObjects: [
+        {
+          id: 'statue-1',
+          displayName: 'Statue',
+          x: 3,
+          y: 3,
+          objectType: 'decoration',
+          interactionType: 'inspect',
+          state: 'idle',
+        },
+      ],
+      environments: [
+        {
+          id: 'wall-1',
+          displayName: 'Stone Wall',
+          x: 1,
+          y: 1,
+          isBlocking: true,
+        },
+      ],
+    });
 
     const state = await fetchAndLoadLevel('/levels/test.json');
 
@@ -45,6 +88,40 @@ describe('fetchAndLoadLevel', () => {
       premise: 'A deterministic test premise.',
       goal: 'Verify level loading behavior.',
     });
+    expect(state.npcs[0]).toBeInstanceOf(Npc);
+    expect(state.npcs[0].inventory?.[0]).toBeInstanceOf(Item);
+    expect(state.interactiveObjects[0]).toBeInstanceOf(InertObject);
+    expect(state.environments?.[0]).toBeInstanceOf(Environment);
+  });
+
+  it('returns equivalent deterministic runtime state across repeated identical DTO loads', async () => {
+    const sameLevel: LevelData = {
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Archivist', x: 2, y: 4, npcType: 'archive_keeper' }],
+    };
+
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve(sameLevel),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve(sameLevel),
+        }),
+    );
+
+    const first = await fetchAndLoadLevel('/levels/test.json');
+    const second = await fetchAndLoadLevel('/levels/test.json');
+
+    expect(first).toEqual(second);
   });
 
   it('throws when the server returns a non-ok status', async () => {

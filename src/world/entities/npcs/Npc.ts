@@ -1,5 +1,6 @@
 import type { InventoryItem, NpcTriggers, RiddleClue } from '../../types';
 import { Actor, type ActorInit } from '../base/Actor';
+import { Item } from '../items/Item';
 
 export interface NpcInit extends ActorInit {
   npcType: string;
@@ -28,9 +29,17 @@ export class Npc extends Actor {
     this.dialogueContextKey = init.dialogueContextKey;
     this.patrol = init.patrol ? { path: init.patrol.path.map((position) => ({ ...position })) } : undefined;
     this.triggers = init.triggers;
-    this.inventory = init.inventory?.map((item) => ({ ...item }));
+    this.inventory = init.inventory?.map((item) => Item.fromInventoryItem(item));
     this.instanceKnowledge = init.instanceKnowledge;
     this.instanceBehavior = init.instanceBehavior;
     this.riddleClue = init.riddleClue ? { ...init.riddleClue } : undefined;
+
+    if (init.instanceKnowledge === undefined) {
+      delete this.instanceKnowledge;
+    }
+
+    if (init.instanceBehavior === undefined) {
+      delete this.instanceBehavior;
+    }
   }
 }

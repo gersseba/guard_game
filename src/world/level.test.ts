@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import riddleJson from '../../public/levels/riddle.json';
 import { deserializeLevel, validateLevelData } from './level';
+import { Environment } from './entities/environment/Environment';
+import { Item } from './entities/items/Item';
 import { GuardNpc } from './entities/npcs/GuardNpc';
+import { Npc } from './entities/npcs/Npc';
+import { MechanismObject } from './entities/objects/MechanismObject';
 import * as spatialRules from './spatialRules';
 import type { LevelData } from './types';
 
@@ -118,6 +122,7 @@ describe('deserializeLevel', () => {
         isBlocking: true,
       },
     ]);
+    expect(state.environments?.[0]).toBeInstanceOf(Environment);
   });
 
   it('keeps player inventory JSON-serializable after deserialization', () => {
@@ -607,6 +612,30 @@ describe('validateLevelData', () => {
 
     expect(state.interactiveObjects[0].objectType).toBe('mechanism');
     expect(state.interactiveObjects[0].spriteAssetPath).toBe('/assets/medieval_mechanism_door.svg');
+    expect(state.interactiveObjects[0]).toBeInstanceOf(MechanismObject);
+  });
+
+  it('validateLevelData keeps JSON ingress DTO-shaped and does not emit runtime class instances', () => {
+    const validated = validateLevelData({
+      ...minimalLevel,
+      npcs: [{ id: 'npc-1', displayName: 'Archivist', x: 4, y: 4, npcType: 'archive_keeper' }],
+      environments: [{ id: 'env-1', displayName: 'Stone Wall', x: 6, y: 7, isBlocking: true }],
+      interactiveObjects: [
+        {
+          id: 'mechanism-1',
+          displayName: 'Mechanism',
+          x: 4,
+          y: 4,
+          objectType: 'mechanism',
+          interactionType: 'use',
+          state: 'idle',
+        },
+      ],
+    });
+
+    expect(validated.npcs?.[0]).not.toBeInstanceOf(Npc);
+    expect(validated.environments?.[0]).not.toBeInstanceOf(Environment);
+    expect(validated.interactiveObjects?.[0]).not.toBeInstanceOf(MechanismObject);
   });
 
   it('throws when input is not an object', () => {
@@ -884,6 +913,7 @@ describe('npcs field', () => {
     const state = deserializeLevel(validated);
 
     expect(state.npcs).toHaveLength(2);
+    expect(state.npcs[0]).toBeInstanceOf(Npc);
     expect(state.npcs[0]).toEqual({
       id: 'npc-1',
       displayName: 'Archivist',
@@ -1275,6 +1305,7 @@ describe('NPC capability fields', () => {
         pickedUpAtTick: 0,
       },
     ]);
+    expect(state.npcs[0].inventory?.[0]).toBeInstanceOf(Item);
   });
 
   it('rejects npc patrol paths with out-of-bounds coordinates', () => {

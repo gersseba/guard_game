@@ -1,6 +1,11 @@
-import type { Environment, GridPosition, LevelData, Npc, WorldState } from './types';
+import type { Environment, LevelData, Npc, WorldState } from './types';
 import { validateSpatialLayout } from './spatialRules';
-import { mapGuardDtoToRuntime } from './entities/dtoRuntimeSeams';
+import {
+  mapEnvironmentDtoToRuntime,
+  mapGuardDtoToRuntime,
+  mapLevelInteractiveObjectDtoToRuntime,
+  mapNpcDtoToRuntime,
+} from './entities/dtoRuntimeSeams';
 
 const DEFAULT_TILE_SIZE = 48;
 
@@ -566,35 +571,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       ...(levelData.player.spriteSet !== undefined ? { spriteSet: levelData.player.spriteSet } : {}),
     },
     npcs: (levelData.npcs ?? []).map((n) => {
-      const npc: Npc = {
-        id: n.id,
-        displayName: n.displayName,
-        position: { x: n.x, y: n.y },
-        npcType: n.npcType,
-        dialogueContextKey: `npc_${n.npcType.toLowerCase()}`,
-        ...(n.spriteAssetPath !== undefined ? { spriteAssetPath: n.spriteAssetPath } : {}),
-        ...(n.spriteSet !== undefined ? { spriteSet: n.spriteSet } : {}),
-        ...(n.patrol !== undefined
-          ? {
-              patrol: {
-                path: n.patrol.path.map((position: GridPosition) => ({ x: position.x, y: position.y })),
-              },
-            }
-          : {}),
-        ...(n.triggers !== undefined ? { triggers: n.triggers } : {}),
-        ...(n.inventory !== undefined
-          ? {
-              inventory: n.inventory.map((item) => ({
-                itemId: item.itemId,
-                displayName: item.displayName,
-                sourceObjectId: item.sourceObjectId,
-                pickedUpAtTick: item.pickedUpAtTick,
-              })),
-            }
-          : {}),
-        ...(n.instanceKnowledge !== undefined ? { instanceKnowledge: n.instanceKnowledge } : {}),
-        ...(n.instanceBehavior !== undefined ? { instanceBehavior: n.instanceBehavior } : {}),
-      };
+      const npc: Npc = mapNpcDtoToRuntime(n);
 
       // Add riddleClue if present, computing mustStateDoorAs
       if (n.riddleClue !== undefined) {
@@ -624,20 +601,7 @@ export function deserializeLevel(levelData: LevelData): WorldState {
 
       return npc;
     }),
-    guards: levelData.guards.map((g) =>
-      mapGuardDtoToRuntime({
-        id: g.id,
-        displayName: g.displayName,
-        position: { x: g.x, y: g.y },
-        guardState: g.guardState,
-        ...(g.traits !== undefined ? { traits: g.traits } : {}),
-        ...(g.spriteAssetPath !== undefined ? { spriteAssetPath: g.spriteAssetPath } : {}),
-        ...(g.spriteSet !== undefined ? { spriteSet: g.spriteSet } : {}),
-        ...(g.instanceKnowledge !== undefined ? { instanceKnowledge: g.instanceKnowledge } : {}),
-        ...(g.instanceBehavior !== undefined ? { instanceBehavior: g.instanceBehavior } : {}),
-        ...(g.itemUseRules !== undefined ? { itemUseRules: g.itemUseRules } : {}),
-      }),
-    ),
+    guards: levelData.guards.map((g) => mapGuardDtoToRuntime(g)),
     doors: levelData.doors.map((d) => ({
       id: d.id,
       displayName: d.displayName,
@@ -649,29 +613,11 @@ export function deserializeLevel(levelData: LevelData): WorldState {
       ...(d.spriteAssetPath !== undefined ? { spriteAssetPath: d.spriteAssetPath } : {}),
       ...(d.spriteSet !== undefined ? { spriteSet: d.spriteSet } : {}),
     })),
-    interactiveObjects: (levelData.interactiveObjects ?? []).map((o) => ({
-      id: o.id,
-      displayName: o.displayName,
-      position: { x: o.x, y: o.y },
-      objectType: o.objectType,
-      interactionType: o.interactionType,
-      state: o.state,
-      pickupItem: o.pickupItem,
-      idleMessage: o.idleMessage,
-      usedMessage: o.usedMessage,
-      firstUseOutcome: o.firstUseOutcome,
-      spriteAssetPath: o.spriteAssetPath,
-      spriteSet: o.spriteSet,
-      capabilities: o.capabilities,
-      itemUseRules: o.itemUseRules,
-    })),
+    interactiveObjects: (levelData.interactiveObjects ?? []).map((o) =>
+      mapLevelInteractiveObjectDtoToRuntime(o),
+    ),
     environments: (levelData.environments ?? []).map(
-      (environment): Environment => ({
-        id: environment.id,
-        displayName: environment.displayName,
-        position: { x: environment.x, y: environment.y },
-        isBlocking: environment.isBlocking,
-      }),
+      (environment): Environment => mapEnvironmentDtoToRuntime(environment),
     ),
     actorConversationHistoryByActorId: {},
     lastItemUseAttemptEvent: null,

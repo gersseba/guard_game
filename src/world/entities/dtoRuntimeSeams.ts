@@ -1,16 +1,30 @@
-import type { GameEntity, Guard as GuardDto, InteractiveObject, Npc as NpcDto } from '../types';
+import type {
+  GameEntity,
+  InteractiveObject,
+  InventoryItem,
+  LevelEnvironmentDto,
+  LevelGuardDto,
+  LevelInteractiveObjectDto,
+  LevelNpcDto,
+} from '../types';
 import { Entity } from './base/Entity';
+import { Environment } from './environment/Environment';
+import { Item } from './items/Item';
 import { GuardNpc } from './npcs/GuardNpc';
 import { Npc } from './npcs/Npc';
 import { ContainerObject } from './objects/ContainerObject';
 import { DoorObject } from './objects/DoorObject';
+import { InertObject } from './objects/InertObject';
 import { MechanismObject } from './objects/MechanismObject';
 import { WorldObject } from './objects/WorldObject';
 
 export type EntityDtoContract = GameEntity;
-export type NpcDtoContract = NpcDto;
-export type GuardDtoContract = GuardDto;
+export type NpcDtoContract = LevelNpcDto;
+export type GuardDtoContract = LevelGuardDto;
 export type InteractiveObjectDtoContract = InteractiveObject;
+export type LevelInteractiveObjectDtoContract = LevelInteractiveObjectDto;
+export type EnvironmentDtoContract = LevelEnvironmentDto;
+export type ItemDtoContract = InventoryItem;
 
 export interface DtoToRuntimeAdapter<TDto, TRuntime> {
   fromDto(dto: TDto): TRuntime;
@@ -30,37 +44,43 @@ export const mapEntityDtoToRuntime = (dto: EntityDtoContract): Entity =>
 export const mapNpcDtoToRuntime = (dto: NpcDtoContract): Npc =>
   new Npc({
     id: dto.id,
-    position: dto.position,
+    position: { x: dto.x, y: dto.y },
     displayName: dto.displayName,
     spriteAssetPath: dto.spriteAssetPath,
     spriteSet: dto.spriteSet,
-    traits: dto.traits,
-    facts: dto.facts,
     npcType: dto.npcType,
-    dialogueContextKey: dto.dialogueContextKey,
+    dialogueContextKey: `npc_${dto.npcType.toLowerCase()}`,
     patrol: dto.patrol,
     triggers: dto.triggers,
-    inventory: dto.inventory,
+    inventory: dto.inventory?.map(mapInventoryItemDtoToRuntime),
     instanceKnowledge: dto.instanceKnowledge,
     instanceBehavior: dto.instanceBehavior,
-    riddleClue: dto.riddleClue,
   });
 
 export const mapGuardDtoToRuntime = (dto: GuardDtoContract): GuardNpc =>
   new GuardNpc({
     id: dto.id,
-    position: dto.position,
+    position: { x: dto.x, y: dto.y },
     displayName: dto.displayName,
     spriteAssetPath: dto.spriteAssetPath,
     spriteSet: dto.spriteSet,
     traits: dto.traits,
-    facts: dto.facts,
     guardState: dto.guardState,
-    facingDirection: dto.facingDirection,
     instanceKnowledge: dto.instanceKnowledge,
     instanceBehavior: dto.instanceBehavior,
     itemUseRules: dto.itemUseRules,
   });
+
+export const mapEnvironmentDtoToRuntime = (dto: EnvironmentDtoContract): Environment =>
+  new Environment({
+    id: dto.id,
+    displayName: dto.displayName,
+    position: { x: dto.x, y: dto.y },
+    isBlocking: dto.isBlocking,
+  });
+
+export const mapInventoryItemDtoToRuntime = (dto: ItemDtoContract): Item =>
+  Item.fromInventoryItem(dto);
 
 const isDoorLikeObjectType = (objectType: string): boolean => {
   return objectType === 'door' || objectType.endsWith('-door') || objectType.includes('door');
@@ -82,4 +102,28 @@ export const mapInteractiveObjectDtoToRuntime = (
   }
 
   return null;
+};
+
+export const mapLevelInteractiveObjectDtoToRuntime = (
+  dto: LevelInteractiveObjectDtoContract,
+): WorldObject => {
+  const runtimeShape: InteractiveObject = {
+    id: dto.id,
+    displayName: dto.displayName,
+    position: { x: dto.x, y: dto.y },
+    objectType: dto.objectType,
+    interactionType: dto.interactionType,
+    state: dto.state,
+    pickupItem: dto.pickupItem,
+    idleMessage: dto.idleMessage,
+    usedMessage: dto.usedMessage,
+    firstUseOutcome: dto.firstUseOutcome,
+    spriteAssetPath: dto.spriteAssetPath,
+    spriteSet: dto.spriteSet,
+    capabilities: dto.capabilities,
+    itemUseRules: dto.itemUseRules,
+  };
+
+  const worldObject = mapInteractiveObjectDtoToRuntime(runtimeShape);
+  return worldObject ?? new InertObject(runtimeShape);
 };
