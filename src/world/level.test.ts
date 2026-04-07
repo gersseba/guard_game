@@ -1128,3 +1128,109 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
   });
 });
 
+describe('NPC capability fields', () => {
+  it('maps optional npc patrol, triggers, and inventory fields during deserialization', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [
+        {
+          id: 'npc-1',
+          displayName: 'Courier',
+          x: 5,
+          y: 5,
+          npcType: 'villager',
+          patrol: {
+            path: [
+              { x: 5, y: 5 },
+              { x: 6, y: 5 },
+            ],
+          },
+          triggers: {
+            onTalk: {
+              setFact: 'alerted',
+              value: true,
+            },
+          },
+          inventory: [
+            {
+              itemId: 'key-token',
+              displayName: 'Key Token',
+              sourceObjectId: 'npc-1',
+              pickedUpAtTick: 0,
+            },
+          ],
+        },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    const state = deserializeLevel(validateLevelData(level));
+
+    expect(state.npcs[0].patrol).toEqual({
+      path: [
+        { x: 5, y: 5 },
+        { x: 6, y: 5 },
+      ],
+    });
+    expect(state.npcs[0].triggers).toEqual({
+      onTalk: {
+        setFact: 'alerted',
+        value: true,
+      },
+    });
+    expect(state.npcs[0].inventory).toEqual([
+      {
+        itemId: 'key-token',
+        displayName: 'Key Token',
+        sourceObjectId: 'npc-1',
+        pickedUpAtTick: 0,
+      },
+    ]);
+  });
+
+  it('rejects npc patrol paths with out-of-bounds coordinates', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [
+        {
+          id: 'npc-1',
+          displayName: 'Courier',
+          x: 5,
+          y: 5,
+          npcType: 'villager',
+          patrol: {
+            path: [{ x: 99, y: 5 }],
+          },
+        },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('patrol.path[0] is out of bounds');
+  });
+
+  it('rejects npc triggers with invalid shape', () => {
+    const bad = {
+      ...minimalLevel,
+      npcs: [
+        {
+          id: 'npc-1',
+          displayName: 'Courier',
+          x: 5,
+          y: 5,
+          npcType: 'villager',
+          triggers: {
+            onTalk: {
+              setFact: 42,
+              value: true,
+            },
+          },
+        },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('triggers.onTalk.setFact must be a non-empty string');
+  });
+});
+

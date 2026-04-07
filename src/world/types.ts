@@ -122,9 +122,22 @@ export interface EntityCapabilities {
   lock?: { isLocked: boolean; requiredItemId?: string };
 }
 
+export interface TriggerEffect {
+  setFact: string;
+  value: string | boolean | number;
+}
+
+export interface NpcTriggers {
+  onApproach?: TriggerEffect;
+  onTalk?: TriggerEffect;
+}
+
 export interface Npc extends GameEntity {
   npcType: string;
   dialogueContextKey: string;
+  patrol?: { path: Array<{ x: number; y: number }> };
+  triggers?: NpcTriggers;
+  inventory?: InventoryItem[];
   /** Instance-specific knowledge this NPC has (overrides or extends type-level knowledge). */
   instanceKnowledge?: string;
   /** Instance-specific behavior traits for this NPC (overrides or extends type-level behavior). */
@@ -246,6 +259,9 @@ export interface LevelData {
     x: number;
     y: number;
     npcType: string;
+    patrol?: { path: GridPosition[] };
+    triggers?: NpcTriggers;
+    inventory?: InventoryItem[];
     spriteAssetPath?: string;
     spriteSet?: SpriteSet;
     /** Instance-specific knowledge this NPC has. */

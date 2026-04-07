@@ -1,4 +1,4 @@
-import type { LevelData, WorldState } from './types';
+import type { GridPosition, LevelData, WorldState } from './types';
 import { validateSpatialLayout } from './spatialRules';
 
 const DEFAULT_TILE_SIZE = 48;
@@ -81,6 +81,98 @@ const validateObjectCapabilities = (value: unknown, contextLabel: string): void 
   }
 };
 
+const validateGridPositionInBounds = (
+  value: unknown,
+  contextLabel: string,
+  gridWidth: number,
+  gridHeight: number,
+): void => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`Invalid level data: ${contextLabel} must be an object with numeric x and y`);
+  }
+
+  const position = value as Record<string, unknown>;
+  if (typeof position['x'] !== 'number' || typeof position['y'] !== 'number') {
+    throw new Error(`Invalid level data: ${contextLabel} must include numeric x and y`);
+  }
+
+  if (
+    position['x'] < 0 ||
+    position['x'] >= gridWidth ||
+    position['y'] < 0 ||
+    position['y'] >= gridHeight
+  ) {
+    throw new Error(
+      `Invalid level data: ${contextLabel} is out of bounds at (${position['x']}, ${position['y']})`,
+    );
+  }
+};
+
+const validateTriggerEffect = (value: unknown, contextLabel: string): void => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`Invalid level data: ${contextLabel} must be an object when provided`);
+  }
+
+  const effect = value as Record<string, unknown>;
+  if (typeof effect['setFact'] !== 'string' || effect['setFact'].trim() === '') {
+    throw new Error(`Invalid level data: ${contextLabel}.setFact must be a non-empty string`);
+  }
+
+  const effectValue = effect['value'];
+  if (
+    typeof effectValue !== 'string' &&
+    typeof effectValue !== 'boolean' &&
+    typeof effectValue !== 'number'
+  ) {
+    throw new Error(
+      `Invalid level data: ${contextLabel}.value must be a string, boolean, or number`,
+    );
+  }
+};
+
+const validateNpcTriggers = (value: unknown, contextLabel: string): void => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`Invalid level data: ${contextLabel} must be an object when provided`);
+  }
+
+  const triggers = value as Record<string, unknown>;
+  for (const key of Object.keys(triggers)) {
+    if (key !== 'onApproach' && key !== 'onTalk') {
+      throw new Error(`Invalid level data: ${contextLabel} has unknown key '${key}'`);
+    }
+  }
+
+  if (triggers['onApproach'] !== undefined) {
+    validateTriggerEffect(triggers['onApproach'], `${contextLabel}.onApproach`);
+  }
+
+  if (triggers['onTalk'] !== undefined) {
+    validateTriggerEffect(triggers['onTalk'], `${contextLabel}.onTalk`);
+  }
+};
+
+const validateInventoryItems = (value: unknown, contextLabel: string): void => {
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid level data: ${contextLabel} must be an array when provided`);
+  }
+
+  for (let index = 0; index < value.length; index++) {
+    const item = value[index] as Record<string, unknown>;
+    if (
+      typeof item !== 'object' ||
+      item === null ||
+      typeof item['itemId'] !== 'string' ||
+      typeof item['displayName'] !== 'string' ||
+      typeof item['sourceObjectId'] !== 'string' ||
+      typeof item['pickedUpAtTick'] !== 'number'
+    ) {
+      throw new Error(
+        `Invalid level data: ${contextLabel}[${index}] must include itemId, displayName, sourceObjectId, and pickedUpAtTick`,
+      );
+    }
+  }
+};
+
 /**
  * Validates that an unknown value conforms to the LevelData schema.
  * Throws a descriptive Error if any required field is missing or has an unexpected type/value.
@@ -115,6 +207,9 @@ export function validateLevelData(input: unknown): LevelData {
   if (typeof raw['height'] !== 'number' || raw['height'] <= 0) {
     throw new Error('Invalid level data: height must be a positive number');
   }
+
+  const levelWidth = raw['width'] as number;
+  const levelHeight = raw['height'] as number;
 
   const player = raw['player'];
   if (
@@ -270,6 +365,38 @@ export function validateLevelData(input: unknown): LevelData {
         validateSpriteSet(npc['spriteSet'], `npc at index ${i}`);
       }
 
+      if (npc['patrol'] !== undefined) {
+        if (
+          typeof npc['patrol'] !== 'object' ||
+          npc['patrol'] === null ||
+          Array.isArray(npc['patrol'])
+        ) {
+          throw new Error(`Invalid level data: npc at index ${i} patrol must be an object when provided`);
+        }
+
+        const patrol = npc['patrol'] as Record<string, unknown>;
+        if (!Array.isArray(patrol['path'])) {
+          throw new Error(`Invalid level data: npc at index ${i} patrol.path must be an array`);
+        }
+
+        for (let pathIndex = 0; pathIndex < patrol['path'].length; pathIndex++) {
+          validateGridPositionInBounds(
+            patrol['path'][pathIndex],
+            `npc at index ${i} patrol.path[${pathIndex}]`,
+            levelWidth,
+            levelHeight,
+          );
+        }
+      }
+
+      if (npc['triggers'] !== undefined) {
+        validateNpcTriggers(npc['triggers'], `npc at index ${i} triggers`);
+      }
+
+      if (npc['inventory'] !== undefined) {
+        validateInventoryItems(npc['inventory'], `npc at index ${i} inventory`);
+      }
+
       // instanceKnowledge and instanceBehavior are optional strings
       if (npc['instanceKnowledge'] !== undefined && typeof npc['instanceKnowledge'] !== 'string') {
         throw new Error(
@@ -418,6 +545,24 @@ export function deserializeLevel(levelData: LevelData): WorldState {
         dialogueContextKey: `npc_${n.npcType.toLowerCase()}`,
         ...(n.spriteAssetPath !== undefined ? { spriteAssetPath: n.spriteAssetPath } : {}),
         ...(n.spriteSet !== undefined ? { spriteSet: n.spriteSet } : {}),
+        ...(n.patrol !== undefined
+          ? {
+              patrol: {
+                path: n.patrol.path.map((position: GridPosition) => ({ x: position.x, y: position.y })),
+              },
+            }
+          : {}),
+        ...(n.triggers !== undefined ? { triggers: n.triggers } : {}),
+        ...(n.inventory !== undefined
+          ? {
+              inventory: n.inventory.map((item) => ({
+                itemId: item.itemId,
+                displayName: item.displayName,
+                sourceObjectId: item.sourceObjectId,
+                pickedUpAtTick: item.pickedUpAtTick,
+              })),
+            }
+          : {}),
         ...(n.instanceKnowledge !== undefined ? { instanceKnowledge: n.instanceKnowledge } : {}),
         ...(n.instanceBehavior !== undefined ? { instanceBehavior: n.instanceBehavior } : {}),
       } as any;

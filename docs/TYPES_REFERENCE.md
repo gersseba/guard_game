@@ -75,6 +75,18 @@ Opt-in capability container for game entities. Omit a key if the entity lacks th
 - `patrol?: { path: GridPosition[] }` - Entity follows a patrol path
 - `lock?: { isLocked: boolean; requiredItemId?: string }` - Entity has a lock mechanism
 
+### TriggerEffect
+- `setFact: string` - Fact key to update on the NPC facts bag
+- `value: string | boolean | number` - Value to assign to that fact key
+
+Serializable trigger mutation used by NPC approach/talk hooks.
+
+### NpcTriggers
+- `onApproach?: TriggerEffect`
+- `onTalk?: TriggerEffect`
+
+Optional trigger hooks for deterministic NPC state updates.
+
 ### Player
 - `id: string`
 - `displayName: string`
@@ -125,6 +137,9 @@ Represents one deterministic selected-item use attempt resolved for a specific c
 - `position: GridPosition`
 - `npcType: string` - Categorizes the NPC's role (for prompt profile resolution)
 - `dialogueContextKey: string` - Deterministically derived from `npcType` via `npc_${npcType.toLowerCase()}`
+- `patrol?: { path: Array<{ x: number; y: number }> }` - Optional scripted patrol path, advanced by world tick in loop order
+- `triggers?: NpcTriggers` - Optional deterministic trigger hooks for approach/talk
+- `inventory?: InventoryItem[]` - Optional NPC-carried items used for deterministic dialogue item transfer
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`
 - `instanceKnowledge?: string` - Instance-specific knowledge this NPC has; included in prompt context output when set
