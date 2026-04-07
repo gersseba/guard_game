@@ -26,7 +26,7 @@ export interface RuntimeModalCoordinatorDependencies {
   chatModalHostElement: HTMLElement;
   actionModalHostElement: HTMLElement;
   inventoryOverlayHostElement: HTMLElement;
-  onOpenConversationForActionSession: (session: RuntimeActionModalSession) => void;
+  onOpenConversationForActionSession: (session: RuntimeActionModalSession) => boolean;
   onSendConversationMessage: (
     actorId: string,
     playerMessage: string,
@@ -97,7 +97,11 @@ export const createRuntimeModalCoordinator = (
 
       if (action === 'chat') {
         actionModal.close();
-        dependencies.onOpenConversationForActionSession(session);
+        const didStartConversation = dependencies.onOpenConversationForActionSession(session);
+        if (!didStartConversation) {
+          actionModal.open(session.displayName);
+          dependencies.viewportPauseOverlay.show();
+        }
         return;
       }
 

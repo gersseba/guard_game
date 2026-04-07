@@ -26,7 +26,7 @@ export interface RuntimeInteractionResultBridgeDependencies {
 
 export interface RuntimeInteractionResultBridge {
   runInteractionIfRequested(worldState: WorldState, commands: WorldCommand[]): void;
-  openConversationForActionSession(session: RuntimeActionModalSession): void;
+  openConversationForActionSession(session: RuntimeActionModalSession): boolean;
   sendConversationMessage(
     actorId: string,
     playerMessage: string,
@@ -93,17 +93,18 @@ export const createRuntimeInteractionResultBridge = (
       dispatchAndHandleResult(adjacentTarget, worldState);
     },
 
-    openConversationForActionSession(session: RuntimeActionModalSession): void {
+    openConversationForActionSession(session: RuntimeActionModalSession): boolean {
       const currentWorldState = dependencies.world.getState();
       const target = dependencies.interactionDispatcher.resolveConversationalTarget(
         currentWorldState,
         session.targetId,
       );
       if (!target) {
-        return;
+        return false;
       }
 
       dispatchAndHandleResult(target, currentWorldState);
+      return true;
     },
 
     async sendConversationMessage(

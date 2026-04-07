@@ -194,4 +194,33 @@ describe('createRuntimeInteractionResultBridge', () => {
     expect(onAssistantMessage).toHaveBeenCalledWith('Not yet.');
     expect(resetToState).toHaveBeenCalledWith(updatedWorldState);
   });
+
+  it('returns false when action-modal chat target can no longer be resolved', () => {
+    const worldState = createWorldState({ guards: [] });
+    const interactionDispatcher = createInteractionDispatcherMock(() => ({
+      kind: 'guard',
+      targetId: 'guard-1',
+      displayName: 'Guard One',
+      isConversational: false,
+    }));
+
+    const bridge = createRuntimeInteractionResultBridge({
+      world: {
+        getState: () => worldState,
+        resetToState: vi.fn(),
+      },
+      interactionDispatcher,
+      onActionModalStarted: vi.fn(),
+      onConversationStarted: vi.fn(),
+    });
+
+    const didStartConversation = bridge.openConversationForActionSession({
+      targetId: 'guard-1',
+      targetKind: 'guard',
+      displayName: 'Guard One',
+    });
+
+    expect(didStartConversation).toBe(false);
+    expect(interactionDispatcher.dispatch).not.toHaveBeenCalled();
+  });
 });
