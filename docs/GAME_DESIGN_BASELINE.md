@@ -40,6 +40,7 @@ Implemented systems:
 - World model:
   - Serializable WorldState with tick, grid, level metadata/objective, entities (including optional environments), conversation history, last item-use attempt event, and levelOutcome.
   - Deterministic command application and level deserialization.
+  - Guards deserialize via runtime `GuardNpc` specialization (inherits from `Npc`) while preserving the same serialized guard state contract.
   - Spatial validation at level load (in-bounds and no overlaps, including environments).
   - Deterministic selected inventory slot state in player inventory (`selectedItem`).
 - Input:
@@ -99,6 +100,7 @@ Design-level entity model in current implementation:
     - Included in npc prompt context as player id and displayName.
 - Guard:
   - Core fields: id, displayName, position, guardState, honestyTrait, facingDirection, optional sprite fields, optional instanceKnowledge/instanceBehavior.
+  - Runtime class model: represented as `GuardNpc` (a specialized `Npc` subclass) with non-enumerable inherited `npcType/dialogueContextKey` to keep guard JSON output stable.
   - Deterministic behavior fields:
     - honestyTrait drives truth boolean in prompt context.
     - facingDirection updates from approach on initial guard interaction open.
