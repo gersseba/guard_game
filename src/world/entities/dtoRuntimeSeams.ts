@@ -1,11 +1,16 @@
-import type { GameEntity, Guard as GuardDto, Npc as NpcDto } from '../types';
+import type { GameEntity, Guard as GuardDto, InteractiveObject, Npc as NpcDto } from '../types';
 import { Entity } from './base/Entity';
 import { GuardNpc } from './npcs/GuardNpc';
 import { Npc } from './npcs/Npc';
+import { ContainerObject } from './objects/ContainerObject';
+import { DoorObject } from './objects/DoorObject';
+import { MechanismObject } from './objects/MechanismObject';
+import { WorldObject } from './objects/WorldObject';
 
 export type EntityDtoContract = GameEntity;
 export type NpcDtoContract = NpcDto;
 export type GuardDtoContract = GuardDto;
+export type InteractiveObjectDtoContract = InteractiveObject;
 
 export interface DtoToRuntimeAdapter<TDto, TRuntime> {
   fromDto(dto: TDto): TRuntime;
@@ -56,3 +61,25 @@ export const mapGuardDtoToRuntime = (dto: GuardDtoContract): GuardNpc =>
     instanceBehavior: dto.instanceBehavior,
     itemUseRules: dto.itemUseRules,
   });
+
+const isDoorLikeObjectType = (objectType: string): boolean => {
+  return objectType === 'door' || objectType.endsWith('-door') || objectType.includes('door');
+};
+
+export const mapInteractiveObjectDtoToRuntime = (
+  dto: InteractiveObjectDtoContract,
+): WorldObject | null => {
+  if (dto.capabilities?.containsItems) {
+    return new ContainerObject(dto);
+  }
+
+  if (dto.capabilities?.isActivatable || dto.objectType === 'mechanism') {
+    return new MechanismObject(dto);
+  }
+
+  if (isDoorLikeObjectType(dto.objectType)) {
+    return new DoorObject(dto);
+  }
+
+  return null;
+};

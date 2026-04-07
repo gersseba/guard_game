@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { Environment } from './environment/Environment';
 import { Item } from './items/Item';
-import { mapGuardDtoToRuntime, mapNpcDtoToRuntime } from './dtoRuntimeSeams';
+import { mapGuardDtoToRuntime, mapInteractiveObjectDtoToRuntime, mapNpcDtoToRuntime } from './dtoRuntimeSeams';
 import { GuardNpc } from './npcs/GuardNpc';
 import { Npc } from './npcs/Npc';
+import { ContainerObject } from './objects/ContainerObject';
+import { DoorObject } from './objects/DoorObject';
+import { MechanismObject } from './objects/MechanismObject';
 
 describe('domain class foundation seams', () => {
   it('instantiates foundational classes and maps NPC dto to runtime class without runtime integration', () => {
@@ -75,5 +78,51 @@ describe('domain class foundation seams', () => {
         },
       },
     });
+  });
+
+  it('maps interactive object dto to the expected polymorphic world object class', () => {
+    const containerRuntime = mapInteractiveObjectDtoToRuntime({
+      id: 'obj-container',
+      displayName: 'Crate',
+      position: { x: 1, y: 1 },
+      objectType: 'supply-crate',
+      interactionType: 'inspect',
+      state: 'idle',
+      capabilities: {
+        containsItems: true,
+      },
+    });
+
+    const mechanismRuntime = mapInteractiveObjectDtoToRuntime({
+      id: 'obj-mechanism',
+      displayName: 'Mechanism',
+      position: { x: 2, y: 1 },
+      objectType: 'mechanism',
+      interactionType: 'use',
+      state: 'idle',
+    });
+
+    const doorRuntime = mapInteractiveObjectDtoToRuntime({
+      id: 'obj-door',
+      displayName: 'Service Door',
+      position: { x: 3, y: 1 },
+      objectType: 'service-door',
+      interactionType: 'use',
+      state: 'idle',
+    });
+
+    const inertRuntime = mapInteractiveObjectDtoToRuntime({
+      id: 'obj-inert',
+      displayName: 'Statue',
+      position: { x: 4, y: 1 },
+      objectType: 'decoration',
+      interactionType: 'inspect',
+      state: 'idle',
+    });
+
+    expect(containerRuntime).toBeInstanceOf(ContainerObject);
+    expect(mechanismRuntime).toBeInstanceOf(MechanismObject);
+    expect(doorRuntime).toBeInstanceOf(DoorObject);
+    expect(inertRuntime).toBeNull();
   });
 });
