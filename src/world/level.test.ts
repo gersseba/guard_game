@@ -95,6 +95,30 @@ describe('deserializeLevel', () => {
     expect(state.player.inventory.items).toEqual([]);
   });
 
+  it('deserializes environments when provided', () => {
+    const state = deserializeLevel({
+      ...minimalLevel,
+      environments: [
+        {
+          id: 'wall-1',
+          displayName: 'Stone Wall',
+          x: 6,
+          y: 7,
+          isBlocking: true,
+        },
+      ],
+    });
+
+    expect(state.environments).toEqual([
+      {
+        id: 'wall-1',
+        displayName: 'Stone Wall',
+        position: { x: 6, y: 7 },
+        isBlocking: true,
+      },
+    ]);
+  });
+
   it('keeps player inventory JSON-serializable after deserialization', () => {
     const state = deserializeLevel(minimalLevel);
 
@@ -337,6 +361,41 @@ describe('validateLevelData', () => {
   it('returns the input unchanged when all required fields are valid', () => {
     const result = validateLevelData(minimalLevel);
     expect(result).toEqual(minimalLevel);
+  });
+
+  it('accepts optional environments when each entry has required fields', () => {
+    const levelWithEnvironments: LevelData = {
+      ...minimalLevel,
+      environments: [
+        {
+          id: 'wall-1',
+          displayName: 'Stone Wall',
+          x: 3,
+          y: 4,
+          isBlocking: true,
+        },
+      ],
+    };
+
+    expect(validateLevelData(levelWithEnvironments)).toEqual(levelWithEnvironments);
+  });
+
+  it('throws when an environment entry is missing required fields', () => {
+    const invalidLevel = {
+      ...minimalLevel,
+      environments: [
+        {
+          id: 'wall-1',
+          displayName: 'Stone Wall',
+          x: 3,
+          y: 4,
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(invalidLevel)).toThrowError(
+      'Invalid level data: environment at index 0 must have id, displayName, x, y, and isBlocking',
+    );
   });
 
   it('throws when version is missing', () => {

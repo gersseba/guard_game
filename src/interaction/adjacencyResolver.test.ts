@@ -23,6 +23,7 @@ const baseState = (): WorldState => ({
   guards: [],
   doors: [],
   interactiveObjects: [],
+  environments: [],
   actorConversationHistoryByActorId: {},
   levelOutcome: null,
 });
@@ -84,6 +85,20 @@ describe('resolveAdjacentTarget', () => {
       const state = baseState();
       state.guards = [makeGuard(5, 3)]; // distance 2 right
       state.doors = [makeDoor(3, 5)]; // distance 2 down
+      expect(resolveAdjacentTarget(state)).toBeNull();
+    });
+
+    it('ignores adjacent environments as interaction targets', () => {
+      const state = baseState();
+      state.environments = [
+        {
+          id: 'wall-1',
+          displayName: 'Stone Wall',
+          position: { x: 4, y: 3 },
+          isBlocking: true,
+        },
+      ];
+
       expect(resolveAdjacentTarget(state)).toBeNull();
     });
   });
