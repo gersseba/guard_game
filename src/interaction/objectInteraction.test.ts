@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { handleInteractiveObjectInteraction } from './objectInteraction';
-import type { InteractiveObject, Player, WorldState } from '../world/types';
+import { handleObjectInteraction } from './objectInteraction';
+import type { InteractiveObject, ObjectCapabilities, Player, WorldState } from '../world/types';
 
 const player: Player = {
   id: 'player-1',
@@ -11,19 +11,51 @@ const player: Player = {
   },
 };
 
-const makeSupplyCrate = (
+const makeContainerObject = (
   id: string,
   state: InteractiveObject['state'],
   overrides: Partial<InteractiveObject> = {},
 ): InteractiveObject => ({
   id,
-  displayName: 'Supply Crate',
+  displayName: 'Supply Container',
   position: { x: 4, y: 3 },
   objectType: 'supply-crate',
   interactionType: 'inspect',
   state,
-  idleMessage: 'You open the crate and find bandages.',
-  usedMessage: 'The crate is empty now.',
+  capabilities: { containsItems: true },
+  idleMessage: 'You open the container and find items.',
+  usedMessage: 'The container is empty now.',
+  ...overrides,
+});
+
+const makeActivatableObject = (
+  id: string,
+  state: InteractiveObject['state'],
+  overrides: Partial<InteractiveObject> = {},
+): InteractiveObject => ({
+  id,
+  displayName: 'Activation Device',
+  position: { x: 5, y: 3 },
+  objectType: 'mechanism',
+  interactionType: 'use',
+  state,
+  capabilities: { isActivatable: true },
+  idleMessage: 'The device looks ready to activate.',
+  usedMessage: 'The device has been activated.',
+  ...overrides,
+});
+
+const makeInertObject = (
+  id: string,
+  overrides: Partial<InteractiveObject> = {},
+): InteractiveObject => ({
+  id,
+  displayName: 'Decorative Object',
+  position: { x: 6, y: 3 },
+  objectType: 'decoration',
+  interactionType: 'inspect',
+  state: 'idle',
+  // No capabilities - decorative only
   ...overrides,
 });
 
@@ -45,112 +77,255 @@ const createWorldState = (...interactiveObjects: InteractiveObject[]): WorldStat
   levelOutcome: null,
 });
 
-describe('handleInteractiveObjectInteraction', () => {
-  it('uses shared object-type behavior and instance fields for first supply-crate interaction', () => {
-    const crate = makeSupplyCrate('crate-a', 'idle', {
-      idleMessage: 'You lift the lid and uncover a brass key.',
-      pickupItem: {
-        itemId: 'brass-key',
-        displayName: 'Brass Key',
-      },
-      firstUseOutcome: 'win',
-    });
-    const worldState = createWorldState(crate);
+describe('handleObjectInteraction', () => {
+  describe('container objects (containsItems capability)', () => {
+    it('reveals items from a container on first interaction', () => {
+      const container = makeContainerObject('container-a', 'idle', {
+        idleMessage: 'You lift the lid and uncover a brass key.',
+        pickupItem: {
+          itemId: 'brass-key',
+          displayName: 'Brass Key',
+        },
+        firstUseOutcome: 'win',
+      });
+      const worldState = createWorldState(container);
 
-    const result = handleInteractiveObjectInteraction({
-      interactiveObject: crate,
-      player,
-      worldState,
-    });
+      const result = handleObjectInteraction({
+        interactiveObject: container,
+        player,
+        worldState,
+      });
 
-    expect(result.objectId).toBe('crate-a');
-    expect(result.responseText).toBe('You lift the lid and uncover a brass key.');
-    expect(result.updatedWorldState.levelOutcome).toBe('win');
-    expect(result.updatedWorldState.interactiveObjects[0].state).toBe('used');
-    expect(result.updatedWorldState.player.inventory.items).toEqual([
-      {
-        itemId: 'brass-key',
-        displayName: 'Brass Key',
-        sourceObjectId: 'crate-a',
-        pickedUpAtTick: 0,
-      },
-    ]);
-  });
-
-  it('returns used-state message on repeat interaction and does not re-trigger first-use outcome', () => {
-    const crate = makeSupplyCrate('crate-b', 'used', {
-      usedMessage: 'Only splinters remain inside the crate.',
-      firstUseOutcome: 'lose',
-    });
-    const worldState = createWorldState(crate);
-
-    const result = handleInteractiveObjectInteraction({
-      interactiveObject: crate,
-      player,
-      worldState,
+      expect(result.objectId).toBe('container-a');
+      expect(result.responseText).toBe('You lift the lid and uncover a brass key.');
+      expect(result.updatedWorldState.levelOutcome).toBe('win');
+      expect(result.updatedWorldState.interactiveObjects[0].state).toBe('used');
+      expect(result.updatedWorldState.player.inventory.items).toEqual([
+        {
+          itemId: 'brass-key',
+          displayName: 'Brass Key',
+          sourceObjectId: 'container-a',
+          pickedUpAtTick: 0,
+        },
+      ]);
     });
 
-    expect(result.responseText).toBe('Only splinters remain inside the crate.');
-    expect(result.updatedWorldState.levelOutcome).toBeNull();
-    expect(result.updatedWorldState.interactiveObjects[0].state).toBe('used');
-    expect(result.updatedWorldState.player.inventory.items).toEqual([]);
-  });
+    it('returns used-state message on repeat interaction and does not re-trigger first-use outcome', () => {
+      const container = makeContainerObject('container-b', 'used', {
+        usedMessage: 'Only splinters remain inside the container.',
+        firstUseOutcome: 'lose',
+      });
+      const worldState = createWorldState(container);
 
-  it('keeps per-instance outcomes distinct while reusing the same supply-crate handler', () => {
-    const winningCrate = makeSupplyCrate('crate-win', 'idle', {
-      idleMessage: 'You find the evacuation signal flare.',
-      firstUseOutcome: 'win',
-    });
-    const neutralCrate = makeSupplyCrate('crate-neutral', 'idle', {
-      idleMessage: 'You find rope and a water skin.',
-    });
+      const result = handleObjectInteraction({
+        interactiveObject: container,
+        player,
+        worldState,
+      });
 
-    const winningResult = handleInteractiveObjectInteraction({
-      interactiveObject: winningCrate,
-      player,
-      worldState: createWorldState(winningCrate, neutralCrate),
-    });
-    const neutralResult = handleInteractiveObjectInteraction({
-      interactiveObject: neutralCrate,
-      player,
-      worldState: createWorldState(winningCrate, neutralCrate),
+      expect(result.responseText).toBe('Only splinters remain inside the container.');
+      expect(result.updatedWorldState.levelOutcome).toBeNull();
+      expect(result.updatedWorldState.interactiveObjects[0].state).toBe('used');
+      expect(result.updatedWorldState.player.inventory.items).toEqual([]);
     });
 
-    expect(winningResult.responseText).toBe('You find the evacuation signal flare.');
-    expect(winningResult.updatedWorldState.levelOutcome).toBe('win');
-    expect(winningResult.updatedWorldState.player.inventory.items).toEqual([]);
-    expect(neutralResult.responseText).toBe('You find rope and a water skin.');
-    expect(neutralResult.updatedWorldState.levelOutcome).toBeNull();
-    expect(neutralResult.updatedWorldState.player.inventory.items).toEqual([]);
-  });
+    it('does not duplicate pickup from the same object instance across repeated interactions', () => {
+      const container = makeContainerObject('container-repeat', 'idle', {
+        pickupItem: {
+          itemId: 'field-rations',
+          displayName: 'Field Rations',
+        },
+      });
 
-  it('does not duplicate pickup from the same object instance across repeated interactions', () => {
-    const crate = makeSupplyCrate('crate-repeat', 'idle', {
-      pickupItem: {
+      const firstResult = handleObjectInteraction({
+        interactiveObject: container,
+        player,
+        worldState: createWorldState(container),
+      });
+
+      const secondResult = handleObjectInteraction({
+        interactiveObject: firstResult.updatedWorldState.interactiveObjects[0],
+        player,
+        worldState: firstResult.updatedWorldState,
+      });
+
+      expect(firstResult.updatedWorldState.player.inventory.items).toHaveLength(1);
+      expect(secondResult.updatedWorldState.player.inventory.items).toHaveLength(1);
+      expect(secondResult.updatedWorldState.player.inventory.items[0]).toEqual({
         itemId: 'field-rations',
         displayName: 'Field Rations',
-      },
+        sourceObjectId: 'container-repeat',
+        pickedUpAtTick: 0,
+      });
     });
 
-    const firstResult = handleInteractiveObjectInteraction({
-      interactiveObject: crate,
-      player,
-      worldState: createWorldState(crate),
+    it('keeps per-instance outcomes distinct between different containers', () => {
+      const winningContainer = makeContainerObject('container-win', 'idle', {
+        idleMessage: 'You find the evacuation signal flare.',
+        firstUseOutcome: 'win',
+      });
+      const neutralContainer = makeContainerObject('container-neutral', 'idle', {
+        idleMessage: 'You find rope and a water skin.',
+      });
+
+      const winningResult = handleObjectInteraction({
+        interactiveObject: winningContainer,
+        player,
+        worldState: createWorldState(winningContainer, neutralContainer),
+      });
+      const neutralResult = handleObjectInteraction({
+        interactiveObject: neutralContainer,
+        player,
+        worldState: createWorldState(winningContainer, neutralContainer),
+      });
+
+      expect(winningResult.responseText).toBe('You find the evacuation signal flare.');
+      expect(winningResult.updatedWorldState.levelOutcome).toBe('win');
+      expect(neutralResult.responseText).toBe('You find rope and a water skin.');
+      expect(neutralResult.updatedWorldState.levelOutcome).toBeNull();
+    });
+  });
+
+  describe('activatable objects (isActivatable capability)', () => {
+    it('activates an object and triggers firstUseOutcome on first interaction', () => {
+      const mechanism = makeActivatableObject('mechanism-a', 'idle', {
+        idleMessage: 'A complex mechanical lock. It looks ready to activate.',
+        usedMessage: 'The mechanism has been activated.',
+        firstUseOutcome: 'win',
+      });
+      const worldState = createWorldState(mechanism);
+
+      const result = handleObjectInteraction({
+        interactiveObject: mechanism,
+        player,
+        worldState,
+      });
+
+      expect(result.objectId).toBe('mechanism-a');
+      expect(result.responseText).toBe('The mechanism has been activated.');
+      expect(result.updatedWorldState.levelOutcome).toBe('win');
+      expect(result.updatedWorldState.interactiveObjects[0].state).toBe('used');
+      expect(result.updatedWorldState.player.inventory.items).toEqual([]);
     });
 
-    const secondResult = handleInteractiveObjectInteraction({
-      interactiveObject: firstResult.updatedWorldState.interactiveObjects[0],
-      player,
-      worldState: firstResult.updatedWorldState,
+    it('uses default message if usedMessage is not provided after activation', () => {
+      const mechanism = makeActivatableObject('mechanism-b', 'idle', {
+        usedMessage: undefined,
+      });
+      const worldState = createWorldState(mechanism);
+
+      const result = handleObjectInteraction({
+        interactiveObject: mechanism,
+        player,
+        worldState,
+      });
+
+      expect(result.responseText).toBe('You activate the Activation Device.');
+      expect(result.updatedWorldState.interactiveObjects[0].state).toBe('used');
     });
 
-    expect(firstResult.updatedWorldState.player.inventory.items).toHaveLength(1);
-    expect(secondResult.updatedWorldState.player.inventory.items).toHaveLength(1);
-    expect(secondResult.updatedWorldState.player.inventory.items[0]).toEqual({
-      itemId: 'field-rations',
-      displayName: 'Field Rations',
-      sourceObjectId: 'crate-repeat',
-      pickedUpAtTick: 0,
+    it('does not re-trigger firstUseOutcome on repeat activation', () => {
+      const mechanism = makeActivatableObject('mechanism-c', 'used', {
+        usedMessage: 'The mechanism is already activated.',
+        firstUseOutcome: 'win',
+      });
+      const worldState = createWorldState(mechanism);
+
+      const result = handleObjectInteraction({
+        interactiveObject: mechanism,
+        player,
+        worldState,
+      });
+
+      expect(result.responseText).toBe('The mechanism is already activated.');
+      expect(result.updatedWorldState.levelOutcome).toBeNull();
+    });
+  });
+
+  describe('inert objects (no capabilities)', () => {
+    it('returns no-action response for object without capabilities', () => {
+      const inert = makeInertObject('inert-a');
+      const worldState = createWorldState(inert);
+
+      const result = handleObjectInteraction({
+        interactiveObject: inert,
+        player,
+        worldState,
+      });
+
+      expect(result.objectId).toBe('inert-a');
+      expect(result.responseText).toBe('Decorative Object cannot be interacted with.');
+      expect(result.updatedWorldState).toEqual(worldState);
+      expect(result.updatedWorldState.interactiveObjects[0].state).toBe('idle');
+    });
+
+    it('returns no-action response for object with empty capabilities', () => {
+      const inert = makeInertObject('inert-b', {
+        capabilities: {},
+      });
+      const worldState = createWorldState(inert);
+
+      const result = handleObjectInteraction({
+        interactiveObject: inert,
+        player,
+        worldState,
+      });
+
+      expect(result.responseText).toBe('Decorative Object cannot be interacted with.');
+      expect(result.updatedWorldState).toEqual(worldState);
+    });
+  });
+
+  describe('capability priority', () => {
+    it('prioritizes containsItems over isActivatable when both are present', () => {
+      const hybrid = makeContainerObject('hybrid-a', 'idle', {
+        capabilities: { containsItems: true, isActivatable: true },
+        pickupItem: {
+          itemId: 'hybrid-item',
+          displayName: 'Hybrid Item',
+        },
+      });
+      const worldState = createWorldState(hybrid);
+
+      const result = handleObjectInteraction({
+        interactiveObject: hybrid,
+        player,
+        worldState,
+      });
+
+      // Should treat as container (containsItems takes priority)
+      expect(result.updatedWorldState.player.inventory.items).toEqual([
+        {
+          itemId: 'hybrid-item',
+          displayName: 'Hybrid Item',
+          sourceObjectId: 'hybrid-a',
+          pickedUpAtTick: 0,
+        },
+      ]);
+    });
+  });
+
+  describe('backward compatibility', () => {
+    it('works with objects that have no explicit capabilities field', () => {
+      const objectWithoutCapabilities: InteractiveObject = {
+        id: 'legacy-obj',
+        displayName: 'Legacy Object',
+        position: { x: 7, y: 3 },
+        objectType: 'legacy-type',
+        interactionType: 'inspect',
+        state: 'idle',
+        // No capabilities field defined - uses undefined as default
+      };
+      const worldState = createWorldState(objectWithoutCapabilities);
+
+      const result = handleObjectInteraction({
+        interactiveObject: objectWithoutCapabilities,
+        player,
+        worldState,
+      });
+
+      expect(result.responseText).toBe('Legacy Object cannot be interacted with.');
+      expect(result.updatedWorldState).toEqual(worldState);
     });
   });
 });
