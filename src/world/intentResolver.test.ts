@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld } from './world';
 import { resolveIntent, resolveMoveIntent } from './intentResolver';
-import type { Intent, WorldState } from './types';
+import type { Intent } from './types';
 
 describe('intentResolver', () => {
   describe('resolveMoveIntent', () => {
@@ -38,24 +38,25 @@ describe('intentResolver', () => {
 
     it('updates facing direction and blocks move when target is out of bounds', () => {
       const world = createWorld();
-      const state = world.getState();
+      const baseState = world.getState();
 
       // Move player to top-left corner, then try to move further out
-      const stateAtCorner = {
-        ...state,
+      world.resetToState({
+        ...baseState,
         player: {
-          ...state.player,
+          ...baseState.player,
           position: { x: 0, y: 0 },
         },
-      };
+      });
 
+      const state = world.getState();
       const moveIntent: Intent = {
-        actorId: stateAtCorner.player.id,
+        actorId: state.player.id,
         type: 'move',
         payload: { direction: 'up' },
       };
 
-      const nextState = resolveMoveIntent(stateAtCorner, moveIntent);
+      const nextState = resolveMoveIntent(state, moveIntent);
 
       expect(nextState.player.position).toEqual({ x: 0, y: 0 }); // blocked at boundary
       expect(nextState.player.facingDirection).toBe('away'); // facing updated even though blocked
@@ -65,7 +66,7 @@ describe('intentResolver', () => {
       const world = createWorld();
       const baseState = world.getState();
 
-      const stateWithNpc = {
+      world.resetToState({
         ...baseState,
         npcs: [
           {
@@ -76,15 +77,16 @@ describe('intentResolver', () => {
             position: { x: 1, y: 0 }, // directly north of player starting position
           },
         ],
-      };
+      });
 
+      const state = world.getState();
       const moveIntent: Intent = {
-        actorId: stateWithNpc.player.id,
+        actorId: state.player.id,
         type: 'move',
         payload: { direction: 'up' },
       };
 
-      const nextState = resolveMoveIntent(stateWithNpc, moveIntent);
+      const nextState = resolveMoveIntent(state, moveIntent);
 
       expect(nextState.player.position).toEqual({ x: 1, y: 1 }); // position unchanged
       expect(nextState.player.facingDirection).toBe('away'); // facing toward NPC
@@ -95,7 +97,7 @@ describe('intentResolver', () => {
       const world = createWorld();
       const baseState = world.getState();
 
-      const stateWithGuard = {
+      world.resetToState({
         ...baseState,
         guards: [
           {
@@ -105,15 +107,16 @@ describe('intentResolver', () => {
             position: { x: 2, y: 1 }, // directly east of player
           },
         ],
-      };
+      });
 
+      const state = world.getState();
       const moveIntent: Intent = {
-        actorId: stateWithGuard.player.id,
+        actorId: state.player.id,
         type: 'move',
         payload: { direction: 'right' },
       };
 
-      const nextState = resolveMoveIntent(stateWithGuard, moveIntent);
+      const nextState = resolveMoveIntent(state, moveIntent);
 
       expect(nextState.player.position).toEqual({ x: 1, y: 1 }); // position unchanged
       expect(nextState.player.facingDirection).toBe('right'); // facing toward guard
@@ -123,7 +126,7 @@ describe('intentResolver', () => {
       const world = createWorld();
       const baseState = world.getState();
 
-      const stateWithObject = {
+      world.resetToState({
         ...baseState,
         interactiveObjects: [
           {
@@ -135,15 +138,16 @@ describe('intentResolver', () => {
             position: { x: 1, y: 2 }, // directly south of player
           },
         ],
-      };
+      });
 
+      const state = world.getState();
       const moveIntent: Intent = {
-        actorId: stateWithObject.player.id,
+        actorId: state.player.id,
         type: 'move',
         payload: { direction: 'down' },
       };
 
-      const nextState = resolveMoveIntent(stateWithObject, moveIntent);
+      const nextState = resolveMoveIntent(state, moveIntent);
 
       expect(nextState.player.position).toEqual({ x: 1, y: 1 }); // position unchanged
       expect(nextState.player.facingDirection).toBe('front'); // facing down
@@ -153,7 +157,7 @@ describe('intentResolver', () => {
       const world = createWorld();
       const baseState = world.getState();
 
-      const stateWithLockedDoor = {
+      world.resetToState({
         ...baseState,
         doors: [
           {
@@ -164,15 +168,16 @@ describe('intentResolver', () => {
             isUnlocked: false,
           },
         ],
-      };
+      });
 
+      const state = world.getState();
       const moveIntent: Intent = {
-        actorId: stateWithLockedDoor.player.id,
+        actorId: state.player.id,
         type: 'move',
         payload: { direction: 'left' },
       };
 
-      const nextState = resolveMoveIntent(stateWithLockedDoor, moveIntent);
+      const nextState = resolveMoveIntent(state, moveIntent);
 
       expect(nextState.player.position).toEqual({ x: 1, y: 1 }); // position unchanged
       expect(nextState.player.facingDirection).toBe('left'); // facing toward door
@@ -182,7 +187,7 @@ describe('intentResolver', () => {
       const world = createWorld();
       const baseState = world.getState();
 
-      const stateWithUnlockedDoor = {
+      world.resetToState({
         ...baseState,
         doors: [
           {
@@ -193,15 +198,16 @@ describe('intentResolver', () => {
             isUnlocked: true,
           },
         ],
-      };
+      });
 
+      const state = world.getState();
       const moveIntent: Intent = {
-        actorId: stateWithUnlockedDoor.player.id,
+        actorId: state.player.id,
         type: 'move',
         payload: { direction: 'left' },
       };
 
-      const nextState = resolveMoveIntent(stateWithUnlockedDoor, moveIntent);
+      const nextState = resolveMoveIntent(state, moveIntent);
 
       expect(nextState.player.position).toEqual({ x: 0, y: 1 }); // position changed through door
       expect(nextState.player.facingDirection).toBe('left');
@@ -237,7 +243,7 @@ describe('intentResolver', () => {
         const initialX = 5;
         const initialY = 5;
 
-        const stateForTest = {
+        world.resetToState({
           ...baseState,
           npcs: [], // Clear any NPCs from baseState
           guards: [], // Clear any guards
@@ -247,15 +253,16 @@ describe('intentResolver', () => {
             ...baseState.player,
             position: { x: initialX, y: initialY },
           },
-        };
+        });
 
+        const state = world.getState();
         const moveIntent: Intent = {
-          actorId: stateForTest.player.id,
+          actorId: state.player.id,
           type: 'move',
           payload: { direction },
         };
 
-        const nextState = resolveMoveIntent(stateForTest, moveIntent);
+        const nextState = resolveMoveIntent(state, moveIntent);
 
         const expectedX = initialX + expectedDelta.dx;
         const expectedY = initialY + expectedDelta.dy;

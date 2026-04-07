@@ -1,4 +1,4 @@
-import type { Intent, IntentType, SpriteDirection, WorldState } from './types';
+import type { Intent, SpriteDirection, WorldState } from './types';
 import { canMovePlayerTo } from './spatialRules';
 
 /**
@@ -131,7 +131,7 @@ export const resolveMoveIntent = (state: WorldState, intent: Intent): WorldState
  * Currently a no-op; interaction logic remains in interaction dispatcher.
  * Intent type exists to support future unified interaction pipeline.
  */
-export const resolveInteractIntent = (state: WorldState, intent: Intent): WorldState => {
+export const resolveInteractIntent = (state: WorldState): WorldState => {
   // Interaction handling delegated to interactionDispatcher
   return state;
 };
@@ -140,7 +140,7 @@ export const resolveInteractIntent = (state: WorldState, intent: Intent): WorldS
  * Resolves a wait intent (no-op action).
  * Useful for NPCs to explicitly pause or scripted delays.
  */
-export const resolveWaitIntent = (state: WorldState, intent: Intent): WorldState => {
+export const resolveWaitIntent = (state: WorldState): WorldState => {
   return state;
 };
 
