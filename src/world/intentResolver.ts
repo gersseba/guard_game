@@ -20,8 +20,8 @@ const directionToDelta = (
 };
 
 /**
- * Determines sprite facing direction from direction change.
- * Returns undefined if no meaningful facing change.
+ * Determines sprite facing direction from cardinal direction.
+ * Returns the appropriate facing direction for the given cardinal direction.
  */
 const toFacingDirectionFromDirection = (direction: 'up' | 'down' | 'left' | 'right'): SpriteDirection => {
   switch (direction) {
@@ -37,10 +37,33 @@ const toFacingDirectionFromDirection = (direction: 'up' | 'down' | 'left' | 'rig
 };
 
 /**
+ * Determines sprite facing direction from arbitrary delta movement.
+ * Prioritizes the most significant (non-zero) component.
+ */
+const toFacingDirectionFromDelta = (dx: number, dy: number): SpriteDirection | undefined => {
+  if (dx < 0) {
+    return 'left';
+  }
+  if (dx > 0) {
+    return 'right';
+  }
+  if (dy < 0) {
+    return 'away';
+  }
+  if (dy > 0) {
+    return 'front';
+  }
+  return undefined;
+};
+
+/**
  * Resolves a move intent for an actor, applying collision checking.
  * Currently supports player movement; NPC movement to be extended.
  * Returns new WorldState with updated player position (if move is valid),
  * or with updated facing direction only (if move is blocked).
+ *
+ * Supports both cardinal directions and arbitrary delta vectors.
+ * Preferred path uses direction; delta is fallback for backward compatibility.
  */
 export const resolveMoveIntent = (state: WorldState, intent: Intent): WorldState => {
   // Currently only support player movement
@@ -48,12 +71,33 @@ export const resolveMoveIntent = (state: WorldState, intent: Intent): WorldState
     return state;
   }
 
-  if (!intent.payload?.direction) {
+  if (!intent.payload) {
     return state;
   }
 
-  const { dx, dy } = directionToDelta(intent.payload.direction);
-  const nextFacingDirection = toFacingDirectionFromDirection(intent.payload.direction);
+  // Extract movement delta from either direction or raw delta
+  let dx = 0;
+  let dy = 0;
+  let nextFacingDirection: SpriteDirection | undefined;
+
+  if (intent.payload.direction) {
+    const { dx: dirDx, dy: dirDy } = directionToDelta(intent.payload.direction);
+    dx = dirDx;
+    dy = dirDy;
+    nextFacingDirection = toFacingDirectionFromDirection(intent.payload.direction);
+  } else if (intent.payload.delta) {
+    dx = intent.payload.delta.dx;
+    dy = intent.payload.delta.dy;
+    nextFacingDirection = toFacingDirectionFromDelta(dx, dy);
+  } else {
+    // No movement vector provided
+    return state;
+  }
+
+  // If no facing change inferred, preserve current facing
+  if (nextFacingDirection === undefined) {
+    nextFacingDirection = state.player.facingDirection ?? 'front';
+  }
 
   const nextPosition = {
     x: state.player.position.x + dx,
@@ -126,3 +170,4 @@ export const resolveIntent = (state: WorldState, intent: Intent): WorldState => 
       return _exhaustive;
   }
 };
+

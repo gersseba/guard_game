@@ -314,6 +314,9 @@ export interface Intent {
   payload?: {
     direction?: 'up' | 'down' | 'left' | 'right';
     targetId?: string;
+    // Support arbitrary delta movement for backward compatibility during transition.
+    // Preferred path uses direction; delta is fallback for legacy movement vectors.
+    delta?: { dx: number; dy: number };
   };
 }
 

@@ -2,30 +2,16 @@ import { createInitialWorldState } from './state';
 import { resolveIntent } from './intentResolver';
 import type { Intent, World, WorldCommand, WorldState } from './types';
 
-/**
- * Converts dx/dy movement delta to cardinal direction.
- * Used to bridge between legacy WorldCommand format and Intent pipeline.
- */
-const deltaToDirection = (dx: number, dy: number): 'up' | 'down' | 'left' | 'right' | null => {
-  if (dx === 0 && dy === -1) return 'up';
-  if (dx === 0 && dy === 1) return 'down';
-  if (dx === -1 && dy === 0) return 'left';
-  if (dx === 1 && dy === 0) return 'right';
-  return null;
-};
-
 const applyCommand = (worldState: WorldState, command: WorldCommand): WorldState => {
   if (command.type === 'move') {
-    const direction = deltaToDirection(command.dx, command.dy);
-    if (direction === null) {
-      // Invalid movement vector; no-op
-      return worldState;
-    }
-
+    // Convert WorldCommand move to Intent format with delta payload
+    // (supports both cardinal directions and arbitrary movement vectors)
     const moveIntent: Intent = {
       actorId: worldState.player.id,
       type: 'move',
-      payload: { direction },
+      payload: {
+        delta: { dx: command.dx, dy: command.dy },
+      },
     };
 
     return resolveIntent(worldState, moveIntent);
