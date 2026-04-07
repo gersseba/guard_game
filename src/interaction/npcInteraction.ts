@@ -1,4 +1,5 @@
 import { REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
+import { Item } from '../world/entities/items/Item';
 import type { ConversationMessage, Npc, Player, WorldState } from '../world/types';
 import { buildNpcPromptContext } from './npcPromptContext';
 
@@ -60,10 +61,10 @@ const applyInventoryOutcome = (
   let playerInventoryChanged = false;
 
   if (typeof outcome.giveItem === 'string') {
-    const npcItemIndex = npcItems.findIndex((item) => item.itemId === outcome.giveItem);
-    if (npcItemIndex >= 0) {
-      const [transferredItem] = npcItems.splice(npcItemIndex, 1);
-      playerItems.push(transferredItem);
+    const transferResult = Item.takeFirstByItemId(npcItems, outcome.giveItem);
+    npcItems.splice(0, npcItems.length, ...transferResult.remainingItems);
+    if (transferResult.item) {
+      playerItems.push(transferResult.item.toInventoryItem());
       npcInventoryChanged = true;
       playerInventoryChanged = true;
     }
@@ -71,10 +72,11 @@ const applyInventoryOutcome = (
 
   if (typeof outcome.takeItem === 'string') {
     const playerItemIndex = playerItems.findIndex((item) => item.itemId === outcome.takeItem);
-    if (playerItemIndex >= 0) {
-      const [transferredItem] = playerItems.splice(playerItemIndex, 1);
+    const transferResult = Item.takeFirstByItemId(playerItems, outcome.takeItem);
+    playerItems.splice(0, playerItems.length, ...transferResult.remainingItems);
+    if (transferResult.item) {
       selectedItem = reindexSelectedSlotAfterRemoval(selectedItem, playerItemIndex) ?? null;
-      npcItems.push(transferredItem);
+      npcItems.push(transferResult.item.toInventoryItem());
       npcInventoryChanged = true;
       playerInventoryChanged = true;
     }

@@ -1,4 +1,5 @@
 import type { ItemUseAttemptResultEvent, WorldState } from '../world/types';
+import { Item } from '../world/entities/items/Item';
 import { resolveAdjacentTarget } from './adjacencyResolver';
 
 export interface ItemUseResolutionInput {
@@ -24,6 +25,28 @@ export const createDefaultItemUseResolver = (): ItemUseResolver => {
 
       // No item selected: fail early
       if (!selectedItem) {
+        return {
+          tick: worldState.tick,
+          commandIndex,
+          selectedItem: null,
+          result: 'no-selection',
+          target: null,
+        };
+      }
+
+      const selectedInventoryDto = worldState.player.inventory.items[selectedItem.slotIndex];
+      if (!selectedInventoryDto) {
+        return {
+          tick: worldState.tick,
+          commandIndex,
+          selectedItem: null,
+          result: 'no-selection',
+          target: null,
+        };
+      }
+
+      const selectedInventoryItem = Item.fromInventoryItem(selectedInventoryDto);
+      if (!selectedInventoryItem.matchesItemId(selectedItem.itemId)) {
         return {
           tick: worldState.tick,
           commandIndex,
@@ -66,7 +89,7 @@ export const createDefaultItemUseResolver = (): ItemUseResolver => {
         }
 
         // Door requires an item. Check if selected item matches.
-        if (selectedItem.itemId === door.requiredItemId) {
+        if (selectedInventoryItem.matchesItemId(door.requiredItemId)) {
           // Correct key: unlock the door
           return {
             tick: worldState.tick,
@@ -97,7 +120,7 @@ export const createDefaultItemUseResolver = (): ItemUseResolver => {
       // Handle guard item-use (rules)
       if (adjacentTarget.kind === 'guard') {
         const guard = adjacentTarget.target;
-        const rule = guard.itemUseRules?.[selectedItem.itemId];
+        const rule = guard.itemUseRules?.[selectedInventoryItem.itemId];
 
         // No rule defined for this item on this guard
         if (!rule) {
@@ -148,7 +171,7 @@ export const createDefaultItemUseResolver = (): ItemUseResolver => {
       // Handle interactive object item-use (rules)
       if (adjacentTarget.kind === 'interactiveObject') {
         const obj = adjacentTarget.target;
-        const rule = obj.itemUseRules?.[selectedItem.itemId];
+        const rule = obj.itemUseRules?.[selectedInventoryItem.itemId];
 
         // No rule defined for this item on this object
         if (!rule) {

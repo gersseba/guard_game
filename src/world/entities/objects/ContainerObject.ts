@@ -1,4 +1,5 @@
 import type { InteractiveObject, InventoryItem } from '../../types';
+import { Item } from '../items/Item';
 import { WorldObject, type WorldObjectInteractionRequest, type WorldObjectInteractionResult } from './WorldObject';
 
 export class ContainerObject extends WorldObject {
@@ -36,12 +37,11 @@ export class ContainerObject extends WorldObject {
     const nextInventoryItems: InventoryItem[] = canPickup
       ? [
           ...inventoryItems,
-          {
-            itemId: pickupItem.itemId,
-            displayName: pickupItem.displayName,
+          Item.fromPickup({
+            pickupItem,
             sourceObjectId: request.interactiveObject.id,
             pickedUpAtTick: request.worldState.tick,
-          },
+          }).toInventoryItem(),
         ]
       : inventoryItems;
 
@@ -50,6 +50,7 @@ export class ContainerObject extends WorldObject {
       player: {
         ...request.worldState.player,
         inventory: {
+          ...request.worldState.player.inventory,
           items: nextInventoryItems,
         },
       },

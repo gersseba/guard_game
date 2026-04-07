@@ -373,4 +373,73 @@ describe('createNpcInteractionService', () => {
       },
     ]);
   });
+
+  it('produces deterministic give/take transfer world state for identical input state and action', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({ text: 'We can trade.', outcome: { giveItem: 'npc-token', takeItem: 'player-token' } }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      inventory: [
+        {
+          itemId: 'npc-token',
+          displayName: 'NPC Token',
+          sourceObjectId: 'npc-1',
+          pickedUpAtTick: 0,
+        },
+      ],
+    };
+    const player = {
+      ...worldState.player,
+      inventory: {
+        ...worldState.player.inventory,
+        items: [
+          {
+            itemId: 'player-token',
+            displayName: 'Player Token',
+            sourceObjectId: 'object-2',
+            pickedUpAtTick: 1,
+          },
+        ],
+      },
+    };
+    const sharedInputState = {
+      ...worldState,
+      player,
+      npcs: [npc],
+    };
+
+    const first = await service.handleNpcInteraction({
+      npc,
+      player,
+      worldState: sharedInputState,
+      playerMessage: 'Trade?',
+    });
+    const second = await service.handleNpcInteraction({
+      npc,
+      player,
+      worldState: sharedInputState,
+      playerMessage: 'Trade?',
+    });
+
+    expect(first.updatedWorldState).toEqual(second.updatedWorldState);
+    expect(first.updatedWorldState.player.inventory.items).toEqual([
+      {
+        itemId: 'npc-token',
+        displayName: 'NPC Token',
+        sourceObjectId: 'npc-1',
+        pickedUpAtTick: 0,
+      },
+    ]);
+    expect(first.updatedWorldState.npcs[0].inventory).toEqual([
+      {
+        itemId: 'player-token',
+        displayName: 'Player Token',
+        sourceObjectId: 'object-2',
+        pickedUpAtTick: 1,
+      },
+    ]);
+  });
 });

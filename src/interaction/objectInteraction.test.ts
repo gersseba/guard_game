@@ -175,6 +175,60 @@ describe('handleObjectInteraction', () => {
       });
     });
 
+    it('preserves selected inventory slot while adding a picked item', () => {
+      const container = makeContainerObject('container-selected-slot', 'idle', {
+        pickupItem: {
+          itemId: 'new-token',
+          displayName: 'New Token',
+        },
+      });
+      const worldState = {
+        ...createWorldState(container),
+        player: {
+          ...player,
+          inventory: {
+            items: [
+              {
+                itemId: 'existing-token',
+                displayName: 'Existing Token',
+                sourceObjectId: 'stash-1',
+                pickedUpAtTick: 0,
+              },
+            ],
+            selectedItem: {
+              slotIndex: 0,
+              itemId: 'existing-token',
+            },
+          },
+        },
+      };
+
+      const result = handleObjectInteraction({
+        interactiveObject: container,
+        player: worldState.player,
+        worldState,
+      });
+
+      expect(result.updatedWorldState.player.inventory.selectedItem).toEqual({
+        slotIndex: 0,
+        itemId: 'existing-token',
+      });
+      expect(result.updatedWorldState.player.inventory.items).toEqual([
+        {
+          itemId: 'existing-token',
+          displayName: 'Existing Token',
+          sourceObjectId: 'stash-1',
+          pickedUpAtTick: 0,
+        },
+        {
+          itemId: 'new-token',
+          displayName: 'New Token',
+          sourceObjectId: 'container-selected-slot',
+          pickedUpAtTick: 0,
+        },
+      ]);
+    });
+
     it('keeps per-instance outcomes distinct between different containers', () => {
       const winningContainer = makeContainerObject('container-win', 'idle', {
         idleMessage: 'You find the evacuation signal flare.',

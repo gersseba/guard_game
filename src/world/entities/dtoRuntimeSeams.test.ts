@@ -11,10 +11,10 @@ import { MechanismObject } from './objects/MechanismObject';
 describe('domain class foundation seams', () => {
   it('instantiates foundational classes and maps NPC dto to runtime class without runtime integration', () => {
     const item = new Item({
-      id: 'item-1',
-      position: { x: 1, y: 2 },
+      itemId: 'item-1',
       displayName: 'Bronze Key',
-      itemType: 'key',
+      sourceObjectId: 'crate-1',
+      pickedUpAtTick: 3,
     });
     const environment = new Environment({
       id: 'env-1',
@@ -32,7 +32,12 @@ describe('domain class foundation seams', () => {
       patrol: { path: [{ x: 5, y: 6 }, { x: 6, y: 6 }] },
     });
 
-    expect(item.itemType).toBe('key');
+    expect(item.toInventoryItem()).toEqual({
+      itemId: 'item-1',
+      displayName: 'Bronze Key',
+      sourceObjectId: 'crate-1',
+      pickedUpAtTick: 3,
+    });
     expect(environment.isBlocking).toBe(true);
     expect(npc).toBeInstanceOf(Npc);
     expect(npc.npcType).toBe('archive_keeper');
