@@ -264,8 +264,8 @@ Item use rules on guards/objects:
         "isLockable": false
       },
       "pickupItem": {
-        "itemId": "starter-key",
-        "displayName": "Starter Key"
+        "itemId": "supply-key",
+        "displayName": "Supply Key"
       }
     }
   ]

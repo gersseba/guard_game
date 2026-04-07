@@ -32,7 +32,7 @@ This classification enables the runtime to route interactions appropriately:
 
 **Type Guard Pattern:**
 
-`isActionModalEligibleTarget(target: AdjacentTarget): target is Extract<AdjacentTarget, { kind: 'guard' | 'npc' }>\`
+`isActionModalEligibleTarget(target: AdjacentTarget): target is Extract<AdjacentTarget, { kind: 'guard' | 'npc' }>`
 
 Useful for runtime branching when deciding whether to open the chat modal after interaction resolution.
 
@@ -222,5 +222,5 @@ See `src/interaction/guardInteraction.ts`, `src/interaction/npcInteraction.ts`, 
 - `src/runtimeController.test.ts`: pause entry/exit lifecycle, command gating while paused, resume without command leak, level-outcome gating independent of pause state
 - `src/interaction/npcPromptContext.test.ts`: profile registry resolution, deterministic fallback, world knowledge builder registry keys, alias resolution (`archive_keeper → villager`), self-exclusion from `otherVillagers`, unknown-type `null` fallback, context shape determinism
 - `src/interaction/objectInteraction.test.ts`: object-type dispatcher behavior, first-use outcomes, repeat interactions
-- `src/integration/starterLevel.test.ts`: end-to-end adjacent object resolution and state updates
+- `src/integration/riddleLevel.test.ts`: end-to-end adjacent door resolution and deterministic outcome mapping
 - `src/interaction/adjacencyResolver.test.ts`: deterministic target resolution with interactive objects

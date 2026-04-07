@@ -134,7 +134,7 @@ When features cross layer boundaries, write integration tests:
 - **Interaction + result routing:** Interact command resolves target, dispatcher returns result, result dispatcher applies side effect
 - **NPC interaction + LLM:** Player message triggers LLM call and updates conversation thread
 - **Conversation pause lifecycle:** Conversational open pauses the runtime, shows pause UI, and close/Escape resume the runtime through the shared `onClose` path
-- **Level wiring checks:** Assert shipped level JSON deserializes expected gameplay positions and sprite metadata (`src/integration/starterLevel.test.ts`, `src/integration/riddleLevel.test.ts`)
+- **Level wiring checks:** Assert shipped level JSON deserializes expected gameplay positions and sprite metadata (`src/integration/riddleLevel.test.ts`)
 
 **Pattern:** End-to-end flow through multiple layers, assert final observable state.
 

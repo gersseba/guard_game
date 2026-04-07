@@ -73,7 +73,6 @@ Implemented systems:
 
 Level roster (manifest):
 - riddle (Two Guards): demonstrates truth-teller/liar guard setup, two doors with safe/danger outcomes, directional sprite sets, and explicit objective text.
-- starter (Starter): demonstrates mixed entity playfield with two guards, two doors, one villager NPC, one supply crate interactive object, and explicit objective text.
 
 ## LLM Integration Boundaries
 
