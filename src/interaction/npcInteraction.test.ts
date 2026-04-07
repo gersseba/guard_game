@@ -326,4 +326,51 @@ describe('createNpcInteractionService', () => {
       },
     ]);
   });
+
+  it('moves takeItem outcome item from player inventory to npc inventory', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({ text: 'I will hold on to this.', outcome: { takeItem: 'key-token' } }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      inventory: [],
+    };
+    const player = {
+      ...worldState.player,
+      inventory: {
+        ...worldState.player.inventory,
+        items: [
+          {
+            itemId: 'key-token',
+            displayName: 'Key Token',
+            sourceObjectId: 'object-1',
+            pickedUpAtTick: 1,
+          },
+        ],
+      },
+    };
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player,
+      worldState: {
+        ...worldState,
+        player,
+        npcs: [npc],
+      },
+      playerMessage: 'Can you take this?',
+    });
+
+    expect(result.updatedWorldState.player.inventory.items).toEqual([]);
+    expect(result.updatedWorldState.npcs[0].inventory).toEqual([
+      {
+        itemId: 'key-token',
+        displayName: 'Key Token',
+        sourceObjectId: 'object-1',
+        pickedUpAtTick: 1,
+      },
+    ]);
+  });
 });
