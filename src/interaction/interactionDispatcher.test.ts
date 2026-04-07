@@ -87,6 +87,9 @@ const createTestObject = (id: string): InteractiveObject => ({
   interactionType: 'inspect',
   state: 'idle',
   idleMessage: 'You see a crate.',
+  capabilities: {
+    containsItems: true,
+  },
 });
 
 describe('InteractionDispatcher', () => {
