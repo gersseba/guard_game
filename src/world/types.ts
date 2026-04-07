@@ -301,6 +301,22 @@ export type WorldCommand =
       type: 'useSelectedItem';
     };
 
+export type IntentType = 'move' | 'wait' | 'interact';
+
+/**
+ * Represents an action requested by any actor (player, NPC, scripted).
+ * Intent is decoupled from input source (keyboard, LLM, etc.).
+ * Deterministically resolved by resolveIntent() function.
+ */
+export interface Intent {
+  actorId: string;
+  type: IntentType;
+  payload?: {
+    direction?: 'up' | 'down' | 'left' | 'right';
+    targetId?: string;
+  };
+}
+
 export interface World {
   getState(): WorldState;
   applyCommands(commands: WorldCommand[]): void;
