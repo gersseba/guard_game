@@ -5,7 +5,7 @@ import type { Intent, WorldState } from './types';
 
 describe('intentResolver', () => {
   describe('resolveMoveIntent', () => {
-    it('moves player to empty adjacent cell successfully', () => {
+    it('moves player to empty adjacent cell using cardinal direction', () => {
       const world = createWorld();
       const state = world.getState();
 
@@ -21,19 +21,43 @@ describe('intentResolver', () => {
       expect(nextState.player.facingDirection).toBe('right');
     });
 
-    it('updates facing direction and blocks move when target is out of bounds', () => {
+    it('moves player using arbitrary delta movement vector', () => {
       const world = createWorld();
-      const state = { ...world.getState(), tick: 0 };
+      const state = world.getState();
 
       const moveIntent: Intent = {
         actorId: state.player.id,
         type: 'move',
-        payload: { direction: 'up' },
+        payload: { delta: { dx: 5, dy: 3 } },
       };
 
       const nextState = resolveMoveIntent(state, moveIntent);
 
-      expect(nextState.player.position).toEqual({ x: 1, y: 1 }); // blocked at boundary
+      expect(nextState.player.position).toEqual({ x: 6, y: 4 });
+    });
+
+    it('updates facing direction and blocks move when target is out of bounds', () => {
+      const world = createWorld();
+      const state = world.getState();
+
+      // Move player to top-left corner, then try to move further out
+      const stateAtCorner = {
+        ...state,
+        player: {
+          ...state.player,
+          position: { x: 0, y: 0 },
+        },
+      };
+
+      const moveIntent: Intent = {
+        actorId: stateAtCorner.player.id,
+        type: 'move',
+        payload: { direction: 'up' },
+      };
+
+      const nextState = resolveMoveIntent(stateAtCorner, moveIntent);
+
+      expect(nextState.player.position).toEqual({ x: 0, y: 0 }); // blocked at boundary
       expect(nextState.player.facingDirection).toBe('away'); // facing updated even though blocked
     });
 
@@ -202,19 +226,26 @@ describe('intentResolver', () => {
       const world = createWorld();
       const baseState = world.getState();
 
-      const directions: Array<{ direction: 'up' | 'down' | 'left' | 'right'; dx: number; dy: number }> = [
-        { direction: 'up', dx: 0, dy: -1 },
-        { direction: 'down', dx: 0, dy: 1 },
-        { direction: 'left', dx: -1, dy: 0 },
-        { direction: 'right', dx: 1, dy: 0 },
+      const testCases: Array<{ direction: 'up' | 'down' | 'left' | 'right'; expectedDelta: { dx: number; dy: number } }> = [
+        { direction: 'up', expectedDelta: { dx: 0, dy: -1 } },
+        { direction: 'down', expectedDelta: { dx: 0, dy: 1 } },
+        { direction: 'left', expectedDelta: { dx: -1, dy: 0 } },
+        { direction: 'right', expectedDelta: { dx: 1, dy: 0 } },
       ];
 
-      for (const { direction, dx, dy } of directions) {
+      for (const { direction, expectedDelta } of testCases) {
+        const initialX = 5;
+        const initialY = 5;
+
         const stateForTest = {
           ...baseState,
+          npcs: [], // Clear any NPCs from baseState
+          guards: [], // Clear any guards
+          interactiveObjects: [], // Clear any objects
+          doors: [], // Clear any doors
           player: {
             ...baseState.player,
-            position: { x: 5, y: 5 }, // center of large grid
+            position: { x: initialX, y: initialY },
           },
         };
 
@@ -226,9 +257,12 @@ describe('intentResolver', () => {
 
         const nextState = resolveMoveIntent(stateForTest, moveIntent);
 
+        const expectedX = initialX + expectedDelta.dx;
+        const expectedY = initialY + expectedDelta.dy;
+
         expect(nextState.player.position).toEqual({
-          x: 5 + dx,
-          y: 5 + dy,
+          x: expectedX,
+          y: expectedY,
         });
       }
     });
