@@ -38,6 +38,13 @@ Recipes and walkthroughs for common extension tasks:
 
 See [Game Design Baseline](GAME_DESIGN_BASELINE.md) for the documenter-maintained source used by the game designer for direction, feasibility checks, and feature-gap analysis.
 
+## CI Merge Gate
+
+Pull requests to `main` are expected to pass the required CI status check before merge.
+
+- Required check name: `lint-build-test`
+- CI command sequence: `npm ci`, `npm run lint`, `npm run build`, `npm run test`
+
 ## Documentation Maintenance
 
 Documentation is maintained alongside code changes. When implementing a feature:
