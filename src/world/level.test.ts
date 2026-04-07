@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import starterJson from '../../public/levels/starter.json';
+import riddleJson from '../../public/levels/riddle.json';
 import { deserializeLevel, validateLevelData } from './level';
 import * as spatialRules from './spatialRules';
 import type { LevelData } from './types';
@@ -518,49 +518,49 @@ describe('validateLevelData', () => {
   });
 });
 
-describe('starter level', () => {
-  const starterRaw: unknown = starterJson;
+describe('riddle level', () => {
+  const riddleRaw: unknown = riddleJson;
 
   it('passes validateLevelData without throwing', () => {
-    expect(() => validateLevelData(starterRaw)).not.toThrow();
+    expect(() => validateLevelData(riddleRaw)).not.toThrow();
   });
 
   it('deserializes to a WorldState with two guards and two doors', () => {
-    const level = validateLevelData(starterRaw);
+    const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
     expect(state.guards).toHaveLength(2);
     expect(state.doors).toHaveLength(2);
   });
 
-  it('places the player at (10, 10)', () => {
-    const level = validateLevelData(starterRaw);
+  it('places the player at (10, 15)', () => {
+    const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
-    expect(state.player.position).toEqual({ x: 10, y: 10 });
+    expect(state.player.position).toEqual({ x: 10, y: 15 });
   });
 
   it('does not project objective text into runtime world state', () => {
-    const level = validateLevelData(starterRaw);
+    const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
     expect(state.levelObjective).toBeUndefined();
   });
 
   it('has a 20×20 grid', () => {
-    const level = validateLevelData(starterRaw);
+    const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
     expect(state.grid.width).toBe(20);
     expect(state.grid.height).toBe(20);
   });
 
-  it('all guards start in patrolling state and all doors start closed', () => {
-    const level = validateLevelData(starterRaw);
+  it('all guards start in idle state and all doors start closed', () => {
+    const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
     for (const guard of state.guards) {
-      expect(guard.guardState).toBe('patrolling');
+      expect(guard.guardState).toBe('idle');
     }
     for (const door of state.doors) {
       expect(door.doorState).toBe('closed');
@@ -568,40 +568,26 @@ describe('starter level', () => {
   });
 
   it('guard ids and door ids match expected descriptive values', () => {
-    const level = validateLevelData(starterRaw);
+    const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
-    expect(state.guards.map((g) => g.id)).toEqual(['guard-1', 'guard-2']);
-    expect(state.doors.map((d) => d.id)).toEqual(['door-1', 'door-2']);
+    expect(state.guards.map((g) => g.id)).toEqual(['guard-truth', 'guard-liar']);
+    expect(state.doors.map((d) => d.id)).toEqual(['door-safe', 'door-danger']);
   });
 
-  it('maps starter pickup item metadata into interactive object state', () => {
-    const level = validateLevelData(starterRaw);
+  it('has no interactive objects by default', () => {
+    const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
-    expect(state.interactiveObjects[0].pickupItem).toEqual({
-      itemId: 'starter-storage-key',
-      displayName: 'Storage Key',
-    });
+    expect(state.interactiveObjects).toEqual([]);
   });
 
-  it('deserializes starter guard and object itemUseRules', () => {
-    const level = validateLevelData(starterRaw);
+  it('preserves guard traits and door outcomes from level json', () => {
+    const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
-    expect(state.guards[0].itemUseRules).toEqual({
-      'gift-token': {
-        allowed: true,
-        responseText: 'A gift! How kind of you. You may pass.',
-      },
-    });
-
-    expect(state.interactiveObjects[0].itemUseRules).toEqual({
-      'unlock-rune': {
-        allowed: true,
-        responseText: "The rune fits perfectly! The crate's lock clicks open.",
-      },
-    });
+    expect(state.guards.map((guard) => guard.traits?.truthMode)).toEqual(['truth-teller', 'liar']);
+    expect(state.doors.map((door) => door.outcome)).toEqual(['safe', 'danger']);
   });
 });
 

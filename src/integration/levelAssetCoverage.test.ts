@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 
 type LevelManifestEntry = {
   id: string;
@@ -41,15 +40,14 @@ type LevelFile = {
   interactiveObjects?: LevelInteractiveObject[];
 };
 
-const repoRoot = resolve(__dirname, '../../');
+const repoRootUrl = new URL('../../', import.meta.url);
 
 const assetPathExists = (assetPath: string): boolean => {
   if (!assetPath.startsWith('/assets/')) {
     return false;
   }
 
-  const relativePath = assetPath.replace(/^\//, '');
-  return existsSync(resolve(repoRoot, 'public', relativePath.replace(/^assets\//, 'assets/')));
+  return existsSync(new URL(`../../public${assetPath}`, import.meta.url));
 };
 
 const collectEntityAssetPaths = (entity: LevelEntity): string[] => {
@@ -73,14 +71,14 @@ const collectEntityAssetPaths = (entity: LevelEntity): string[] => {
 
 describe('level NPC/object asset coverage', () => {
   it('ensures every guard, door, NPC, and interactive object has at least one valid existing asset path', () => {
-    const manifestPath = resolve(repoRoot, 'public/levels/manifest.json');
+    const manifestPath = new URL('./manifest.json', new URL('public/levels/', repoRootUrl));
     const manifest: LevelManifestEntry[] = JSON.parse(readFileSync(manifestPath, 'utf8'));
 
     const missingCoverage: string[] = [];
     const missingFiles: string[] = [];
 
     for (const entry of manifest) {
-      const levelPath = resolve(repoRoot, `public/levels/${entry.id}.json`);
+      const levelPath = new URL(`${entry.id}.json`, new URL('public/levels/', repoRootUrl));
       const level: LevelFile = JSON.parse(readFileSync(levelPath, 'utf8'));
 
       for (const guard of level.guards ?? []) {

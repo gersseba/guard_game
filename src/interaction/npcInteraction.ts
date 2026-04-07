@@ -73,7 +73,7 @@ const applyInventoryOutcome = (
     const playerItemIndex = playerItems.findIndex((item) => item.itemId === outcome.takeItem);
     if (playerItemIndex >= 0) {
       const [transferredItem] = playerItems.splice(playerItemIndex, 1);
-      selectedItem = reindexSelectedSlotAfterRemoval(selectedItem, playerItemIndex);
+      selectedItem = reindexSelectedSlotAfterRemoval(selectedItem, playerItemIndex) ?? null;
       npcItems.push(transferredItem);
       npcInventoryChanged = true;
       playerInventoryChanged = true;
@@ -163,7 +163,7 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
     const inventoryResult = applyInventoryOutcome(
       npcAfterTalkTrigger,
       stateWithUpdatedHistory.player,
-      llmResponse.outcome,
+      'outcome' in llmResponse ? llmResponse.outcome : undefined,
     );
 
     const updatedWorldState: WorldState = {

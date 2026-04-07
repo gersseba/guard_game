@@ -1,25 +1,28 @@
 // @vitest-environment jsdom
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { createInventoryOverlay } from './inventoryOverlay';
 import type { PlayerInventory } from '../world/types';
 
 describe('inventory overlay', () => {
   let hostElement: HTMLDivElement;
-  let onCloseSpy: ReturnType<typeof vi.fn>;
+  let onCloseCalls: number;
+  let onClose: () => void;
 
   beforeEach(() => {
     hostElement = document.createElement('div');
     document.body.appendChild(hostElement);
-    onCloseSpy = vi.fn();
+    onCloseCalls = 0;
+    onClose = (): void => {
+      onCloseCalls += 1;
+    };
   });
 
   afterEach(() => {
     hostElement.remove();
-    vi.clearAllMocks();
   });
 
   it('renders a 3x3 grid of inventory tiles', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose: onCloseSpy });
+    const overlay = createInventoryOverlay(hostElement, { onClose });
     const inventory: PlayerInventory = {
       items: [
         { itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 },
@@ -35,7 +38,7 @@ describe('inventory overlay', () => {
   });
 
   it('highlights selected item with distinct styling', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose: onCloseSpy });
+    const overlay = createInventoryOverlay(hostElement, { onClose });
     const inventory: PlayerInventory = {
       items: [{ itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 }],
       selectedItem: { slotIndex: 0, itemId: 'key-1' },
@@ -50,7 +53,7 @@ describe('inventory overlay', () => {
   });
 
   it('displays tooltip on tile hover', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose: onCloseSpy });
+    const overlay = createInventoryOverlay(hostElement, { onClose });
     const inventory: PlayerInventory = {
       items: [{ itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 }],
       selectedItem: null,
@@ -67,7 +70,7 @@ describe('inventory overlay', () => {
   });
 
   it('closes on ESC key', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose: onCloseSpy });
+    const overlay = createInventoryOverlay(hostElement, { onClose });
     const inventory: PlayerInventory = {
       items: [],
       selectedItem: null,
@@ -80,11 +83,11 @@ describe('inventory overlay', () => {
     window.dispatchEvent(escapeEvent);
 
     overlay.close();
-    expect(onCloseSpy).toHaveBeenCalled();
+    expect(onCloseCalls).toBeGreaterThanOrEqual(1);
   });
 
   it('displays empty state for tiles without items', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose: onCloseSpy });
+    const overlay = createInventoryOverlay(hostElement, { onClose });
     const inventory: PlayerInventory = {
       items: [],
       selectedItem: null,
@@ -100,7 +103,7 @@ describe('inventory overlay', () => {
   });
 
   it('calls onClose callback when closing', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose: onCloseSpy });
+    const overlay = createInventoryOverlay(hostElement, { onClose });
     const inventory: PlayerInventory = {
       items: [],
       selectedItem: null,
@@ -109,6 +112,6 @@ describe('inventory overlay', () => {
     overlay.open(inventory);
     overlay.close();
 
-    expect(onCloseSpy).toHaveBeenCalledOnce();
+    expect(onCloseCalls).toBe(1);
   });
 });

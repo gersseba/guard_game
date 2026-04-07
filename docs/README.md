@@ -10,7 +10,7 @@ This directory contains architecture guides, layer-specific documentation, and d
 
 ## Layer Guides
 Deep dives into each architectural layer and its responsibilities:
-- [World Layer](WORLD_LAYER.md) - Deterministic world model, commands, state updates, level schema, serialization boundaries, and starter-level sprite metadata flow
+- [World Layer](WORLD_LAYER.md) - Deterministic world model, commands, state updates, level schema, serialization boundaries, and riddle-level sprite metadata flow
 - [Render Layer](RENDER_LAYER.md) - PixiJS rendering, viewport management, character sprite fallback behavior, and asset metadata usage
 - [Interaction Layer](INTERACTION_LAYER.md) - Deterministic target resolution, routing, object interactions, and LLM chat boundary
 - [Input Layer](INPUT_LAYER.md) - Command buffering, keyboard input mapping, and command creation

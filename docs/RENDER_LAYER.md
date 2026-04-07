@@ -179,13 +179,12 @@ This preserves render-only ownership of visual decisions while keeping gameplay 
 
 ## Shipped Level Demonstration
 
-The shipped levels now demonstrate both sprite metadata forms:
-- starter level: single-path `spriteAssetPath` on player, guards, and NPC
+The shipped level demonstrates directional `spriteSet` metadata:
 - riddle level: directional `spriteSet` on player and guards, default-only `spriteSet` on doors
 
 Source and verification:
-- level data: [public/levels/starter.json](../public/levels/starter.json), [public/levels/riddle.json](../public/levels/riddle.json)
-- integration assertions: [src/integration/starterLevel.test.ts](../src/integration/starterLevel.test.ts), [src/integration/riddleLevel.test.ts](../src/integration/riddleLevel.test.ts)
+- level data: [public/levels/riddle.json](../public/levels/riddle.json)
+- integration assertions: [src/integration/riddleLevel.test.ts](../src/integration/riddleLevel.test.ts)
 - render fallback assertions: [src/render/scene.test.ts](../src/render/scene.test.ts)
 
 ## Tests

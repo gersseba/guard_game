@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 
 describe('runtime layout responsive styles', () => {
   it('defines a narrow-viewport media query that stacks primary panels', () => {
-    const cssPath = resolve(__dirname, '../style.css');
+    const cssPath = new URL('../style.css', import.meta.url);
     const css = readFileSync(cssPath, 'utf8');
 
     expect(css).toMatch(/@media\s*\(max-width:\s*900px\)/);
@@ -13,7 +12,7 @@ describe('runtime layout responsive styles', () => {
   });
 
   it('keeps level briefing section explicitly ordered for mobile reflow', () => {
-    const cssPath = resolve(__dirname, '../style.css');
+    const cssPath = new URL('../style.css', import.meta.url);
     const css = readFileSync(cssPath, 'utf8');
 
     expect(css).toContain('.guard-game-panel-briefing');

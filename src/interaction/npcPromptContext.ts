@@ -1,4 +1,4 @@
-import type { Npc, Player, WorldState } from '../world/types';
+import type { Npc, Player, RiddleClueConstraint, WorldState } from '../world/types';
 
 /**
  * Shared behavior profile for any actor type (Guard, NPC, etc).
@@ -222,7 +222,7 @@ export const buildNpcPromptContext = (npc: Npc, player: Player, worldState: Worl
   const worldKnowledge = buildActorTypeWorldKnowledge(npc.npcType, worldState, npc.id);
 
   // Compute RiddleClueConstraint if riddleClue is present
-  let riddleClueConstraint: any = undefined;
+  let riddleClueConstraint: RiddleClueConstraint | undefined;
   if (npc.riddleClue !== undefined) {
     const { doorId, mustStateDoorAs } = npc.riddleClue;
     const door = worldState.doors.find((d) => d.id === doorId);

@@ -76,8 +76,8 @@ export const resolveMoveIntent = (state: WorldState, intent: Intent): WorldState
   }
 
   // Extract movement delta from either direction or raw delta
-  let dx = 0;
-  let dy = 0;
+  let dx: number;
+  let dy: number;
   let nextFacingDirection: SpriteDirection | undefined;
 
   if (intent.payload.direction) {
@@ -161,13 +161,14 @@ export const resolveIntent = (state: WorldState, intent: Intent): WorldState => 
     case 'move':
       return resolveMoveIntent(state, intent);
     case 'interact':
-      return resolveInteractIntent(state, intent);
+      return resolveInteractIntent(state);
     case 'wait':
-      return resolveWaitIntent(state, intent);
-    default:
+      return resolveWaitIntent(state);
+    default: {
       // Unknown intent type; treat as no-op
       const _exhaustive: never = intent.type;
       return _exhaustive;
+    }
   }
 };
 

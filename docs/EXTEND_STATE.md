@@ -80,7 +80,7 @@ Required follow-up updates:
 - type updates in `src/world/types.ts`
 - optional string validation in `validateLevelData()` for player/guard/NPC
 - passthrough mapping in `deserializeLevel()`
-- integration proof via `public/levels/starter.json` + `src/integration/starterLevel.test.ts`
+- integration proof via `public/levels/riddle.json` + `src/integration/riddleLevel.test.ts`
 
 Boundary reminder:
 - world layer validates serializable shape only

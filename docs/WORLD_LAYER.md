@@ -215,20 +215,13 @@ This enables shared behavior per object type while preserving instance-specific 
 
 ## Shipped Level Demonstrations
 
-Starter level demonstrates single-asset character metadata via `spriteAssetPath`:
-- `player.spriteAssetPath: /assets/medieval_player_town_guard.svg`
-- `guards[*].spriteAssetPath: /assets/medieval_guard_spear.svg`
-- `npcs[*].spriteAssetPath: /assets/medieval_npc_villager.svg`
-
 Riddle level demonstrates directional and default sprite-set wiring:
 - player `spriteSet` includes `default/front/away/left/right`
 - both guards include `default/front/away/left/right`
 - both doors include `spriteSet.default`
 
 References:
-- [public/levels/starter.json](../public/levels/starter.json)
 - [public/levels/riddle.json](../public/levels/riddle.json)
-- [src/integration/starterLevel.test.ts](../src/integration/starterLevel.test.ts)
 - [src/integration/riddleLevel.test.ts](../src/integration/riddleLevel.test.ts)
 
 ## Interaction State Updates
@@ -241,7 +234,6 @@ Movement commands also update immutable player-facing state in `src/world/world.
 
 - `src/world/level.test.ts`: schema validation + deserialization coverage for `spriteAssetPath` and `spriteSet`, including player default `facingDirection` on load
 - `src/world/world.test.ts`: deterministic movement mapping from command intent to `player.facingDirection`, including blocked movement intent
-- `src/integration/starterLevel.test.ts`: starter level pipeline and sprite metadata assertions
 - `src/integration/riddleLevel.test.ts`: riddle-level sprite-set wiring assertions for player/guards/doors and player default `facingDirection`
 - `src/world/spatialRules.test.ts`: occupancy invariants
 
