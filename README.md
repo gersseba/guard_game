@@ -22,6 +22,15 @@ npm run build
 # Run tests
 npm run test
 
+# Run the fast non-integration suite
+npm run test:unit
+
+# Run integration tests only
+npm run test:integration
+
+# Run the full suite explicitly
+npm run test:all
+
 # Lint code
 npm run lint
 
@@ -179,6 +188,24 @@ Issues are tracked as GitHub issues instead of Jira. Each issue includes:
 
 ## Testing & Validation
 
+### Test Tiers
+
+- `npm run test:unit` runs the fast tier: all colocated tests except `src/integration/**/*.test.ts`.
+- `npm run test:fast` is an alias for the same fast tier.
+- `npm run test:integration` runs only the cross-layer integration tests in `src/integration`.
+- `npm run test` remains the default full-suite command.
+- `npm run test:all` is an explicit alias for the full suite when you want the tier name in scripts or CI notes.
+
+### Shared Test Support
+
+Tests remain colocated with the code they exercise. Reusable test-only fixtures live in `src/test-support/` for cases where duplication is already visible, such as:
+
+- base `WorldState` builders and entity fixtures
+- shared DOM host/container setup for jsdom render tests
+- small level-loading helpers for integration fixtures
+
+Keep helper extraction conservative: prefer local fixtures until the duplication is real, then move the shared shape into `src/test-support/` without relocating the tests themselves.
+
 ### CI Required Checks
 
 All pull requests targeting `main` must pass the GitHub Actions CI check before merge.
@@ -190,7 +217,8 @@ All pull requests targeting `main` must pass the GitHub Actions CI check before 
 Before opening a PR, ensure:
 - `npm run build` completes without errors
 - `npm run lint` passes without warnings
-- `npm run test` passes (`vitest run --passWithNoTests` is configured)
+- `npm run test` passes (`vitest run --passWithNoTests` is configured for the full suite)
+- the smallest relevant test tier passes for the change (`npm run test:unit` or `npm run test:integration`)
 - Manual testing confirms the change works as intended
 - Logs or screenshots are included in PR description for verification
 
