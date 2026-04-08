@@ -16,7 +16,7 @@ The **Intent Pipeline** provides a unified, source-agnostic mechanism for all ac
 
 ### Intent Model
 
-`Intent` in `src/world/types.ts` has the structure:
+`Intent` in `src/world/types/command.ts` (exported from `src/world/types.ts`) has the structure:
 ```typescript
 interface Intent {
   actorId: string;
@@ -54,7 +54,7 @@ Legacy `WorldCommand` objects (`move`, `selectInventorySlot`, `useSelectedItem`,
 
 ## Current Deterministic State Model
 
-`WorldState` in `src/world/types.ts` includes:
+`WorldState` in `src/world/types/world-state.ts` (exported from `src/world/types.ts`) includes:
 - `tick`
 - `grid`
 - `levelMetadata`
@@ -82,7 +82,7 @@ These classes establish a typed DTO-to-runtime boundary for future incremental m
 
 ### DTO vs Runtime Class Boundary
 
-- **DTO boundary:** `LevelData` and nested `Level*Dto` shapes in `src/world/types.ts` define file/network JSON contracts.
+- **DTO boundary:** `LevelData` and nested `Level*Dto` shapes in `src/world/types/level.ts` (exported from `src/world/types.ts`) define file/network JSON contracts.
 - **Runtime boundary:** `src/world/entities/*` classes provide constructor guarantees, polymorphic behavior hooks, and explicit conversion helpers.
 - **Seam boundary:** `src/world/entities/dtoRuntimeSeams.ts` is the only place that should map DTO shapes into runtime classes.
 
@@ -296,7 +296,7 @@ This enables shared behavior per object type while preserving instance-specific 
 
 When adding a new world subclass, keep changes localized and deterministic:
 
-1. Add/extend DTO shape in `src/world/types.ts` only if new serializable data is required.
+1. Add/extend DTO shape in `src/world/types/` domain modules (see [TYPES_REFERENCE.md](TYPES_REFERENCE.md) for module organization) only if new serializable data is required. Types are re-exported from `src/world/types.ts` for import stability.
 2. Implement runtime subclass under `src/world/entities/npcs` or `src/world/entities/objects`.
 3. Wire DTO-to-runtime mapping in `src/world/entities/dtoRuntimeSeams.ts`.
 4. Keep deterministic behavior in world/interaction layers; render only consumes resulting state.

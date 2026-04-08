@@ -35,7 +35,7 @@ All world state must serialize to JSON. This enables LLM systems to reason about
 **Implication:** Avoid circular references, functions, or non-serializable objects in `WorldState` and related types.
 
 ### DTO/Runtime Boundary
-Level JSON ingress/egress remains DTO-shaped (`src/world/types.ts`). During deserialization, DTOs are mapped into runtime classes via `src/world/entities/dtoRuntimeSeams.ts`.
+Level JSON ingress/egress remains DTO-shaped (types exported from `src/world/types.ts`, organized across domain-focused modules in `src/world/types/`). During deserialization, DTOs are mapped into runtime classes via `src/world/entities/dtoRuntimeSeams.ts`.
 
 **Implication:** Runtime classes can enforce structure and polymorphism, while serialized `WorldState` keeps stable JSON contracts for tests, debugging, and LLM context.
 

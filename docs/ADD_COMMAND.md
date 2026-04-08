@@ -9,7 +9,7 @@ Commands represent player actions that are buffered and then applied determinist
 ## Steps
 
 ### 1. Define the Command
-Add a new command variant to `WorldCommand` in `src/world/types.ts`:
+Add a new command variant to `WorldCommand` in `src/world/types/command.ts` (exported from `src/world/types.ts`):
 
 ```typescript
 export type WorldCommand =
@@ -98,7 +98,7 @@ test('emits deterministic item-use event for each useSelectedItem command', () =
 
 ## Checklist
 
-- [ ] Command type added to `WorldCommand` union in `src/world/types.ts`
+- [ ] Command type added to `WorldCommand` union in `src/world/types/command.ts` (re-exported from `src/world/types.ts`)
 - [ ] Input mapping added to `src/input/keyboard.ts`
 - [ ] Command application logic added to `src/world/world.ts`
 - [ ] Unit tests written in `src/world/world.test.ts`

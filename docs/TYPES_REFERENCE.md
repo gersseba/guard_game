@@ -3,7 +3,20 @@
 This document tracks the core serializable types and selected transient runtime interfaces used by the runtime.
 
 Source of truth:
-- `src/world/types.ts`
+- `src/world/types.ts` (barrel export; organized across domain-focused modules in `src/world/types/`)
+  - `src/world/types/grid.ts` - GridPosition, SpriteDirection, SpriteSet
+  - `src/world/types/entity.ts` - GameEntity, EntityCapabilities
+  - `src/world/types/player.ts` - Player
+  - `src/world/types/inventory.ts` - Inventory and item-use types
+  - `src/world/types/guard.ts` - Guard
+  - `src/world/types/npc.ts` - Npc, RiddleClue, RiddleClueConstraint
+  - `src/world/types/door.ts` - Door
+  - `src/world/types/object.ts` - InteractiveObject, ObjectCapabilities
+  - `src/world/types/environment.ts` - Environment
+  - `src/world/types/conversation.ts` - ConversationMessage, ActorConversationHistoryByActorId
+  - `src/world/types/world-state.ts` - WorldState, WorldGrid, LevelMetadata
+  - `src/world/types/level.ts` - LevelData, Level*Dto types
+  - `src/world/types/command.ts` - WorldCommand, Intent, World interface
 - `src/world/entities/base/Entity.ts`
 - `src/world/entities/base/Actor.ts`
 - `src/world/entities/npcs/Npc.ts`
@@ -53,7 +66,7 @@ Used by runtime to distinguish between:
 
 ## World Domain Runtime-Class Seams
 
-These interfaces and classes provide a typed construction seam between serializable DTOs in `src/world/types.ts` and runtime class instances in `src/world/entities/`.
+These interfaces and classes provide a typed construction seam between serializable DTOs in `src/world/types/` modules and runtime class instances in `src/world/entities/`. (All types are re-exported from `src/world/types.ts` for import stability.)
 
 ### EntityInit
 - `id: string`

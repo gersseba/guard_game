@@ -1,390 +1,90 @@
-export interface GridPosition {
-  x: number;
-  y: number;
-}
-
-export type SpriteDirection = 'front' | 'away' | 'left' | 'right';
-
 /**
- * Serializable sprite configuration for entities with optional directional variants.
- * `default` provides a deterministic base asset when a directional key is missing.
+ * Barrel export file for world type contracts.
+ * 
+ * This file re-exports types from domain-focused modules under `src/world/types/`,
+ * providing a stable compatibility layer for existing imports.
+ * 
+ * # Module Organization
+ * 
+ * - `grid.ts` - GridPosition, SpriteDirection, SpriteSet
+ * - `entity.ts` - GameEntity, EntityCapabilities (base entity types)
+ * - `player.ts` - Player
+ * - `inventory.ts` - Inventory management and item-use rules
+ * - `guard.ts` - Guard entities
+ * - `npc.ts` - NPC entities, riddle clues, triggers
+ * - `door.ts` - Door entities
+ * - `object.ts` - InteractiveObject and ObjectCapabilities
+ * - `environment.ts` - Environment entities
+ * - `conversation.ts` - Conversation history contracts
+ * - `level.ts` - Level DTOs and LevelData format
+ * - `world-state.ts` - WorldState, WorldGrid, LevelMetadata
+ * - `command.ts` - WorldCommand, Intent, World interface
+ * 
+ * # Usage
+ * 
+ * Existing imports from `src/world/types` continue to work:
+ * ```typescript
+ * import type { WorldState, Player, Guard } from '../world/types';
+ * ```
+ * 
+ * For new code, consider importing from domain-focused modules:
+ * ```typescript
+ * import type { WorldState } from '../world/types/world-state';
+ * import type { Player } from '../world/types/player';
+ * ```
  */
-export interface SpriteSet {
-  default?: string;
-  front?: string;
-  away?: string;
-  left?: string;
-  right?: string;
-}
 
-export interface InventoryItem {
-  itemId: string;
-  displayName: string;
-  sourceObjectId: string;
-  pickedUpAtTick: number;
-}
+// Grid and sprite types
+export type { GridPosition, SpriteDirection, SpriteSet } from './types/grid.js';
 
-export interface PlayerInventory {
-  items: InventoryItem[];
-  selectedItem?: SelectedInventoryItem | null;
-}
+// Entity base types
+export type { GameEntity, EntityCapabilities } from './types/entity.js';
 
-export interface SelectedInventoryItem {
-  slotIndex: number;
-  itemId: string;
-}
+// Player types
+export type { Player } from './types/player.js';
 
-/**
- * Deterministic item-use rule for guards or objects.
- * Defines whether an item can be used and what response to provide.
- */
-export interface ItemUseRule {
-  allowed: boolean;
-  responseText: string;
-}
+// Inventory and item-use types
+export type {
+  InventoryItem,
+  PlayerInventory,
+  SelectedInventoryItem,
+  ItemUseRule,
+  ItemUseAttemptResult,
+  ItemUseAttemptResultEvent,
+} from './types/inventory.js';
 
-export type ItemUseAttemptResult = 'no-selection' | 'no-target' | 'blocked' | 'success' | 'no-rule';
+// Guard types
+export type { Guard } from './types/guard.js';
 
-export interface ItemUseAttemptResultEvent {
-  tick: number;
-  commandIndex: number;
-  selectedItem: SelectedInventoryItem | null;
-  result: ItemUseAttemptResult;
-  target: {
-    kind: 'door' | 'guard' | 'npc' | 'interactiveObject';
-    targetId: string;
-  } | null;
-  /** If a door was unlocked via correct item-use, contains the door ID */
-  doorUnlockedId?: string;
-  /** Type of entity affected by successful item-use rule (guard or object) */
-  affectedEntityType?: 'guard' | 'object';
-  /** ID of entity affected by successful item-use rule */
-  affectedEntityId?: string;
-  /** Response text from the applied item-use rule */
-  ruleResponseText?: string;
-}
+// NPC types
+export type { RiddleClue, RiddleClueConstraint, TriggerEffect, NpcTriggers, Npc } from './types/npc.js';
 
-export interface Player {
-  id: string;
-  displayName: string;
-  position: GridPosition;
-  inventory: PlayerInventory;
-  facingDirection?: SpriteDirection;
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
-}
+// Door types
+export type { Door } from './types/door.js';
 
-/**
- * Riddle clue constraint for an NPC in a logic puzzle.
- * Defines what claim the NPC must make about a door's safety.
- */
-export interface RiddleClue {
-  clueId: string;
-  doorId: string;
-  truthBehavior: 'truthful' | 'inverse';
-  /** Computed field: what the NPC must claim about the door's safety */
-  mustStateDoorAs: 'safe' | 'danger';
-}
+// Interactive object types
+export type { ObjectCapabilities, InteractiveObject } from './types/object.js';
 
-/**
- * Human-readable riddle clue constraint for prompt context.
- */
-export interface RiddleClueConstraint {
-  doorId: string;
-  mustStateDoorAs: 'safe' | 'danger';
-  constraint: string;
-}
+// Environment types
+export type { Environment } from './types/environment.js';
 
-/**
- * Shared structural base for all game entities.
- * All world entities share this common root. JSON-serializable.
- */
-export interface GameEntity {
-  id: string;
-  position: GridPosition;
-  displayName: string;
-  spriteSet?: SpriteSet;
-  spriteAssetPath?: string;
-  /** Open-ended behavioral traits bag, readable by LLM prompt builders. */
-  traits?: Record<string, string>;
-  /** Open-ended facts bag for arbitrary key/value data, readable by LLM prompt builders. */
-  facts?: Record<string, string | number | boolean>;
-}
+// Conversation types
+export type { ConversationMessage, ActorConversationHistoryByActorId } from './types/conversation.js';
 
-/**
- * Opt-in capability container for game entities.
- * Capabilities are typed sub-objects; omit a key if the entity lacks that capability.
- */
-export interface EntityCapabilities {
-  inventory?: { items: InventoryItem[] };
-  dialogue?: { threadId?: string };
-  patrol?: { path: GridPosition[] };
-  lock?: { isLocked: boolean; requiredItemId?: string };
-}
+// World state types
+export type { WorldState, WorldGrid, LevelMetadata } from './types/world-state.js';
 
-export interface TriggerEffect {
-  setFact: string;
-  value: string | boolean | number;
-}
+// Level DTO types
+export type {
+  LevelPlayerDto,
+  LevelGuardDto,
+  LevelDoorDto,
+  LevelNpcRiddleClueDto,
+  LevelNpcDto,
+  LevelInteractiveObjectDto,
+  LevelEnvironmentDto,
+  LevelData,
+} from './types/level.js';
 
-export interface NpcTriggers {
-  onApproach?: TriggerEffect;
-  onTalk?: TriggerEffect;
-}
-
-export interface Npc extends GameEntity {
-  npcType: string;
-  dialogueContextKey: string;
-  patrol?: { path: Array<{ x: number; y: number }> };
-  triggers?: NpcTriggers;
-  inventory?: InventoryItem[];
-  /** Instance-specific knowledge this NPC has (overrides or extends type-level knowledge). */
-  instanceKnowledge?: string;
-  /** Instance-specific behavior traits for this NPC (overrides or extends type-level behavior). */
-  instanceBehavior?: string;
-  /** Riddle clue constraint for logic puzzle NPCs. */
-  riddleClue?: RiddleClue;
-}
-
-export interface ConversationMessage {
-  role: 'player' | 'assistant';
-  text: string;
-}
-
-export type ActorConversationHistoryByActorId = Record<string, ConversationMessage[]>;
-
-/** A guard entity that the player can interact with. */
-export interface Guard extends GameEntity {
-  guardState: 'idle' | 'patrolling' | 'alert';
-  facingDirection?: SpriteDirection;
-  /** Instance-specific knowledge this guard has (overrides or extends type-level knowledge). */
-  instanceKnowledge?: string;
-  /** Instance-specific behavior traits for this guard (overrides or extends type-level behavior). */
-  instanceBehavior?: string;
-  /** Deterministic item-use rules: item ID → rule definition */
-  itemUseRules?: Record<string, ItemUseRule>;
-}
-
-/** A door that the player can pass through or be blocked by. */
-export interface Door extends GameEntity {
-  doorState: 'open' | 'closed' | 'locked';
-  outcome?: 'safe' | 'danger';
-  /** Item ID required to unlock this door (if set, door must be interacted with using this item) */
-  requiredItemId?: string;
-  /** Whether this door has been unlocked via item-use (persists unlock state; default: false) */
-  isUnlocked?: boolean;
-}
-
-/**
- * Capability flags define what an interactive object can do.
- * Objects declare capabilities, and the interaction handler applies matching effects.
- */
-export interface ObjectCapabilities {
-  containsItems?: boolean;
-  isActivatable?: boolean;
-  isLockable?: boolean;
-}
-
-export interface InteractiveObject extends GameEntity {
-  objectType: string;
-  interactionType: 'inspect' | 'use' | 'talk';
-  state: 'idle' | 'used';
-  pickupItem?: {
-    itemId: string;
-    displayName: string;
-  };
-  idleMessage?: string;
-  usedMessage?: string;
-  firstUseOutcome?: 'win' | 'lose';
-  /** Capability flags that drive behavior dispatch */
-  capabilities?: ObjectCapabilities;
-  /** Deterministic item-use rules: item ID → rule definition */
-  itemUseRules?: Record<string, ItemUseRule>;
-}
-
-export interface Environment {
-  id: string;
-  displayName: string;
-  position: GridPosition;
-  isBlocking: boolean;
-}
-
-export interface WorldGrid {
-  width: number;
-  height: number;
-  tileSize: number;
-}
-
-export interface LevelMetadata {
-  name: string;
-  premise: string;
-  goal: string;
-}
-
-export interface LevelPlayerDto {
-  x: number;
-  y: number;
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
-}
-
-export interface LevelGuardDto {
-  id: string;
-  displayName: string;
-  x: number;
-  y: number;
-  guardState: 'patrolling' | 'alert' | 'idle';
-  /** Behavioral traits bag. Use traits.truthMode for guard honesty ('truth-teller' | 'liar'). */
-  traits?: Record<string, string>;
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
-  /** Instance-specific knowledge this guard has. */
-  instanceKnowledge?: string;
-  /** Instance-specific behavior traits for this guard. */
-  instanceBehavior?: string;
-  /** Deterministic item-use rules: item ID -> rule definition */
-  itemUseRules?: Record<string, ItemUseRule>;
-}
-
-export interface LevelDoorDto {
-  id: string;
-  displayName: string;
-  x: number;
-  y: number;
-  doorState: 'open' | 'closed' | 'locked';
-  outcome?: 'safe' | 'danger';
-  /** Item ID required to unlock this door */
-  requiredItemId?: string;
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
-}
-
-export interface LevelNpcRiddleClueDto {
-  clueId: string;
-  doorId: string;
-  truthBehavior: 'truthful' | 'inverse';
-}
-
-export interface LevelNpcDto {
-  id: string;
-  displayName: string;
-  x: number;
-  y: number;
-  npcType: string;
-  patrol?: { path: GridPosition[] };
-  triggers?: NpcTriggers;
-  inventory?: InventoryItem[];
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
-  /** Instance-specific knowledge this NPC has. */
-  instanceKnowledge?: string;
-  /** Instance-specific behavior traits for this NPC. */
-  instanceBehavior?: string;
-  /** Riddle clue constraint for logic puzzle NPCs. */
-  riddleClue?: LevelNpcRiddleClueDto;
-}
-
-export interface LevelInteractiveObjectDto {
-  id: string;
-  displayName: string;
-  x: number;
-  y: number;
-  objectType: string;
-  interactionType: 'inspect' | 'use' | 'talk';
-  state: 'idle' | 'used';
-  pickupItem?: {
-    itemId: string;
-    displayName: string;
-  };
-  idleMessage?: string;
-  usedMessage?: string;
-  firstUseOutcome?: 'win' | 'lose';
-  spriteAssetPath?: string;
-  spriteSet?: SpriteSet;
-  capabilities?: ObjectCapabilities;
-  /** Deterministic item-use rules: item ID -> rule definition */
-  itemUseRules?: Record<string, ItemUseRule>;
-}
-
-export interface LevelEnvironmentDto {
-  id: string;
-  displayName: string;
-  x: number;
-  y: number;
-  isBlocking: boolean;
-}
-
-/** Flat JSON representation of a level file (public/levels/*.json). Version-stamped for future migrations. */
-export interface LevelData {
-  version: number;
-  name: string;
-  premise: string;
-  goal: string;
-  objective?: string;
-  width: number;
-  height: number;
-  player: LevelPlayerDto;
-  guards: LevelGuardDto[];
-  doors: LevelDoorDto[];
-  npcs?: LevelNpcDto[];
-  interactiveObjects?: LevelInteractiveObjectDto[];
-  environments?: LevelEnvironmentDto[];
-}
-
-export interface WorldState {
-  tick: number;
-  grid: WorldGrid;
-  levelMetadata: LevelMetadata;
-  levelObjective?: string;
-  player: Player;
-  npcs: Npc[];
-  guards: Guard[];
-  doors: Door[];
-  interactiveObjects: InteractiveObject[];
-  environments?: Environment[];
-  actorConversationHistoryByActorId: ActorConversationHistoryByActorId;
-  lastItemUseAttemptEvent?: ItemUseAttemptResultEvent | null;
-  levelOutcome: 'win' | 'lose' | null;
-}
-
-export type WorldCommand =
-  | {
-      type: 'move';
-      dx: number;
-      dy: number;
-    }
-  | {
-      type: 'interact';
-    }
-  | {
-      type: 'selectInventorySlot';
-      slotIndex: number;
-    }
-  | {
-      type: 'useSelectedItem';
-    };
-
-export type IntentType = 'move' | 'wait' | 'interact';
-
-/**
- * Represents an action requested by any actor (player, NPC, scripted).
- * Intent is decoupled from input source (keyboard, LLM, etc.).
- * Deterministically resolved by resolveIntent() function.
- */
-export interface Intent {
-  actorId: string;
-  type: IntentType;
-  payload?: {
-    direction?: 'up' | 'down' | 'left' | 'right';
-    targetId?: string;
-    // Support arbitrary delta movement for backward compatibility during transition.
-    // Preferred path uses direction; delta is fallback for legacy movement vectors.
-    delta?: { dx: number; dy: number };
-  };
-}
-
-export interface World {
-  getState(): WorldState;
-  applyCommands(commands: WorldCommand[]): void;
-  resetToState(state: WorldState): void;
-}
+// Command and intent types
+export type { WorldCommand, IntentType, Intent, World } from './types/command.js';

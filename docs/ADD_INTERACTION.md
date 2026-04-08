@@ -50,9 +50,10 @@ In `src/interaction/interactionDispatcher.ts` result registry:
 ## Pattern B: Add a New Deterministic Interaction Kind
 
 ### 1. Extend world types
-In `src/world/types.ts`:
+In `src/world/types/` domain modules (see [TYPES_REFERENCE.md](TYPES_REFERENCE.md)):
 - add/extend the required model fields
 - keep JSON-serializable shape
+- (Types are re-exported from `src/world/types.ts` for import stability)
 
 ### 2. Validate and deserialize level data
 In `src/world/level.ts`:
