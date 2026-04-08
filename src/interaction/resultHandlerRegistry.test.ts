@@ -1,45 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ConversationMessage, WorldState } from '../world/types';
+import type { ConversationMessage } from '../world/types';
 import { createResultHandlerRegistry } from './resultHandlerRegistry';
 import type { ResultHandlerConfig } from './interactionDispatcherTypes';
-
-const createTestWorldState = (
-  overrides?: Omit<Partial<WorldState>, 'player'> & { player?: Partial<WorldState['player']> },
-): WorldState => {
-  const baseState: WorldState = {
-    tick: 0,
-    grid: { width: 10, height: 10, tileSize: 32 },
-    levelMetadata: {
-      name: 'Result Registry Test',
-      premise: 'Fixture for result handler registry tests.',
-      goal: 'Preserve result-side effect ordering.',
-    },
-    levelObjective: 'Exercise result handlers.',
-    player: {
-      id: 'player',
-      displayName: 'Player',
-      position: { x: 0, y: 0 },
-      inventory: {
-        items: [],
-      },
-    },
-    guards: [],
-    doors: [],
-    npcs: [],
-    interactiveObjects: [],
-    actorConversationHistoryByActorId: {},
-    levelOutcome: null,
-  };
-
-  return {
-    ...baseState,
-    ...(overrides ?? {}),
-    player: {
-      ...baseState.player,
-      ...(overrides?.player ?? {}),
-    },
-  };
-};
+import { createTestWorldState } from '../test-support/worldState';
 
 const createResultHandlerConfig = (): ResultHandlerConfig & {
   callOrder: string[];

@@ -1,14 +1,13 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createOutcomeOverlay } from './outcomeOverlay';
+import { createBodyContainer } from '../test-support/dom';
 
 describe('createOutcomeOverlay', () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
-    document.body.innerHTML = '';
-    container = document.createElement('div');
-    document.body.appendChild(container);
+    container = createBodyContainer();
   });
 
   it('shows and hides the overlay lifecycle correctly', () => {

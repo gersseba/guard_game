@@ -1,11 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { LlmClient } from '../llm/client';
-import type { Guard, Npc, Door, InteractiveObject, WorldState } from '../world/types';
+import type { Door, InteractiveObject } from '../world/types';
 import {
   createInteractionDispatcher,
   createResultDispatcher,
   isPromiseLike,
 } from './interactionDispatcher';
+import {
+  createTestDoor,
+  createTestGuard,
+  createTestNpc,
+  createTestObject,
+  createTestWorldState,
+} from '../test-support/worldState';
 
 /**
  * Test suite for interaction dispatcher.
@@ -15,81 +22,6 @@ import {
 // Mock LLM client
 const createMockLlmClient = (): LlmClient => ({
   complete: vi.fn().mockResolvedValue({ text: 'AI response' }),
-});
-
-// Utility to create minimal test world state
-const createTestWorldState = (
-  overrides?: Omit<Partial<WorldState>, 'player'> & { player?: Partial<WorldState['player']> },
-): WorldState => {
-  const baseState: WorldState = {
-    tick: 0,
-    grid: { width: 10, height: 10, tileSize: 32 },
-    levelMetadata: {
-      name: 'Test Level',
-      premise: 'Fixture for interaction dispatcher tests.',
-      goal: 'Dispatch interaction handlers deterministically.',
-    },
-    levelObjective: 'Find a way out.',
-    player: {
-      id: 'player',
-      displayName: 'Player',
-      position: { x: 0, y: 0 },
-      inventory: {
-        items: [],
-      },
-    },
-    guards: [],
-    doors: [],
-    npcs: [],
-    interactiveObjects: [],
-    actorConversationHistoryByActorId: {},
-    levelOutcome: null,
-  };
-
-  return {
-    ...baseState,
-    ...(overrides ?? {}),
-    player: {
-      ...baseState.player,
-      ...(overrides?.player ?? {}),
-    },
-  };
-};
-
-// Utility to create test entities
-const createTestGuard = (id: string): Guard => ({
-  id,
-  displayName: 'Test Guard',
-  position: { x: 1, y: 0 },
-  guardState: 'idle',
-});
-
-const createTestNpc = (id: string): Npc => ({
-  id,
-  displayName: 'Test NPC',
-  position: { x: 1, y: 0 },
-  dialogueContextKey: 'test',
-  npcType: 'scholar',
-});
-
-const createTestDoor = (id: string): Door => ({
-  id,
-  displayName: 'Test Door',
-  position: { x: 1, y: 0 },
-  doorState: 'open',
-});
-
-const createTestObject = (id: string): InteractiveObject => ({
-  id,
-  displayName: 'Test Object',
-  position: { x: 1, y: 0 },
-  objectType: 'supply-crate',
-  interactionType: 'inspect',
-  state: 'idle',
-  idleMessage: 'You see a crate.',
-  capabilities: {
-    containsItems: true,
-  },
 });
 
 describe('InteractionDispatcher', () => {

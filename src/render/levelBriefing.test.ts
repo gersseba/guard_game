@@ -3,14 +3,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import riddleJson from '../../public/levels/riddle.json';
 import { deserializeLevel, validateLevelData } from '../world/level';
 import { createLevelBriefingPanel } from './levelBriefing';
+import { createBodyContainer } from '../test-support/dom';
 
 describe('createLevelBriefingPanel', () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
-    document.body.innerHTML = '';
-    container = document.createElement('div');
-    document.body.appendChild(container);
+    container = createBodyContainer();
   });
 
   it('renders premise and goal labels with metadata content from world state', () => {
