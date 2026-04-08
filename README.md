@@ -40,7 +40,9 @@ The game enforces strict layer separation to support LLM-driven gameplay:
   /interaction    — NPC interaction flow and response formatting
   /input          — Input command buffering
   /llm            — LLM client boundary and stubs
-  main.ts         — Runtime bootstrap and frame/tick loop
+  /runtime        — Runtime composition (app wiring, fixed tick loop, bridge/coordinator modules)
+  runtimeController.ts — Simulation gate for pause state, command drain, and item-use callback boundaries
+  main.ts         — Thin browser bootstrap that starts the runtime app
 ```
 
 ### Key Principles
@@ -51,14 +53,16 @@ The game enforces strict layer separation to support LLM-driven gameplay:
 
 ### Baseline Runtime Loop
 
-The current baseline runtime in `src/main.ts` follows this loop:
+The current baseline runtime is composed in `src/runtime/createRuntimeApp.ts` and follows this loop:
 
-1. Keyboard input maps to `WorldCommand` values and is enqueued into `CommandBuffer`.
-2. A fixed simulation tick of 100ms drains buffered commands.
-3. `world.applyCommands(commands)` updates deterministic state and advances `tick`, including inventory slot selection state.
-4. If any `useSelectedItem` commands were issued, runtime orchestration resolves a deterministic item-use attempt event for each command and stores the latest event in serialized world state.
-5. If an `interact` command was issued, one adjacent target is resolved through the interaction dispatcher; conversational turns may cross the LLM boundary, while door/object paths stay deterministic.
-6. Every animation frame renders the latest world state through the Pixi render port and prints JSON state in the debug panel.
+1. `src/main.ts` validates `#app` and starts `createRuntimeApp(...)`.
+2. `src/runtime/createRuntimeApp.ts` wires the world, `RuntimeController`, render ports, modal coordinator, interaction bridge, and level-load orchestration.
+3. Keyboard input maps to `WorldCommand` values and is enqueued into `CommandBuffer`.
+4. `src/runtime/fixedTickLoop.ts` drives a fixed simulation tick of 100ms plus a per-frame render callback.
+5. `src/runtimeController.ts` drains buffered commands, gates them while paused or after level completion, applies deterministic world commands, and invokes the selected-item resolver callback boundary.
+6. `src/runtime/interactionResultBridge.ts` handles interact commands: door/object targets stay deterministic, while guard/NPC targets open the action-modal flow first and only cross the LLM boundary after chat is chosen.
+7. `src/runtime/modalCoordinator.ts` owns action/chat/inventory modal lifecycles and viewport pause presentation; `src/runtime/levelLoadOrchestration.ts` owns manifest loading, default-level startup, and reset flows.
+8. Every animation frame renders the latest world state through the Pixi render port and prints JSON state in the debug panel.
 
 ## Architecture Documentation
 
@@ -162,9 +166,9 @@ Guard Game uses specialized Copilot agents to manage the full development workfl
 - `@coordinator: Run full flow for ticket #15`
 
 ### Locating Agents & Skills
-- **Agents:** [.github/agents/](/.github/agents/) — Each agent is an `.agent.md` file with description and behavior
-- **Skills:** [.github/skills/](/.github/skills/) — Workflows and best practices for specialized tasks
-- **Project Instructions:** [.github/copilot-instructions.md](/.github/copilot-instructions.md) — Baseline requirements and architecture constraints
+- **Agents:** [.github/agents/](.github/agents/) — Each agent is an `.agent.md` file with description and behavior
+- **Skills:** [.github/skills/](.github/skills/) — Workflows and best practices for specialized tasks
+- **Project Instructions:** [.github/copilot-instructions.md](.github/copilot-instructions.md) — Baseline requirements and architecture constraints
 
 ## Project Management
 

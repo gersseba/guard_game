@@ -64,7 +64,7 @@ Implemented systems:
   - Item-use attempt resolver boundary:
     - Runtime detects each `useSelectedItem` command in tick order.
     - Resolver emits deterministic per-command result events (`no-selection` or `no-target` currently).
-    - Main loop commits latest event to `worldState.lastItemUseAttemptEvent`.
+    - `src/runtimeController.ts` resolves item-use attempt events during tick processing, and `src/runtime/createRuntimeApp.ts` commits the latest event to `worldState.lastItemUseAttemptEvent` through the runtime callback.
 - Runtime UI wiring:
   - Level picker and reset.
   - Level objective panel in runtime controls.

@@ -8,12 +8,15 @@ The render layer translates `WorldState` into visual state and DOM-only runtime 
 - Keep viewport/camera centered around player with clamped world bounds
 - Map world entities to deterministic visuals by type and optional asset metadata
 - Consume world-owned player-facing direction when choosing player directional sprites
-- Manage DOM-only render utilities for runtime layout, level controls UI, chat UI, viewport pause presentation, and level-outcome presentation
+- Manage DOM-only render utilities for runtime layout, level briefing, inventory panel, level controls UI, action/chat/inventory overlays, viewport pause presentation, and level-outcome presentation
 
 Implementation entry points:
 - [src/render/scene.ts](../src/render/scene.ts)
 - [src/render/runtimeLayout.ts](../src/render/runtimeLayout.ts)
+- [src/render/levelBriefing.ts](../src/render/levelBriefing.ts)
+- [src/render/inventoryPanel.ts](../src/render/inventoryPanel.ts)
 - [src/render/levelUi.ts](../src/render/levelUi.ts)
+- [src/render/actionModal.ts](../src/render/actionModal.ts)
 - [src/render/chatModal.ts](../src/render/chatModal.ts)
 - [src/render/inventoryOverlay.ts](../src/render/inventoryOverlay.ts)
 - [src/render/viewportOverlay.ts](../src/render/viewportOverlay.ts)
@@ -57,12 +60,16 @@ This keeps rendering deterministic even with partially configured sprite sets.
 
 The runtime mounts a small set of DOM-only helpers alongside the Pixi canvas:
 - `getRuntimeLayoutMarkup()` creates the host structure for viewport, side panels, modal host, and outcome host.
+- `createLevelBriefingPanel()` renders the active level premise and goal text.
+- `createInventoryPanel()` renders the always-visible inventory summary panel.
 - `createLevelUi()` manages level picker controls and the objective text panel in the runtime controls area.
+- `createActionModal()` manages the action selection UI for guard/NPC interactions.
 - `createChatModal()` manages the conversation dialog DOM and local focus behavior.
+- `createInventoryOverlay()` manages the view-only inventory modal opened from the action modal.
 - `createViewportOverlay()` manages the grey paused-world overlay inside `#viewport`.
 - `createOutcomeOverlay()` manages win/lose overlay messaging.
 
-These utilities are wired in [src/main.ts](../src/main.ts) and remain presentation-only. They do not hold gameplay state.
+`src/runtime/createRuntimeApp.ts` wires these render utilities into the runtime shell, while [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts) owns the modal lifecycle callbacks and [src/runtime/levelLoadOrchestration.ts](../src/runtime/levelLoadOrchestration.ts) owns level-control data flow. The render utilities themselves remain presentation-only and do not hold gameplay state.
 
 ## Entity Marker Mapping
 
@@ -81,7 +88,7 @@ The paused-world presentation is intentionally split from gameplay pause state:
 - `createViewportOverlay()` owns how the paused viewport is presented in the DOM.
 
 Current behavior:
-1. Conversational open results in [src/main.ts](../src/main.ts) call `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`.
+1. Guard/NPC interact commands first open the action modal through [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts). When Chat or Inventory is chosen, the same coordinator keeps the viewport overlay visible while the selected modal remains open.
 2. `createViewportOverlay(viewportElement)` appends a hidden `.viewport-pause-overlay` child inside `#viewport`.
 3. `show()` reveals the overlay and sets the `inert` attribute on the viewport element.
 4. `hide()` hides the overlay and removes `inert`.
@@ -141,8 +148,8 @@ interface InventoryOverlay {
 ### Pause Semantics
 
 The inventory overlay does not pause gameplay directly. Pause state is managed externally by runtime logic:
-- If a conversational interaction is open (chat modal visible), the inventory remains accessible as a view-only reference
-- The overlay visibility is controlled by runtime callbacks, not by modal open state
+- If a guard/NPC action-modal session is active, the player can choose Inventory and keep the runtime paused while the overlay is visible
+- The overlay visibility is controlled by [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts), not by the overlay component itself
 - Inventory slot selection remains available while any modal is visible
 
 ## Conversation Exit Controls
@@ -150,8 +157,10 @@ The inventory overlay does not pause gameplay directly. Pause state is managed e
 `createChatModal()` provides the current conversation exit behavior:
 - The close button and the document-level Escape listener both route through the same `closePanel()` path.
 - `closePanel()` hides the modal, unregisters the Escape listener, invokes `onClose`, and then restores focus to `document.body` if focus was still inside the modal.
-- In [src/main.ts](../src/main.ts), `onClose` is wired to `runtimeController.closeConversation()` and `viewportPauseOverlay.hide()`.
+- In [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts), `onClose` is wired to `runtimeController.closeConversation()` and `viewportPauseOverlay.hide()`.
 - The chat input stops `keydown` and `keyup` propagation so typing does not reach the global movement binding. Enter submission stays local to the modal.
+
+`createActionModal()` and `createInventoryOverlay()` follow the same ownership split: render owns DOM behavior, while `modalCoordinator` decides whether closing the UI resumes gameplay or swaps back to another paused modal state.
 
 ## Asset Metadata and Usage
 

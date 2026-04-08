@@ -66,14 +66,14 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 
 2. **Tick Phase** (fixed 100ms): `runtimeController.stepSimulation()` is called. It drains the command buffer, gates commands based on current pause state and level outcome, then applies the resolved command set to world state via `world.applyCommands(commands)`. This same step also captures every `useSelectedItem` command index from the drained tick list and, after command application, routes those use attempts through the deterministic item-use resolver boundary. If the runtime is paused (a guard or NPC conversation is open), buffered commands are discarded and no world update, item-use resolution, or interaction dispatch occurs for that tick.
 
-3. **Deterministic Use-Attempt Routing:** When `useSelectedItem` commands are present, `RuntimeController` calls the injected item-use resolver with the post-command `WorldState` and each original command index. `main.ts` commits the latest emitted `ItemUseAttemptResultEvent` back into serialized world state through `world.resetToState(...)`. When a door is unlocked (event.doorUnlockedId is present), the corresponding door's `isUnlocked` flag is set to true, allowing future movement through that door via spatial rules checks.
+3. **Deterministic Use-Attempt Routing:** When `useSelectedItem` commands are present, `RuntimeController` calls the injected item-use resolver with the post-command `WorldState` and each original command index. `src/runtime/createRuntimeApp.ts` wires the `onItemUseAttemptResolved(...)` callback that commits the latest emitted `ItemUseAttemptResultEvent` back into serialized world state through `world.resetToState(...)`. When a door is unlocked (`event.doorUnlockedId` is present), that same callback sets the corresponding door's `isUnlocked` flag to true, allowing future movement through that door via spatial rules checks.
 
-4. **Interaction Dispatch:** If an `interact` command was issued and the runtime is not paused, `runInteractionIfRequested()` resolves one adjacent target and calls `interactionDispatcher.dispatch(...)`.
-   - **Action Modal Routing:** If target is action-modal-eligible (guard/npc), dispatcher returns conversational result. Result dispatcher routes to either action modal open (if available) or directly to chat modal (backward compatible).
-   - **Deterministic Routing:** If target is non-modal (door/object), dispatcher resolves interaction locally and returns deterministic result. Result dispatcher commits world state mutations without opening modals.
+4. **Interaction Routing:** If an `interact` command was issued and the runtime is not paused, `src/runtime/interactionResultBridge.ts` resolves one adjacent target.
+       - **Action Modal Routing:** If the target is action-modal-eligible (`guard` or `npc`), the bridge opens an action-modal session immediately through `src/runtime/modalCoordinator.ts`. If the player chooses Chat, the bridge resolves the conversational target by id and then calls `interactionDispatcher.dispatch(...)` to start the chat flow.
+       - **Deterministic Routing:** If the target is non-modal (`door` or `interactiveObject`), the bridge dispatches immediately. Result handlers commit world-state mutations without opening modals.
 
-5. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into main-loop side effects.
-   - Conversational results (guard/npc, `isConversational: false` or `true`) call `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`.
+5. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into runtime bridge side effects.
+       - Conversational results (`guard`/`npc`) are routed through `interactionResultBridge` into `modalCoordinator`, which calls `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`.
    - Deterministic results (door/object) stay local to world-state reset and level-outcome callbacks.
    - Door and object interactions do not open modals and do not pause gameplay.
 
@@ -84,6 +84,7 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 Runtime composition entry points:
 - `src/main.ts`: validates `#app` and starts the runtime app.
 - `src/runtime/createRuntimeApp.ts`: composition root that wires world, runtime controller, render ports, interaction bridge, modal coordinator, and level orchestration.
+- `src/runtimeController.ts`: drains command input, enforces pause and level-outcome gating, and invokes deterministic item-use callback boundaries.
 - `src/runtime/fixedTickLoop.ts`: fixed-timestep simulation loop + per-frame render callback.
 - `src/runtime/interactionResultBridge.ts`: interaction dispatch/result routing and conversation send bridge.
 - `src/runtime/modalCoordinator.ts`: chat/action/inventory modal lifecycle and viewport pause overlay semantics.
@@ -111,14 +112,12 @@ Runtime composition entry points:
 
 ### Modal Lifecycle and Pause Semantics
 
-**Conversation Pause Flow:**
+**Action Modal + Conversation Pause Flow:**
 1. Player presses `e` (interact) adjacent to a guard or NPC.
-2. `interactionDispatcher.dispatch(target)` returns conversational result (initial open, `isConversational: false`).
-3. `resultDispatcher.dispatch(result)` calls `runtimeController.openConversation(actorId)`, which:
-   - Sets `paused = true` in runtime controller
-   - Next `stepSimulation()` tick will drain buffered commands without processing
-4. Main loop calls `viewportPauseOverlay.show()` → adds `.viewport-pause-overlay` div, sets `inert` on viewport, blocks pointer/focus
-5. Chat modal opens: `chatModal.open(actorId, displayName, history)` → renders conversation interface in DOM
+2. `src/runtime/interactionResultBridge.ts` resolves an action-modal-eligible target and creates a `RuntimeActionModalSession` instead of dispatching the interaction immediately.
+3. `src/runtime/modalCoordinator.ts` opens the action modal, calls `runtimeController.openActionModal(session)`, shows the viewport overlay, and pauses gameplay.
+4. If the player chooses Chat, `modalCoordinator` asks `interactionResultBridge.openConversationForActionSession(...)` to resolve the conversational target by id and dispatch the initial interaction result.
+5. The result dispatcher routes the conversational start callback back into `modalCoordinator`, which calls `runtimeController.openConversation(actorId)` and opens `chatModal.open(actorId, displayName, history)`.
 6. **While paused:**
    - Gameplay ticks don't advance (`stepSimulation()` drains but doesn't apply commands)
    - Input layer suppresses movement/interact commands via `isModalOpen()` callback
@@ -193,7 +192,7 @@ Guarantees:
 When implementing a new feature:
 1. **Identify the layer:** Which layer's responsibility does this touch?
 2. **Extend the contract:** Add types, handlers, or state fields as needed.
-3. **Update routing:** Register interaction and result handlers instead of adding ad-hoc branches in `main.ts`.
+3. **Update routing:** Register interaction and result handlers instead of adding ad-hoc branches in runtime composition modules.
 4. **Test the boundary:** Verify layer separation and sync/async behavior parity.
 
 See the relevant layer guide for detailed extension patterns.

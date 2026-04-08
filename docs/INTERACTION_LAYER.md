@@ -14,7 +14,7 @@ It also defines the deterministic item-use resolver boundary used by runtime sel
 - Route target kinds to registered interaction handlers
 - Keep deterministic interactions local and synchronous
 - Keep LLM-backed conversational turns behind the LLM boundary
-- Route normalized results through result handlers to main-loop side effects
+- Route normalized results through result handlers to runtime bridge side effects
 
 ## Action Modal Routing
 
@@ -27,8 +27,8 @@ It also defines the deterministic item-use resolver boundary used by runtime sel
 - `interactiveObject` (deterministic state transition and optional outcome)
 
 This classification enables the runtime to route interactions appropriately:
-1. If target is action-modal-eligible (guard/npc), the interaction dispatcher forwards to conversational handlers and result dispatcher opens chat modal on success.
-2. If target is deterministic (door/object), the interaction dispatcher handles locally and commits result-world-state mutations without opening any modal.
+1. If target is action-modal-eligible (guard/npc), `src/runtime/interactionResultBridge.ts` opens an action-modal session first. The bridge only calls conversational handlers after the player chooses Chat from that action modal.
+2. If target is deterministic (door/object), the interaction bridge dispatches immediately and commits result-world-state mutations without opening any modal.
 
 **Type Guard Pattern:**
 
@@ -67,21 +67,23 @@ Dispatcher contract:
 `createResultDispatcher()` in `src/interaction/interactionDispatcher.ts` owns a second registry keyed by `InteractionHandlerResult['kind']`.
 
 Registered result handlers:
-- `guard`/`npc` -> open chat modal with the latest actor conversation thread for that target id
+- `guard`/`npc` -> open chat modal with the latest actor conversation thread for that target id after the runtime chooses the chat path
 - `door` -> apply level outcome callback if present
 - `interactiveObject` -> apply immutable world-state reset callback if present
 
-Result dispatcher keeps main-loop side effects centralized and testable.
+Result dispatcher keeps runtime side effects centralized and testable.
 
-## Main Loop Routing Pattern
+## Runtime Bridge Routing Pattern
 
-`runInteractionIfRequested()` in `src/main.ts` uses one routing path:
-1. Resolve adjacent target.
-2. Call `interactionDispatcher.dispatch(...)`.
-3. If promise-like, resolve asynchronously then call `resultDispatcher.dispatch(...)`.
-4. If sync result, call `resultDispatcher.dispatch(...)` immediately.
+`src/runtime/interactionResultBridge.ts` owns two related routing paths:
+1. `runInteractionIfRequested()` resolves one adjacent target.
+2. If the target is action-modal-eligible (`guard`/`npc`), it creates a `RuntimeActionModalSession` and hands it to `src/runtime/modalCoordinator.ts` instead of dispatching immediately.
+3. If the target is deterministic (`door`/`interactiveObject`), it calls `interactionDispatcher.dispatch(...)` immediately.
+4. `openConversationForActionSession()` resolves the stored conversational target by id when the player chooses Chat and then dispatches the initial open-chat interaction.
+5. If a dispatch result is promise-like, the bridge resolves it asynchronously and then calls `resultDispatcher.dispatch(...)`.
+6. If a dispatch result is sync, the bridge calls `resultDispatcher.dispatch(...)` immediately.
 
-This removes target-kind branching from `main.ts` and preserves behavior parity from pre-refactor logic.
+This keeps target-kind branching isolated to the runtime bridge and action-modal helper, while preserving sync/async behavior parity within the dispatcher itself.
 
 The runtime bridge and tests use the shared actor-neutral helper in `src/interaction/actorConversationThread.ts` to read and render conversation history.
 
@@ -117,7 +119,7 @@ When an adjacent target is a guard or interactive object, the resolver checks fo
 
 All rules are deterministic and code-owned. No LLM involvement in item-use success/failure determination. Response text is narrative only.
 
-Main-loop wiring in `src/main.ts` commits the latest emitted event to `worldState.lastItemUseAttemptEvent` via immutable `world.resetToState(...)`.
+The item-use callback wiring in `src/runtime/createRuntimeApp.ts` commits the latest emitted event to `worldState.lastItemUseAttemptEvent` via immutable `world.resetToState(...)`.
 
 LLM boundary note:
 - Item-use attempt resolution is deterministic and code-owned.
@@ -126,7 +128,7 @@ LLM boundary note:
 
 ## Conversation Pause Lifecycle
 
-When the result dispatcher opens a guard or NPC conversation (`onConversationStarted` in [src/main.ts](../src/main.ts)), the runtime bridge performs three side effects in order:
+When the player chooses Chat from an action-modal session, `onConversationStarted` is routed from [src/runtime/interactionResultBridge.ts](../src/runtime/interactionResultBridge.ts) into [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts). The runtime bridge + modal coordinator then perform three side effects in order:
 1. `runtimeController.openConversation(actorId)` sets the runtime to paused state, records the active `RuntimeConversationSession`, and clears buffered commands.
 2. `viewportPauseOverlay.show()` reveals the grey viewport overlay and makes `#viewport` inert.
 3. `chatModal.open(targetId, displayName, conversationHistory)` opens the conversation UI and focuses the input.
@@ -136,10 +138,10 @@ While paused, `runtimeController.stepSimulation()` drains and discards buffered 
 When the chat modal closes, both exit controls follow the same path:
 1. The close button or Escape key triggers `closePanel()` in [src/render/chatModal.ts](../src/render/chatModal.ts).
 2. `closePanel()` hides the modal, removes the Escape listener, invokes `onClose`, and then restores focus to `document.body` if focus was still inside the modal.
-3. `onClose` in [src/main.ts](../src/main.ts) calls `runtimeController.closeConversation()` and `viewportPauseOverlay.hide()`.
+3. `onClose` in [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts) calls `runtimeController.closeConversation()` and `viewportPauseOverlay.hide()`.
 4. `runtimeController.closeConversation()` clears the active conversation session, clears buffered commands accumulated during the conversation, and resumes simulation on the next tick.
 
-Door and interactive object results never trigger `onConversationStarted`, so they never cause a pause and never show the viewport overlay. This is enforced by the result dispatcher and verified in `src/interaction/interactionDispatcher.test.ts` under the `result dispatcher timing parity` suite.
+Door and interactive object results never trigger `onConversationStarted`, so they never cause a pause and never show the viewport overlay. This is enforced by the runtime bridge + result dispatcher flow and verified in `src/interaction/interactionDispatcher.test.ts` under the `result dispatcher timing parity` suite.
 
 Gameplay pause state is kept outside `WorldState`. UI pause presentation is also transient render-layer DOM state. Neither belongs in serialized world state or LLM context.
 
@@ -226,6 +228,7 @@ See `src/interaction/guardInteraction.ts`, `src/interaction/npcInteraction.ts`, 
 ## Tests
 
 - `src/interaction/interactionDispatcher.test.ts`: dispatch routing by kind, sync/async behavior parity, result dispatcher timing parity, door/object non-pause guarantee
+- `src/interaction/actionModalRouting.test.ts`: action-modal eligibility and session creation for guard/NPC targets
 - `src/runtimeController.test.ts`: pause entry/exit lifecycle, command gating while paused, resume without command leak, level-outcome gating independent of pause state
 - `src/interaction/npcPromptContext.test.ts`: profile registry resolution, deterministic fallback, world knowledge builder registry keys, alias resolution (`archive_keeper → villager`), self-exclusion from `otherVillagers`, unknown-type `null` fallback, context shape determinism
 - `src/interaction/objectInteraction.test.ts`: polymorphic object dispatch, first-use outcomes, repeat interactions

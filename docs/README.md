@@ -53,4 +53,4 @@ Documentation is maintained alongside code changes. When implementing a feature:
 - Keep types in sync with the Type Reference
 - Link to actual code files for concrete examples
 
-See the [documenter agent](../.github/agents/documenter.agent.md) for how documentation updates are handled during code review.
+See the [content manager agent](../.github/agents/content-manager.agent.md) for how documentation updates are handled during code review.
