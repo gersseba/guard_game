@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createGeminiLlmClient,
-  MISSING_API_KEY_FALLBACK_TEXT,
-  REQUEST_FAILURE_FALLBACK_TEXT,
+  isLlmRequestError,
 } from './client';
 
 const prompt = {
@@ -48,12 +47,18 @@ describe('createGeminiLlmClient', () => {
     const response = await client.complete(prompt);
 
     expect(fetchImpl).not.toHaveBeenCalled();
-    expect(response).toEqual({ text: MISSING_API_KEY_FALLBACK_TEXT });
+    expect(isLlmRequestError(response)).toBe(true);
+    if (isLlmRequestError(response)) {
+      expect(response.kind).toBe('llm_request_error');
+      expect(typeof response.message).toBe('string');
+      expect(response.statusCode).toBeUndefined();
+    }
   });
 
-  it('returns deterministic fallback when request fails', async () => {
+  it('returns structured error when request returns non-ok status', async () => {
     const fetchImpl = vi.fn(async () => ({
       ok: false,
+      status: 503,
       json: async () => ({}),
     }));
 
@@ -64,10 +69,14 @@ describe('createGeminiLlmClient', () => {
 
     const response = await client.complete(prompt);
 
-    expect(response).toEqual({ text: REQUEST_FAILURE_FALLBACK_TEXT });
+    expect(isLlmRequestError(response)).toBe(true);
+    if (isLlmRequestError(response)) {
+      expect(response.kind).toBe('llm_request_error');
+      expect(response.statusCode).toBe(503);
+    }
   });
 
-  it('returns deterministic fallback when fetch throws', async () => {
+  it('returns structured error when fetch throws (network failure)', async () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error('network down');
     });
@@ -79,6 +88,27 @@ describe('createGeminiLlmClient', () => {
 
     const response = await client.complete(prompt);
 
-    expect(response).toEqual({ text: REQUEST_FAILURE_FALLBACK_TEXT });
+    expect(isLlmRequestError(response)).toBe(true);
+    if (isLlmRequestError(response)) {
+      expect(response.kind).toBe('llm_request_error');
+      expect(response.statusCode).toBeUndefined();
+    }
+  });
+
+  it('does not append assistant fallback text on failure (no text property on error)', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: false,
+      status: 503,
+      json: async () => ({}),
+    }));
+
+    const client = createGeminiLlmClient({
+      apiKey: 'test-key',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    const response = await client.complete(prompt);
+
+    expect('text' in response).toBe(false);
   });
 });

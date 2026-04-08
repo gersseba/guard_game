@@ -1,4 +1,5 @@
 import type { WorldCommand, WorldState, ConversationMessage } from '../world/types';
+import type { LlmRequestError } from '../llm/client';
 import { resolveAdjacentTarget, type AdjacentTarget } from '../interaction/adjacencyResolver';
 import {
   createActionModalSession,
@@ -31,6 +32,7 @@ export interface RuntimeInteractionResultBridge {
     actorId: string,
     playerMessage: string,
     onAssistantMessage: (message: string) => void,
+    onLlmError?: (error: LlmRequestError) => void,
   ): Promise<void>;
 }
 
@@ -111,6 +113,7 @@ export const createRuntimeInteractionResultBridge = (
       actorId: string,
       playerMessage: string,
       onAssistantMessage: (message: string) => void,
+      onLlmError?: (error: LlmRequestError) => void,
     ): Promise<void> {
       const currentWorldState = dependencies.world.getState();
       const target = dependencies.interactionDispatcher.resolveConversationalTarget(
@@ -126,6 +129,14 @@ export const createRuntimeInteractionResultBridge = (
         currentWorldState,
         playerMessage,
       );
+
+      if (result.llmError) {
+        if (result.updatedWorldState) {
+          dependencies.world.resetToState(result.updatedWorldState);
+        }
+        onLlmError?.(result.llmError);
+        return;
+      }
 
       const history = getActorConversationHistory(
         result.updatedWorldState ?? currentWorldState,

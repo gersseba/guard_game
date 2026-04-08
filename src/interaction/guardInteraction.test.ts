@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createInitialWorldState } from '../world/state';
-import { MISSING_API_KEY_FALLBACK_TEXT, REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
+import { isLlmRequestError, type LlmClient } from '../llm/client';
 import { GUARD_PERSONA_CONTRACT } from './guardPromptContext';
 import { createGuardInteractionService, handleGuardInteraction } from './guardInteraction';
 import { GuardNpc } from '../world/entities/npcs/GuardNpc';
@@ -132,9 +132,12 @@ describe('createGuardInteractionService', () => {
     expect(parsedContext.world.doors).toEqual([]);
   });
 
-  it('preserves deterministic missing-api-key fallback text from llm boundary', async () => {
+  it('propagates structured error when llm client returns missing-api-key error', async () => {
     const llmClient: LlmClient = {
-      complete: async () => ({ text: MISSING_API_KEY_FALLBACK_TEXT }),
+      complete: async () => ({
+        kind: 'llm_request_error' as const,
+        message: 'API key is not configured.',
+      }),
     };
     const service = createGuardInteractionService(llmClient);
     const worldState = createInitialWorldState();
@@ -147,12 +150,36 @@ describe('createGuardInteractionService', () => {
       playerMessage: 'Status?',
     });
 
-    expect(result.responseText).toBe(`Guard: ${MISSING_API_KEY_FALLBACK_TEXT}`);
+    expect(isLlmRequestError(result.llmError!)).toBe(true);
+    expect(result.responseText).toBe('');
   });
 
-  it('returns deterministic request-failure fallback when llm call throws', async () => {
+  it('does not append assistant message to history when llm returns structured error', async () => {
     const llmClient: LlmClient = {
-      complete: async () => {
+      complete: async () => ({
+        kind: 'llm_request_error' as const,
+        message: 'API key is not configured.',
+      }),
+    };
+    const service = createGuardInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    worldState.guards = [makeGuard('idle')];
+
+    const result = await service.handleGuardInteraction({
+      guard: worldState.guards[0],
+      player: worldState.player,
+      worldState,
+      playerMessage: 'Status?',
+    });
+
+    const history =
+      result.updatedWorldState.actorConversationHistoryByActorId['guard-1'] ?? [];
+    expect(history.at(-1)?.role).toBe('player');
+  });
+
+  it('propagates structured error when llm call throws', async () => {
+    const llmClient: LlmClient = {
+      complete: async (): Promise<never> => {
         throw new Error('network down');
       },
     };
@@ -167,6 +194,10 @@ describe('createGuardInteractionService', () => {
       playerMessage: 'Any trouble?',
     });
 
-    expect(result.responseText).toBe(`Guard: ${REQUEST_FAILURE_FALLBACK_TEXT}`);
+    expect(isLlmRequestError(result.llmError!)).toBe(true);
+    expect(result.responseText).toBe('');
+    const history =
+      result.updatedWorldState.actorConversationHistoryByActorId['guard-1'] ?? [];
+    expect(history.at(-1)?.role).toBe('player');
   });
 });

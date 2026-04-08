@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
+import { isLlmRequestError, type LlmClient } from '../llm/client';
 import { createNpcInteractionService } from './npcInteraction';
 import { renderActorConversationThread } from './actorConversationThread';
 import { createInitialWorldState } from '../world/state';
@@ -102,9 +102,9 @@ describe('createNpcInteractionService', () => {
     ]);
   });
 
-  it('stores deterministic fallback assistant text when llm request throws', async () => {
+  it('propagates structured error and does not append assistant message when llm request throws', async () => {
     const llmClient: LlmClient = {
-      complete: async () => {
+      complete: async (): Promise<never> => {
         throw new Error('timeout');
       },
     };
@@ -119,11 +119,10 @@ describe('createNpcInteractionService', () => {
       playerMessage: 'Can you hear me?',
     });
 
-    expect(result.responseText).toBe(`Archivist: ${REQUEST_FAILURE_FALLBACK_TEXT}`);
-    expect(result.updatedWorldState.actorConversationHistoryByActorId[npc.id]).toEqual([
-      { role: 'player', text: 'Can you hear me?' },
-      { role: 'assistant', text: REQUEST_FAILURE_FALLBACK_TEXT },
-    ]);
+    expect(isLlmRequestError(result.llmError!)).toBe(true);
+    expect(result.responseText).toBe('');
+    const history = result.updatedWorldState.actorConversationHistoryByActorId[npc.id] ?? [];
+    expect(history).toEqual([{ role: 'player', text: 'Can you hear me?' }]);
   });
 
   it('keeps conversation history JSON-serializable', async () => {

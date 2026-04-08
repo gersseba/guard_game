@@ -1,4 +1,4 @@
-import type { LlmClient } from '../llm/client';
+import type { LlmClient, LlmRequestError } from '../llm/client';
 import type { ConversationMessage, WorldState } from '../world/types';
 import type { AdjacentTarget } from './adjacencyResolver';
 
@@ -10,6 +10,7 @@ export interface InteractionHandlerResult {
   updatedWorldState?: WorldState;
   levelOutcome?: 'win' | 'lose' | null;
   isConversational: boolean;
+  llmError?: LlmRequestError;
 }
 
 export type InteractionDispatchResult = InteractionHandlerResult | Promise<InteractionHandlerResult>;
