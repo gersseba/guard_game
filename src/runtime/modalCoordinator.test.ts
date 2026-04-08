@@ -134,4 +134,127 @@ describe('createRuntimeModalCoordinator', () => {
     expect(pauseOverlay.show).toHaveBeenCalledTimes(2);
     expect(pauseOverlay.hide).not.toHaveBeenCalled();
   });
+
+  it('shows request error in status slot and does not append assistant bubble on failure', async () => {
+    document.body.innerHTML = `
+      <div id="chat-host"></div>
+      <div id="action-host"></div>
+      <div id="inventory-host"></div>
+    `;
+
+    const runtimeController = createRuntimeControllerMock(null);
+    const pauseOverlay = {
+      show: vi.fn(),
+      hide: vi.fn(),
+    };
+
+    const onSendConversationMessage = vi.fn(
+      async (
+        _actorId: string,
+        _playerMessage: string,
+        _onAssistantMessage: (message: string) => void,
+        onLlmError?: (error: { kind: 'llm_request_error'; message: string; statusCode?: number }) => void,
+      ) => {
+        onLlmError?.({ kind: 'llm_request_error', message: 'LLM request failed.', statusCode: 503 });
+      },
+    );
+
+    const coordinator = createRuntimeModalCoordinator({
+      runtimeController,
+      world: {
+        getState: () => createWorldState(),
+      },
+      viewportPauseOverlay: pauseOverlay,
+      chatModalHostElement: document.querySelector<HTMLElement>('#chat-host')!,
+      actionModalHostElement: document.querySelector<HTMLElement>('#action-host')!,
+      inventoryOverlayHostElement: document.querySelector<HTMLElement>('#inventory-host')!,
+      onOpenConversationForActionSession: vi.fn(() => true),
+      onSendConversationMessage,
+    });
+
+    coordinator.openConversation('guard-1', 'Guard One', [], 'guard');
+
+    const input = document.querySelector<HTMLInputElement>('.chat-modal-input');
+    const sendButton = document.querySelector<HTMLButtonElement>('.chat-modal-send-btn');
+    input!.value = 'State your orders.';
+    sendButton?.click();
+    await Promise.resolve();
+
+    const status = document.querySelector<HTMLDivElement>('.chat-modal-loading');
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toBe('Request failed. Please try again.');
+    expect(status?.getAttribute('aria-label')).toBe('Error');
+
+    const assistantBubbles = document.querySelectorAll('.chat-bubble-assistant');
+    expect(assistantBubbles).toHaveLength(0);
+  });
+
+  it('clears error state on next successful send and appends assistant bubble', async () => {
+    document.body.innerHTML = `
+      <div id="chat-host"></div>
+      <div id="action-host"></div>
+      <div id="inventory-host"></div>
+    `;
+
+    const runtimeController = createRuntimeControllerMock(null);
+    const pauseOverlay = {
+      show: vi.fn(),
+      hide: vi.fn(),
+    };
+
+    let callCount = 0;
+    const onSendConversationMessage = vi.fn(
+      async (
+        _actorId: string,
+        _playerMessage: string,
+        onAssistantMessage: (message: string) => void,
+        onLlmError?: (error: { kind: 'llm_request_error'; message: string; statusCode?: number }) => void,
+      ) => {
+        callCount += 1;
+        if (callCount === 1) {
+          onLlmError?.({ kind: 'llm_request_error', message: 'Network request failed.' });
+          return;
+        }
+
+        onAssistantMessage('Permission granted.');
+      },
+    );
+
+    const coordinator = createRuntimeModalCoordinator({
+      runtimeController,
+      world: {
+        getState: () => createWorldState(),
+      },
+      viewportPauseOverlay: pauseOverlay,
+      chatModalHostElement: document.querySelector<HTMLElement>('#chat-host')!,
+      actionModalHostElement: document.querySelector<HTMLElement>('#action-host')!,
+      inventoryOverlayHostElement: document.querySelector<HTMLElement>('#inventory-host')!,
+      onOpenConversationForActionSession: vi.fn(() => true),
+      onSendConversationMessage,
+    });
+
+    coordinator.openConversation('guard-1', 'Guard One', [], 'guard');
+
+    const input = document.querySelector<HTMLInputElement>('.chat-modal-input');
+    const sendButton = document.querySelector<HTMLButtonElement>('.chat-modal-send-btn');
+
+    input!.value = 'First attempt';
+    sendButton?.click();
+    await Promise.resolve();
+
+    let status = document.querySelector<HTMLDivElement>('.chat-modal-loading');
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toBe('Request failed. Please try again.');
+
+    input!.value = 'Second attempt';
+    sendButton?.click();
+    await Promise.resolve();
+
+    status = document.querySelector<HTMLDivElement>('.chat-modal-loading');
+    expect(status?.hidden).toBe(true);
+
+    const assistantBubbles = document.querySelectorAll('.chat-bubble-assistant');
+    expect(assistantBubbles).toHaveLength(1);
+    expect(assistantBubbles[0].textContent).toContain('Permission granted.');
+  });
 });
