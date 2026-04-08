@@ -101,6 +101,7 @@ export const createGuardHandler = (llmClient: LlmClient): ConditionalInteraction
         responseText: result.responseText,
         updatedWorldState: result.updatedWorldState,
         isConversational: true,
+        llmError: result.llmError,
       }));
   };
 };
@@ -137,6 +138,7 @@ export const createNpcHandler = (llmClient: LlmClient): ConditionalInteractionHa
         responseText: result.responseText,
         updatedWorldState: result.updatedWorldState,
         isConversational: true,
+        llmError: result.llmError,
       }));
   };
 };

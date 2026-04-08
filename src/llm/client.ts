@@ -18,8 +18,18 @@ export interface LlmResponse {
   };
 }
 
+export interface LlmRequestError {
+  kind: 'llm_request_error';
+  message: string;
+  statusCode?: number;
+}
+
+export const isLlmRequestError = (
+  result: LlmResponse | LlmRequestError,
+): result is LlmRequestError => 'kind' in result && result.kind === 'llm_request_error';
+
 export interface LlmClient {
-  complete(prompt: LlmPrompt): Promise<LlmResponse>;
+  complete(prompt: LlmPrompt): Promise<LlmResponse | LlmRequestError>;
 }
 
 export interface GeminiLlmClientOptions {
@@ -72,9 +82,12 @@ export const createGeminiLlmClient = (options: GeminiLlmClientOptions = {}): Llm
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   return {
-    complete: async (prompt: LlmPrompt): Promise<LlmResponse> => {
+        complete: async (prompt: LlmPrompt): Promise<LlmResponse | LlmRequestError> => {
       if (!apiKey) {
-        return { text: MISSING_API_KEY_FALLBACK_TEXT };
+        return {
+          kind: 'llm_request_error' as const,
+          message: 'API key is not configured.',
+        };
       }
 
       const abortController = new AbortController();
@@ -107,18 +120,28 @@ export const createGeminiLlmClient = (options: GeminiLlmClientOptions = {}): Llm
         );
 
         if (!response.ok) {
-          return { text: REQUEST_FAILURE_FALLBACK_TEXT };
+          return {
+            kind: 'llm_request_error' as const,
+            message: 'LLM request failed.',
+            statusCode: response.status,
+          };
         }
 
         const payload = (await response.json()) as unknown;
         const text = extractGeminiText(payload);
         if (!text) {
-          return { text: REQUEST_FAILURE_FALLBACK_TEXT };
+          return {
+            kind: 'llm_request_error' as const,
+            message: 'Empty or unparseable response from LLM.',
+          };
         }
 
         return { text };
       } catch {
-        return { text: REQUEST_FAILURE_FALLBACK_TEXT };
+        return {
+          kind: 'llm_request_error' as const,
+          message: 'Network request failed.',
+        };
       } finally {
         clearTimeout(timeout);
       }

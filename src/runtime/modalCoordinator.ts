@@ -8,6 +8,7 @@ import type {
   RuntimeConversationSession,
 } from './runtimeController';
 import type { ConversationMessage, WorldState } from '../world/types';
+import type { LlmRequestError } from '../llm/client';
 
 export interface RuntimeModalCoordinatorDependencies {
   runtimeController: Pick<
@@ -31,6 +32,7 @@ export interface RuntimeModalCoordinatorDependencies {
     actorId: string,
     playerMessage: string,
     onAssistantMessage: (message: string) => void,
+    onLlmError?: (error: LlmRequestError) => void,
   ) => Promise<void>;
 }
 
@@ -66,6 +68,10 @@ export const createRuntimeModalCoordinator = (
           playerMessage,
           (assistantMessage: string) => {
             chatModal.appendMessage('assistant', assistantMessage);
+          },
+          (_error: LlmRequestError) => {
+            // Error rendering is deferred to follow-up ticket #177.
+            // Loading state is cleared so the UI is not left in a stuck state.
           },
         );
 

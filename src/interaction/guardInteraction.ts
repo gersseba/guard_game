@@ -1,4 +1,4 @@
-import { REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
+import { isLlmRequestError, type LlmRequestError, type LlmClient } from '../llm/client';
 import type { ConversationMessage, Guard, Player, WorldState } from '../world/types';
 import { buildGuardPromptContext } from './guardPromptContext';
 
@@ -10,6 +10,7 @@ export interface GuardInteractionRequest {
 export interface GuardInteractionResult {
   guardId: string;
   responseText: string;
+  llmError?: LlmRequestError;
 }
 
 export interface GuardLlmInteractionResult extends GuardInteractionResult {
@@ -52,16 +53,36 @@ export const createGuardInteractionService = (llmClient: LlmClient): GuardIntera
     };
     const historyWithPlayerMessage = [...previousHistory, playerMessageRecord];
 
-    const assistantText = await llmClient
+    const llmResult = await llmClient
       .complete({
         actorId: request.guard.id,
         context: buildGuardPromptContext(request.guard, request.worldState),
         playerMessage: request.playerMessage,
         conversationHistory: historyWithPlayerMessage,
       })
-      .then((llmResponse) => llmResponse.text)
-      .catch(() => REQUEST_FAILURE_FALLBACK_TEXT);
+      .catch((err: unknown): LlmRequestError => ({
+        kind: 'llm_request_error',
+        message: err instanceof Error ? err.message : 'Unknown error',
+      }));
 
+    if (isLlmRequestError(llmResult)) {
+      const updatedWorldState: WorldState = {
+        ...request.worldState,
+        actorConversationHistoryByActorId: {
+          ...request.worldState.actorConversationHistoryByActorId,
+          [request.guard.id]: historyWithPlayerMessage,
+        },
+      };
+
+      return {
+        guardId: request.guard.id,
+        responseText: '',
+        llmError: llmResult,
+        updatedWorldState,
+      };
+    }
+
+    const assistantText = llmResult.text;
     const assistantMessageRecord: ConversationMessage = {
       role: 'assistant',
       text: assistantText,

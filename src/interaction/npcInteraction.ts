@@ -1,4 +1,4 @@
-import { REQUEST_FAILURE_FALLBACK_TEXT, type LlmClient } from '../llm/client';
+import { isLlmRequestError, type LlmRequestError, type LlmClient } from '../llm/client';
 import { Item } from '../world/entities/items/Item';
 import type { ConversationMessage, Npc, Player, WorldState } from '../world/types';
 import { buildNpcPromptContext } from './npcPromptContext';
@@ -117,6 +117,7 @@ export interface NpcInteractionResult {
   npcId: string;
   responseText: string;
   updatedWorldState: WorldState;
+  llmError?: LlmRequestError;
 }
 
 export interface NpcInteractionService {
@@ -133,16 +134,37 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
     };
     const historyWithPlayerMessage = [...previousHistory, playerMessageRecord];
 
-    const llmResponse = await llmClient
+    const llmResult = await llmClient
       .complete({
         actorId: request.npc.id,
         context: buildNpcPromptContext(request.npc, request.player, request.worldState),
         playerMessage: request.playerMessage,
         conversationHistory: historyWithPlayerMessage,
       })
-      .catch(() => ({ text: REQUEST_FAILURE_FALLBACK_TEXT }));
+      .catch((err: unknown): LlmRequestError => ({
+        kind: 'llm_request_error',
+        message: err instanceof Error ? err.message : 'Unknown error',
+      }));
 
-    const assistantText = llmResponse.text;
+    if (isLlmRequestError(llmResult)) {
+      const updatedHistoryByActorId = {
+        ...request.worldState.actorConversationHistoryByActorId,
+        [request.npc.id]: historyWithPlayerMessage,
+      };
+      const updatedWorldState: WorldState = {
+        ...request.worldState,
+        actorConversationHistoryByActorId: updatedHistoryByActorId,
+      };
+
+      return {
+        npcId: request.npc.id,
+        responseText: '',
+        llmError: llmResult,
+        updatedWorldState,
+      };
+    }
+
+    const assistantText = llmResult.text;
 
     const assistantMessageRecord: ConversationMessage = {
       role: 'assistant',
@@ -165,7 +187,7 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
     const inventoryResult = applyInventoryOutcome(
       npcAfterTalkTrigger,
       stateWithUpdatedHistory.player,
-      'outcome' in llmResponse ? llmResponse.outcome : undefined,
+      'outcome' in llmResult ? llmResult.outcome : undefined,
     );
 
     const updatedWorldState: WorldState = {

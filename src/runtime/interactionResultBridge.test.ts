@@ -3,6 +3,7 @@ import { createRuntimeInteractionResultBridge } from './interactionResultBridge'
 import type { InteractionDispatcher, InteractionHandlerResult } from '../interaction/interactionDispatcher';
 import type { WorldState } from '../world/types';
 import type { Guard } from '../world/types';
+import type { LlmRequestError } from '../llm/client';
 
 const createWorldState = (
   overrides?: Omit<Partial<WorldState>, 'player'> & { player?: Partial<WorldState['player']> },
@@ -222,5 +223,116 @@ describe('createRuntimeInteractionResultBridge', () => {
 
     expect(didStartConversation).toBe(false);
     expect(interactionDispatcher.dispatch).not.toHaveBeenCalled();
+  });
+
+  it('calls onLlmError and not onAssistantMessage when result carries llmError', async () => {
+    const llmError: LlmRequestError = { kind: 'llm_request_error', message: 'Service unavailable.', statusCode: 503 };
+    const initialState = createWorldState();
+    const stateWithPlayerMessage: WorldState = {
+      ...initialState,
+      actorConversationHistoryByActorId: {
+        ...initialState.actorConversationHistoryByActorId,
+        'guard-1': [
+          { role: 'player', text: 'Hello?' },
+          { role: 'assistant', text: 'State your purpose.' },
+          { role: 'player', text: 'Can I pass?' },
+        ],
+      },
+    };
+
+    let worldState = initialState;
+    const resetToState = vi.fn((nextState: WorldState) => {
+      worldState = nextState;
+    });
+
+    const interactionDispatcher = createInteractionDispatcherMock((playerMessage) => {
+      if (!playerMessage) {
+        return {
+          kind: 'guard',
+          targetId: 'guard-1',
+          displayName: 'Guard One',
+          isConversational: false,
+        };
+      }
+
+      return Promise.resolve({
+        kind: 'guard',
+        targetId: 'guard-1',
+        displayName: 'Guard One',
+        updatedWorldState: stateWithPlayerMessage,
+        isConversational: true,
+        llmError,
+      });
+    });
+
+    const bridge = createRuntimeInteractionResultBridge({
+      world: { getState: () => worldState, resetToState },
+      interactionDispatcher,
+      onActionModalStarted: vi.fn(),
+      onConversationStarted: vi.fn(),
+    });
+
+    const onAssistantMessage = vi.fn();
+    const onLlmError = vi.fn();
+    await bridge.sendConversationMessage('guard-1', 'Can I pass?', onAssistantMessage, onLlmError);
+
+    expect(onAssistantMessage).not.toHaveBeenCalled();
+    expect(onLlmError).toHaveBeenCalledWith(llmError);
+    expect(resetToState).toHaveBeenCalledWith(stateWithPlayerMessage);
+  });
+
+  it('does not call onLlmError or reset state when result has no error', async () => {
+    const initialState = createWorldState();
+    const updatedWorldState: WorldState = {
+      ...initialState,
+      actorConversationHistoryByActorId: {
+        ...initialState.actorConversationHistoryByActorId,
+        'guard-1': [
+          { role: 'player', text: 'Hello?' },
+          { role: 'assistant', text: 'State your purpose.' },
+          { role: 'player', text: 'Can I pass?' },
+          { role: 'assistant', text: 'Not yet.' },
+        ],
+      },
+    };
+
+    let worldState = initialState;
+    const resetToState = vi.fn((nextState: WorldState) => {
+      worldState = nextState;
+    });
+
+    const interactionDispatcher = createInteractionDispatcherMock((playerMessage) => {
+      if (!playerMessage) {
+        return {
+          kind: 'guard',
+          targetId: 'guard-1',
+          displayName: 'Guard One',
+          isConversational: false,
+        };
+      }
+
+      return Promise.resolve({
+        kind: 'guard',
+        targetId: 'guard-1',
+        displayName: 'Guard One',
+        updatedWorldState,
+        isConversational: true,
+      });
+    });
+
+    const bridge = createRuntimeInteractionResultBridge({
+      world: { getState: () => worldState, resetToState },
+      interactionDispatcher,
+      onActionModalStarted: vi.fn(),
+      onConversationStarted: vi.fn(),
+    });
+
+    const onAssistantMessage = vi.fn();
+    const onLlmError = vi.fn();
+    await bridge.sendConversationMessage('guard-1', 'Can I pass?', onAssistantMessage, onLlmError);
+
+    expect(onLlmError).not.toHaveBeenCalled();
+    expect(onAssistantMessage).toHaveBeenCalledWith('Not yet.');
+    expect(resetToState).toHaveBeenCalledWith(updatedWorldState);
   });
 });
