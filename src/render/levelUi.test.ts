@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createLevelUi } from './levelUi';
+import { createBodyContainer } from '../test-support/dom';
 
 describe('createLevelUi', () => {
   let container: HTMLDivElement;
@@ -8,9 +9,7 @@ describe('createLevelUi', () => {
   const onReset = vi.fn();
 
   beforeEach(() => {
-    document.body.innerHTML = '';
-    container = document.createElement('div');
-    document.body.appendChild(container);
+    container = createBodyContainer();
     onLevelSelect.mockReset();
     onReset.mockReset();
   });

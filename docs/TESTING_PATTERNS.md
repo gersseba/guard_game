@@ -2,6 +2,26 @@
 
 Guard Game uses a layered testing approach aligned with architectural boundaries.
 
+## Test Support Workflow
+
+Tests stay colocated next to the source they exercise. Shared test-only utilities live in `src/test-support/` and should be limited to helpers that clearly remove repeated setup across files.
+
+Good candidates:
+- repeatable `WorldState` builders or entity fixtures used across multiple test files
+- shared jsdom host/container setup for render or runtime DOM tests
+- small level-loading helpers for integration fixtures
+
+Avoid hiding test intent behind deep helper stacks. If a fixture is only used once or twice, keep it local.
+
+## Test Tiers
+
+- `npm run test:unit`: fast non-integration suite for most development loops
+- `npm run test:fast`: alias of `npm run test:unit`
+- `npm run test:integration`: cross-layer checks under `src/integration`
+- `npm run test` and `npm run test:all`: full suite
+
+Use the smallest tier that matches the change while developing, then run the full suite before opening or updating a PR.
+
 ## Layer Testing Strategy
 
 ### World Layer Tests
@@ -179,3 +199,4 @@ The debug panel in the UI also displays serialized state after each tick.
 ---
 
 *Test organization: test files live alongside source files with `.test.ts` suffix.*
+*Shared helpers live in `src/test-support/` when duplication across colocated tests is already established.*

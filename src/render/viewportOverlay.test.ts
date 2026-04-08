@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { describe, beforeEach, expect, it } from 'vitest';
 import { createViewportOverlay } from './viewportOverlay';
+import { createBodyElement } from '../test-support/dom';
 
 const makeViewport = (): HTMLDivElement => {
-  const el = document.createElement('div');
+  const el = createBodyElement('div') as HTMLDivElement;
   el.tabIndex = 0;
-  document.body.appendChild(el);
   return el;
 };
 
