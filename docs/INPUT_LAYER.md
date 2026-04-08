@@ -62,7 +62,7 @@ The binding optionally accepts an `isModalOpen?: () => boolean` callback in `Key
 
 ```typescript
 bindKeyboardCommands(window, commandBuffer, {
-  isModalOpen: () => chatModal.isOpen(),
+  isModalOpen: () => runtimeController.isPaused(),
 });
 ```
 

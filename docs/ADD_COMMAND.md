@@ -64,7 +64,12 @@ const applyCommand = (worldState: WorldState, command: WorldCommand): WorldState
 If your command produces an event consumed by runtime orchestration (without direct world mutation):
 - add a deterministic resolver boundary in `src/interaction/*`
 - wire it through `src/runtimeController.ts` dependency callbacks
-- commit resulting serializable event/state from `src/runtime/createRuntimeApp.ts`
+- commit the resulting serializable event/state from the callback wiring in `src/runtime/createRuntimeApp.ts`
+
+If your command needs new runtime UI handoff behavior (for example, a modal or bridge callback):
+- keep command draining/gating in `src/runtimeController.ts`
+- keep interaction/result routing in `src/runtime/interactionResultBridge.ts`
+- keep modal lifecycle behavior in `src/runtime/modalCoordinator.ts`
 
 If your command changes visual appearance through world state:
 - Update `src/render/scene.ts` to render any new state
@@ -75,6 +80,7 @@ Add focused tests:
 - input mapping tests in `src/input/keyboard.test.ts`
 - world command determinism tests in `src/world/world.test.ts`
 - runtime orchestration tests in `src/runtimeController.test.ts` when command effects route through runtime callbacks
+- runtime bridge or modal-coordinator tests in `src/runtime/*.test.ts` when the command changes runtime handoff behavior
 
 ```typescript
 test('selects valid inventory slot deterministically', () => {

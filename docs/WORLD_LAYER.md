@@ -131,8 +131,8 @@ Deterministic rules:
 Deterministic rules:
 - New runtime state initializes `lastItemUseAttemptEvent` to `null`.
 - Level deserialization also initializes `lastItemUseAttemptEvent` to `null`.
-- Runtime emits one event per `useSelectedItem` command using command index ordering within the tick.
-- Main-loop wiring commits each emitted event immutably, so the last one in a tick becomes the stored event.
+- `src/runtimeController.ts` emits one event per `useSelectedItem` command using command index ordering within the tick.
+- The callback wiring in `src/runtime/createRuntimeApp.ts` commits each emitted event immutably, so the last one in a tick becomes the stored event.
 
 ### Door Unlock State
 
@@ -142,7 +142,7 @@ Deterministic rules:
 - New runtime state initializes all doors with `isUnlocked: false` (default, omitted if false).
 - Level deserialization also initializes all doors with `isUnlocked: false` unless explicitly set in the level JSON.
 - Item-use resolver emits `doorUnlockedId` when player's selected item matches a door's `requiredItemId`.
-- Runtime app wiring commits unlock mutations: when `event.doorUnlockedId` is present, the corresponding door is mutated to set `isUnlocked: true` (`src/runtime/createRuntimeApp.ts`).
+- The item-use callback wiring in `src/runtime/createRuntimeApp.ts` commits unlock mutations: when `event.doorUnlockedId` is present, the corresponding door is mutated to set `isUnlocked: true`.
 - Once `isUnlocked` is true, the door allows traversal: `canMovePlayerTo()` in [src/world/spatialRules.ts](../src/world/spatialRules.ts#L38) skips blocked-door checks for unlocked doors.
 - Unlock state persists through JSON serialization and level state save/restore, enabling preserved progress across play sessions.
 

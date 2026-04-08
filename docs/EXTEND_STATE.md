@@ -18,7 +18,7 @@ Validation/deserialization:
 - `src/world/level.ts`
 
 Runtime state commit:
-- `src/world/world.ts` and runtime composition wiring in `src/runtime/createRuntimeApp.ts`
+- `src/world/world.ts`, `src/runtimeController.ts`, and callback wiring in `src/runtime/createRuntimeApp.ts`
 
 ## State Extension Workflow
 
