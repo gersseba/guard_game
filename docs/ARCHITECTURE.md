@@ -84,7 +84,7 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 Runtime composition entry points:
 - `src/main.ts`: validates `#app` and starts the runtime app.
 - `src/runtime/createRuntimeApp.ts`: composition root that wires world, runtime controller, render ports, interaction bridge, modal coordinator, and level orchestration.
-- `src/runtimeController.ts`: drains command input, enforces pause and level-outcome gating, and invokes deterministic item-use callback boundaries.
+- `src/runtime/runtimeController.ts`: drains command input, enforces pause and level-outcome gating, and invokes deterministic item-use callback boundaries.
 - `src/runtime/fixedTickLoop.ts`: fixed-timestep simulation loop + per-frame render callback.
 - `src/runtime/interactionResultBridge.ts`: interaction dispatch/result routing and conversation send bridge.
 - `src/runtime/modalCoordinator.ts`: chat/action/inventory modal lifecycle and viewport pause overlay semantics.

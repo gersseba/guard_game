@@ -111,7 +111,7 @@ Guard Game uses a layered testing approach aligned with architectural boundaries
 - **What to test:** Tick-time command gating, pause semantics, command-indexed callbacks, and state-commit orchestration that intentionally lives outside the pure world layer
 - **Type:** Unit tests
 - **Pattern:** Enqueue commands into `CommandBuffer`, step `RuntimeController`, then assert callback order and payloads against the resulting world snapshot
-- **Item-use pipeline checks** (`src/runtimeController.test.ts`):
+- **Item-use pipeline checks** (`src/runtime/runtimeController.test.ts`):
   - each `useSelectedItem` command emits exactly one deterministic `ItemUseAttemptResultEvent`
   - emitted events preserve the original command index from the drained tick list
   - no selected item resolves to `no-selection`

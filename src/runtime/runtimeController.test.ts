@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCommandBuffer } from './input/commands';
+import { createCommandBuffer } from '../input/commands';
 import { createRuntimeController } from './runtimeController';
-import { createDefaultItemUseResolver } from './interaction/itemUse';
-import type { World, WorldCommand, WorldState } from './world/types';
+import { createDefaultItemUseResolver } from '../interaction/itemUse';
+import type { World, WorldCommand, WorldState } from '../world/types';
 
 const createTestWorldState = (
   overrides?: Omit<Partial<WorldState>, 'player'> & { player?: Partial<WorldState['player']> },

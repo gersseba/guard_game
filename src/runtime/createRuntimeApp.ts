@@ -12,7 +12,7 @@ import {
   createRuntimeController,
   type RuntimeActionModalSession,
   type RuntimeController,
-} from '../runtimeController';
+} from './runtimeController';
 import { createDefaultItemUseResolver } from '../interaction/itemUse';
 import { createInteractionDispatcher } from '../interaction/interactionDispatcher';
 import { createWorld } from '../world/world';

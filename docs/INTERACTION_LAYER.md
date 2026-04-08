@@ -229,7 +229,7 @@ See `src/interaction/guardInteraction.ts`, `src/interaction/npcInteraction.ts`, 
 
 - `src/interaction/interactionDispatcher.test.ts`: dispatch routing by kind, sync/async behavior parity, result dispatcher timing parity, door/object non-pause guarantee
 - `src/interaction/actionModalRouting.test.ts`: action-modal eligibility and session creation for guard/NPC targets
-- `src/runtimeController.test.ts`: pause entry/exit lifecycle, command gating while paused, resume without command leak, level-outcome gating independent of pause state
+- `src/runtime/runtimeController.test.ts`: pause entry/exit lifecycle, command gating while paused, resume without command leak, level-outcome gating independent of pause state
 - `src/interaction/npcPromptContext.test.ts`: profile registry resolution, deterministic fallback, world knowledge builder registry keys, alias resolution (`archive_keeper → villager`), self-exclusion from `otherVillagers`, unknown-type `null` fallback, context shape determinism
 - `src/interaction/objectInteraction.test.ts`: polymorphic object dispatch, first-use outcomes, repeat interactions
 - `src/integration/riddleLevel.test.ts`: end-to-end adjacent door resolution and deterministic outcome mapping

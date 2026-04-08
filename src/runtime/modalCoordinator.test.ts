@@ -6,7 +6,7 @@ import type {
   RuntimeActionModalSession,
   RuntimeController,
   RuntimeConversationSession,
-} from '../runtimeController';
+} from './runtimeController';
 import type { WorldState } from '../world/types';
 
 const createWorldState = (): WorldState => ({

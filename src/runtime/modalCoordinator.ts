@@ -6,7 +6,7 @@ import type {
   RuntimeActionModalSession,
   RuntimeController,
   RuntimeConversationSession,
-} from '../runtimeController';
+} from './runtimeController';
 import type { ConversationMessage, WorldState } from '../world/types';
 
 export interface RuntimeModalCoordinatorDependencies {

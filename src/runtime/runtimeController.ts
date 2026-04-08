@@ -1,7 +1,7 @@
-import type { CommandBuffer } from './input/commands';
-import type { ItemUseResolver } from './interaction/itemUse';
-import type { ItemUseAttemptResultEvent } from './world/types';
-import type { World, WorldCommand, WorldState } from './world/types';
+import type { CommandBuffer } from '../input/commands';
+import type { ItemUseResolver } from '../interaction/itemUse';
+import type { ItemUseAttemptResultEvent } from '../world/types';
+import type { World, WorldCommand, WorldState } from '../world/types';
 
 export interface RuntimeConversationSession {
   actorId: string;
