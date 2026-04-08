@@ -96,6 +96,8 @@ If the user asks you to finish a PR, follow this exact sequence:
 2. If PR passes:
   - consider and apply non-blocking comment adjustments when they improve quality
   - merge the PR
+  - delete the merged implementation branch on GitHub after merge
+  - delete the corresponding local branch when available and safe to remove
   - close the corresponding ticket as `Done`/`Completed` immediately after merge (the merged PR must be the ticket's only implementation PR)
   - verify the ticket state after closing; if close/transition fails, retry and report the blocker
   - if this was a sub ticket, add a parent-ticket comment summarizing what changed and linking the merged PR
