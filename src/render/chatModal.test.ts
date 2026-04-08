@@ -124,4 +124,66 @@ describe('createChatModal', () => {
       expect(handle.isOpen()).toBe(false);
     });
   });
+
+  describe('status slot states', () => {
+    it('shows error text in the loading/status slot when setError is called', () => {
+      const { handle } = openModal(container);
+
+      handle.setError('Request failed. Please try again.');
+
+      const status = container.querySelector<HTMLDivElement>('.chat-modal-loading');
+      expect(status?.hidden).toBe(false);
+      expect(status?.textContent).toBe('Request failed. Please try again.');
+      expect(status?.getAttribute('aria-label')).toBe('Error');
+    });
+
+    it('hides the loading/status slot when setError is called with null', () => {
+      const { handle } = openModal(container);
+      handle.setError('Request failed. Please try again.');
+
+      handle.setError(null);
+
+      const status = container.querySelector<HTMLDivElement>('.chat-modal-loading');
+      expect(status?.hidden).toBe(true);
+    });
+
+    it('clears visible error state when loading starts', () => {
+      const { handle } = openModal(container);
+      handle.setError('Request failed. Please try again.');
+
+      handle.setLoading(true);
+
+      const status = container.querySelector<HTMLDivElement>('.chat-modal-loading');
+      expect(status?.hidden).toBe(false);
+      expect(status?.textContent).toBe('…');
+      expect(status?.getAttribute('aria-label')).toBe('Waiting for response');
+    });
+
+    it('replaces loading indicator with error text when setError is called', () => {
+      const { handle } = openModal(container);
+      handle.setLoading(true);
+
+      handle.setError('Request failed. Please try again.');
+
+      const status = container.querySelector<HTMLDivElement>('.chat-modal-loading');
+      expect(status?.hidden).toBe(false);
+      expect(status?.textContent).toBe('Request failed. Please try again.');
+      expect(status?.getAttribute('aria-label')).toBe('Error');
+    });
+
+    it('clears prior error state when the modal is reopened', () => {
+      const callbacks = makeCallbacks();
+      const handle = createChatModal(container, callbacks);
+      handle.open('actor-1', 'Guard', []);
+      handle.setError('Request failed. Please try again.');
+      handle.close();
+
+      handle.open('actor-1', 'Guard', []);
+
+      const status = container.querySelector<HTMLDivElement>('.chat-modal-loading');
+      expect(status?.hidden).toBe(true);
+      expect(status?.textContent).toBe('…');
+      expect(status?.getAttribute('aria-label')).toBe('Waiting for response');
+    });
+  });
 });

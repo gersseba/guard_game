@@ -14,6 +14,12 @@ export interface ChatModalHandle {
   appendMessage(role: 'player' | 'assistant', text: string): void;
   /** Show or hide the loading indicator; disables/enables input while loading. */
   setLoading(loading: boolean): void;
+  /**
+   * Show an error message in the loading/status slot, or clear it when null.
+   * Mutually exclusive with the loading state: setting error enables input;
+   * calling setLoading(true) clears any visible error.
+   */
+  setError(message: string | null): void;
   /** Returns true when the panel is visible. */
   isOpen(): boolean;
 }
@@ -27,6 +33,7 @@ export function createChatModal(
   callbacks: ChatModalCallbacks,
 ): ChatModalHandle {
   let open = false;
+  let errorText: string | null = null;
 
   // --- Build DOM skeleton ---
   const overlay = document.createElement('div');
@@ -182,7 +189,10 @@ export function createChatModal(
       document.addEventListener('keydown', escapeListener);
       input.disabled = false;
       sendBtn.disabled = false;
+      errorText = null;
       loadingEl.hidden = true;
+      loadingEl.textContent = '\u2026';
+      loadingEl.setAttribute('aria-label', 'Waiting for response');
       input.value = '';
       input.focus();
     },
@@ -196,10 +206,33 @@ export function createChatModal(
     },
 
     setLoading(loading: boolean): void {
-      loadingEl.hidden = !loading;
-      input.disabled = loading;
-      sendBtn.disabled = loading;
-      if (!loading) {
+      if (loading) {
+        errorText = null;
+        loadingEl.textContent = '\u2026';
+        loadingEl.setAttribute('aria-label', 'Waiting for response');
+        loadingEl.hidden = false;
+        input.disabled = true;
+        sendBtn.disabled = true;
+      } else {
+        if (errorText === null) {
+          loadingEl.hidden = true;
+        }
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    },
+
+    setError(message: string | null): void {
+      errorText = message;
+      if (message === null) {
+        loadingEl.hidden = true;
+      } else {
+        loadingEl.textContent = message;
+        loadingEl.setAttribute('aria-label', 'Error');
+        loadingEl.hidden = false;
+        input.disabled = false;
+        sendBtn.disabled = false;
         input.focus();
       }
     },

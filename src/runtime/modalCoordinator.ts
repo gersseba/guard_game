@@ -59,6 +59,7 @@ export const createRuntimeModalCoordinator = (
       }
 
       const interaction: RuntimeConversationSession = currentInteraction;
+      chatModal.setError(null);
       chatModal.setLoading(true);
       chatModal.appendMessage('player', playerMessage);
 
@@ -70,8 +71,7 @@ export const createRuntimeModalCoordinator = (
             chatModal.appendMessage('assistant', assistantMessage);
           },
           (_error: LlmRequestError) => {
-            // Error rendering is deferred to follow-up ticket #177.
-            // Loading state is cleared so the UI is not left in a stuck state.
+            chatModal.setError('Request failed. Please try again.');
           },
         );
 
