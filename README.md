@@ -40,8 +40,7 @@ The game enforces strict layer separation to support LLM-driven gameplay:
   /interaction    — NPC interaction flow and response formatting
   /input          — Input command buffering
   /llm            — LLM client boundary and stubs
-  /runtime        — Runtime composition (app wiring, fixed tick loop, bridge/coordinator modules)
-  runtimeController.ts — Simulation gate for pause state, command drain, and item-use callback boundaries
+  /runtime        — Runtime composition (app wiring, fixed tick loop, runtime controller, bridge/coordinator modules)
   main.ts         — Thin browser bootstrap that starts the runtime app
 ```
 
@@ -59,7 +58,7 @@ The current baseline runtime is composed in `src/runtime/createRuntimeApp.ts` an
 2. `src/runtime/createRuntimeApp.ts` wires the world, `RuntimeController`, render ports, modal coordinator, interaction bridge, and level-load orchestration.
 3. Keyboard input maps to `WorldCommand` values and is enqueued into `CommandBuffer`.
 4. `src/runtime/fixedTickLoop.ts` drives a fixed simulation tick of 100ms plus a per-frame render callback.
-5. `src/runtimeController.ts` drains buffered commands, gates them while paused or after level completion, applies deterministic world commands, and invokes the selected-item resolver callback boundary.
+5. `src/runtime/runtimeController.ts` drains buffered commands, gates them while paused or after level completion, applies deterministic world commands, and invokes the selected-item resolver callback boundary.
 6. `src/runtime/interactionResultBridge.ts` handles interact commands: door/object targets stay deterministic, while guard/NPC targets open the action-modal flow first and only cross the LLM boundary after chat is chosen.
 7. `src/runtime/modalCoordinator.ts` owns action/chat/inventory modal lifecycles and viewport pause presentation; `src/runtime/levelLoadOrchestration.ts` owns manifest loading, default-level startup, and reset flows.
 8. Every animation frame renders the latest world state through the Pixi render port and prints JSON state in the debug panel.

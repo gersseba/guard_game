@@ -63,11 +63,11 @@ const applyCommand = (worldState: WorldState, command: WorldCommand): WorldState
 ### 4. (Optional) Add Rendering
 If your command produces an event consumed by runtime orchestration (without direct world mutation):
 - add a deterministic resolver boundary in `src/interaction/*`
-- wire it through `src/runtimeController.ts` dependency callbacks
+- wire it through `src/runtime/runtimeController.ts` dependency callbacks
 - commit the resulting serializable event/state from the callback wiring in `src/runtime/createRuntimeApp.ts`
 
 If your command needs new runtime UI handoff behavior (for example, a modal or bridge callback):
-- keep command draining/gating in `src/runtimeController.ts`
+- keep command draining/gating in `src/runtime/runtimeController.ts`
 - keep interaction/result routing in `src/runtime/interactionResultBridge.ts`
 - keep modal lifecycle behavior in `src/runtime/modalCoordinator.ts`
 
@@ -79,7 +79,7 @@ If your command changes visual appearance through world state:
 Add focused tests:
 - input mapping tests in `src/input/keyboard.test.ts`
 - world command determinism tests in `src/world/world.test.ts`
-- runtime orchestration tests in `src/runtimeController.test.ts` when command effects route through runtime callbacks
+- runtime orchestration tests in `src/runtime/runtimeController.test.ts` when command effects route through runtime callbacks
 - runtime bridge or modal-coordinator tests in `src/runtime/*.test.ts` when the command changes runtime handoff behavior
 
 ```typescript
@@ -102,7 +102,7 @@ test('emits deterministic item-use event for each useSelectedItem command', () =
 - [ ] Input mapping added to `src/input/keyboard.ts`
 - [ ] Command application logic added to `src/world/world.ts`
 - [ ] Unit tests written in `src/world/world.test.ts`
-- [ ] Runtime-controller tests added in `src/runtimeController.test.ts` when command uses callback/resolver boundaries
+- [ ] Runtime-controller tests added in `src/runtime/runtimeController.test.ts` when command uses callback/resolver boundaries
 - [ ] (Optional) Render updates in `src/render/scene.ts`
 - [ ] Input layer tests in `src/input/keyboard.test.ts`
 - [ ] State remains JSON-serializable

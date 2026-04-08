@@ -31,7 +31,7 @@ Source of truth:
 - `src/interaction/npcPromptContext.ts`
 - `src/interaction/objectInteraction.ts`
 - `src/interaction/adjacencyResolver.ts`
-- `src/runtimeController.ts`
+- `src/runtime/runtimeController.ts`
 - `src/render/viewportOverlay.ts`
 - `src/render/chatModal.ts`
 - `src/render/inventoryOverlay.ts`

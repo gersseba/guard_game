@@ -131,7 +131,7 @@ Deterministic rules:
 Deterministic rules:
 - New runtime state initializes `lastItemUseAttemptEvent` to `null`.
 - Level deserialization also initializes `lastItemUseAttemptEvent` to `null`.
-- `src/runtimeController.ts` emits one event per `useSelectedItem` command using command index ordering within the tick.
+- `src/runtime/runtimeController.ts` emits one event per `useSelectedItem` command using command index ordering within the tick.
 - The callback wiring in `src/runtime/createRuntimeApp.ts` commits each emitted event immutably, so the last one in a tick becomes the stored event.
 
 ### Door Unlock State

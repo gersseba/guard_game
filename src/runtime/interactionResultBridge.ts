@@ -10,7 +10,7 @@ import {
   type InteractionDispatcher,
 } from '../interaction/interactionDispatcher';
 import { getActorConversationHistory } from '../interaction/actorConversationThread';
-import type { RuntimeActionModalSession } from '../runtimeController';
+import type { RuntimeActionModalSession } from './runtimeController';
 
 export interface RuntimeInteractionResultBridgeDependencies {
   world: Pick<{ getState: () => WorldState; resetToState: (worldState: WorldState) => void }, 'getState' | 'resetToState'>;

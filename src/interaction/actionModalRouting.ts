@@ -1,4 +1,4 @@
-import type { RuntimeActionModalSession } from '../runtimeController';
+import type { RuntimeActionModalSession } from '../runtime/runtimeController';
 import type { AdjacentTarget } from './adjacencyResolver';
 
 export type ActionModalEligibleTarget = Extract<AdjacentTarget, { kind: 'guard' | 'npc' }>;

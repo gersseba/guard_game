@@ -17,8 +17,8 @@ Guard Game enforces strict layer separation to support deterministic world updat
   /interaction         - Interaction dispatch + result routing across target kinds
   /input               - Input command buffering and keyboard mapping
   /llm                 - LLM client boundary and context generation stubs
-  /runtime             - Runtime composition modules (bootstrap app, loop, level orchestration, modal + interaction bridges)
-  runtimeController.ts - Runtime simulation coordinator: pause/resume and command drain semantics
+       /runtime             - Runtime composition modules (bootstrap app, loop, level orchestration, simulation control, and modal + interaction bridges)
+                             runtimeController.ts - Runtime simulation coordinator: pause/resume and command drain semantics
   main.ts              - Thin bootstrap shell that invokes runtime composition root
 ```
 
@@ -84,7 +84,7 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 Runtime composition entry points:
 - `src/main.ts`: validates `#app` and starts the runtime app.
 - `src/runtime/createRuntimeApp.ts`: composition root that wires world, runtime controller, render ports, interaction bridge, modal coordinator, and level orchestration.
-- `src/runtimeController.ts`: drains command input, enforces pause and level-outcome gating, and invokes deterministic item-use callback boundaries.
+- `src/runtime/runtimeController.ts`: drains command input, enforces pause and level-outcome gating, and invokes deterministic item-use callback boundaries.
 - `src/runtime/fixedTickLoop.ts`: fixed-timestep simulation loop + per-frame render callback.
 - `src/runtime/interactionResultBridge.ts`: interaction dispatch/result routing and conversation send bridge.
 - `src/runtime/modalCoordinator.ts`: chat/action/inventory modal lifecycle and viewport pause overlay semantics.
