@@ -1,7 +1,6 @@
 import type { GridPosition, SpriteSet } from './grid.js';
 import type { InventoryItem, ItemUseRule } from './inventory.js';
 import type { NpcTriggers } from './npc.js';
-import type { LevelMetadata } from './world-state.js';
 
 export interface LevelPlayerDto {
   x: number;

@@ -1,5 +1,4 @@
 import type { GameEntity } from './entity.js';
-import type { GridPosition } from './grid.js';
 import type { InventoryItem } from './inventory.js';
 
 /**
