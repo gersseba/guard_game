@@ -18,7 +18,7 @@ Validation/deserialization:
 - `src/world/level.ts`
 
 Runtime state commit:
-- `src/world/world.ts` and routing in `src/main.ts`
+- `src/world/world.ts` and runtime composition wiring in `src/runtime/createRuntimeApp.ts`
 
 ## State Extension Workflow
 
@@ -117,7 +117,7 @@ Required follow-up updates:
 - deterministic default initialization in `src/world/state.ts` and `src/world/level.ts`
 - deterministic command handling in `src/world/world.ts` for `selectInventorySlot`
 - runtime command-indexed event emission in `src/runtimeController.ts` using an item-use resolver boundary
-- immutable event commit wiring in `src/main.ts`
+- immutable event commit wiring in `src/runtime/createRuntimeApp.ts`
 - regression tests in `src/world/world.test.ts`, `src/runtimeController.test.ts`, and `src/input/keyboard.test.ts`
 
 ## Checklist

@@ -64,7 +64,7 @@ const applyCommand = (worldState: WorldState, command: WorldCommand): WorldState
 If your command produces an event consumed by runtime orchestration (without direct world mutation):
 - add a deterministic resolver boundary in `src/interaction/*`
 - wire it through `src/runtimeController.ts` dependency callbacks
-- commit resulting serializable event/state from `src/main.ts`
+- commit resulting serializable event/state from `src/runtime/createRuntimeApp.ts`
 
 If your command changes visual appearance through world state:
 - Update `src/render/scene.ts` to render any new state

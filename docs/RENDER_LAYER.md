@@ -62,7 +62,7 @@ The runtime mounts a small set of DOM-only helpers alongside the Pixi canvas:
 - `createViewportOverlay()` manages the grey paused-world overlay inside `#viewport`.
 - `createOutcomeOverlay()` manages win/lose overlay messaging.
 
-These utilities are wired in [src/main.ts](../src/main.ts) and remain presentation-only. They do not hold gameplay state.
+These utilities are wired in [src/runtime/createRuntimeApp.ts](../src/runtime/createRuntimeApp.ts) and remain presentation-only. They do not hold gameplay state.
 
 ## Entity Marker Mapping
 
@@ -81,7 +81,7 @@ The paused-world presentation is intentionally split from gameplay pause state:
 - `createViewportOverlay()` owns how the paused viewport is presented in the DOM.
 
 Current behavior:
-1. Conversational open results in [src/main.ts](../src/main.ts) call `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`.
+1. Conversational open results are routed from [src/runtime/interactionResultBridge.ts](../src/runtime/interactionResultBridge.ts) into [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts), which calls `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`.
 2. `createViewportOverlay(viewportElement)` appends a hidden `.viewport-pause-overlay` child inside `#viewport`.
 3. `show()` reveals the overlay and sets the `inert` attribute on the viewport element.
 4. `hide()` hides the overlay and removes `inert`.
@@ -150,7 +150,7 @@ The inventory overlay does not pause gameplay directly. Pause state is managed e
 `createChatModal()` provides the current conversation exit behavior:
 - The close button and the document-level Escape listener both route through the same `closePanel()` path.
 - `closePanel()` hides the modal, unregisters the Escape listener, invokes `onClose`, and then restores focus to `document.body` if focus was still inside the modal.
-- In [src/main.ts](../src/main.ts), `onClose` is wired to `runtimeController.closeConversation()` and `viewportPauseOverlay.hide()`.
+- In [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts), `onClose` is wired to `runtimeController.closeConversation()` and `viewportPauseOverlay.hide()`.
 - The chat input stops `keydown` and `keyup` propagation so typing does not reach the global movement binding. Enter submission stays local to the modal.
 
 ## Asset Metadata and Usage

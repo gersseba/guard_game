@@ -36,11 +36,11 @@ In `src/interaction/interactionDispatcher.ts` result registry:
 - map conversational result kind with `isConversational: true` to `onConversationStarted(...)` for LLM response display
 - rely on `getConversationHistory(...)` for modal preload consistency
 
-### 5. Keep main loop generic
-`src/main.ts` should not branch by target kind for interaction logic.
+### 5. Keep runtime bridge generic
+`src/runtime/interactionResultBridge.ts` should not branch by target kind for interaction logic.
 - `runInteractionIfRequested()` dispatches once and forwards result to `resultDispatcher`
 - chat submit path resolves target by id and reuses dispatcher with `playerMessage`
-- action modal routing (if present) handles player choice to Chat/Inventory/Back without main-loop changes
+- action modal routing (if present) handles player choice to Chat/Inventory/Back without runtime bridge changes
 
 ### 6. Test
 - Unit tests in `src/interaction/*Interaction.test.ts`

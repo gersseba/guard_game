@@ -40,7 +40,8 @@ The game enforces strict layer separation to support LLM-driven gameplay:
   /interaction    — NPC interaction flow and response formatting
   /input          — Input command buffering
   /llm            — LLM client boundary and stubs
-  main.ts         — Runtime bootstrap and frame/tick loop
+  /runtime        — Runtime composition (app wiring, fixed tick loop, bridge/coordinator modules)
+  main.ts         — Thin browser bootstrap that starts the runtime app
 ```
 
 ### Key Principles
@@ -51,7 +52,7 @@ The game enforces strict layer separation to support LLM-driven gameplay:
 
 ### Baseline Runtime Loop
 
-The current baseline runtime in `src/main.ts` follows this loop:
+The current baseline runtime is composed in `src/runtime/createRuntimeApp.ts` and follows this loop:
 
 1. Keyboard input maps to `WorldCommand` values and is enqueued into `CommandBuffer`.
 2. A fixed simulation tick of 100ms drains buffered commands.
