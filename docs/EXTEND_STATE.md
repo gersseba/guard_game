@@ -12,7 +12,7 @@ This pattern describes how to expand `WorldState` safely while preserving determ
 ## Current State Anchors
 
 Source types:
-- `src/world/types.ts`
+- `src/world/types.ts` (barrel export; see [TYPES_REFERENCE.md](TYPES_REFERENCE.md) for domain module organization in `src/world/types/`)
 
 Validation/deserialization:
 - `src/world/level.ts`
@@ -23,7 +23,7 @@ Runtime state commit:
 ## State Extension Workflow
 
 ### 1. Define or extend type fields
-Update type interfaces in `src/world/types.ts` (for example `InteractiveObject` or `WorldState`).
+Update type interfaces in the appropriate `src/world/types/` domain module (see [TYPES_REFERENCE.md](TYPES_REFERENCE.md); types re-export from `src/world/types.ts` for import stability). For example, extend `InteractiveObject` in `src/world/types/object.ts` or `WorldState` in `src/world/types/world-state.ts`.
 
 Prefer explicit unions over free-form strings when the allowed values are known.
 
