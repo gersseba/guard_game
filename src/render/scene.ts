@@ -31,6 +31,8 @@ export interface CharacterRenderModes {
   player: CharacterRenderMode;
   guardsById: Record<string, CharacterRenderMode>;
   npcsById: Record<string, CharacterRenderMode>;
+  doorsById: Record<string, CharacterRenderMode>;
+  interactiveObjectsById: Record<string, CharacterRenderMode>;
 }
 
 export interface EntityCircleSpec {
@@ -105,6 +107,19 @@ export const buildCharacterRenderModes = (
     npcsById[npc.id] = getCharacterRenderMode(resolveCharacterSpriteAssetPath(npc), spriteLoadStatusByPath);
   }
 
+  const doorsById: Record<string, CharacterRenderMode> = {};
+  for (const door of worldState.doors) {
+    doorsById[door.id] = getCharacterRenderMode(resolveCharacterSpriteAssetPath(door), spriteLoadStatusByPath);
+  }
+
+  const interactiveObjectsById: Record<string, CharacterRenderMode> = {};
+  for (const interactiveObject of worldState.interactiveObjects) {
+    interactiveObjectsById[interactiveObject.id] = getCharacterRenderMode(
+      resolveCharacterSpriteAssetPath(interactiveObject),
+      spriteLoadStatusByPath,
+    );
+  }
+
   return {
     player: getCharacterRenderMode(
       resolveCharacterSpriteAssetPath(worldState.player, worldState.player.facingDirection ?? DEFAULT_RENDER_DIRECTION),
@@ -112,6 +127,8 @@ export const buildCharacterRenderModes = (
     ),
     guardsById,
     npcsById,
+    doorsById,
+    interactiveObjectsById,
   };
 };
 
@@ -227,6 +244,18 @@ const requestCharacterSpriteLoads = (context: RenderContext, worldState: WorldSt
       characterSpritePaths.add(spritePath);
     }
   }
+  for (const door of worldState.doors) {
+    const spritePath = resolveCharacterSpriteAssetPath(door);
+    if (spritePath !== undefined) {
+      characterSpritePaths.add(spritePath);
+    }
+  }
+  for (const interactiveObject of worldState.interactiveObjects) {
+    const spritePath = resolveCharacterSpriteAssetPath(interactiveObject);
+    if (spritePath !== undefined) {
+      characterSpritePaths.add(spritePath);
+    }
+  }
 
   for (const spriteAssetPath of characterSpritePaths) {
     if (context.spriteLoadStatusByPath.has(spriteAssetPath)) {
@@ -310,6 +339,24 @@ const syncCharacterSprites = (
     }
     const center = toCenter(npc.position.x, npc.position.y);
     upsert(`npc:${npc.id}`, spritePath, center.centerX, center.centerY);
+  }
+
+  for (const door of worldState.doors) {
+    const spritePath = resolveCharacterSpriteAssetPath(door);
+    if (characterRenderModes.doorsById[door.id] !== 'sprite' || spritePath === undefined) {
+      continue;
+    }
+    const center = toCenter(door.position.x, door.position.y);
+    upsert(`door:${door.id}`, spritePath, center.centerX, center.centerY);
+  }
+
+  for (const interactiveObject of worldState.interactiveObjects) {
+    const spritePath = resolveCharacterSpriteAssetPath(interactiveObject);
+    if (characterRenderModes.interactiveObjectsById[interactiveObject.id] !== 'sprite' || spritePath === undefined) {
+      continue;
+    }
+    const center = toCenter(interactiveObject.position.x, interactiveObject.position.y);
+    upsert(`interactive-object:${interactiveObject.id}`, spritePath, center.centerX, center.centerY);
   }
 
   for (const [entityId, entry] of context.characterSpritesByEntityId.entries()) {
@@ -413,73 +460,96 @@ const drawGrid = (context: RenderContext, worldState: WorldState): void => {
   }
 };
 
-const drawEntityMarkers = (
+const shouldRenderMissingAssetMarker = (
+  spriteAssetPath: string | undefined,
+  spriteLoadStatusByPath: ReadonlyMap<string, SpriteLoadStatus>,
+): boolean => {
+  if (spriteAssetPath === undefined) {
+    return true;
+  }
+
+  return spriteLoadStatusByPath.get(spriteAssetPath) === 'failed';
+};
+
+const drawMissingAssetMarker = (graphics: Graphics, centerX: number, centerY: number, markerSize: number): void => {
+  const halfSize = markerSize / 2;
+  graphics
+    .moveTo(centerX - halfSize, centerY - halfSize)
+    .lineTo(centerX + halfSize, centerY + halfSize)
+    .stroke({ color: 0xff3b30, width: 3, alpha: 1 });
+  graphics
+    .moveTo(centerX - halfSize, centerY + halfSize)
+    .lineTo(centerX + halfSize, centerY - halfSize)
+    .stroke({ color: 0xff3b30, width: 3, alpha: 1 });
+};
+
+const drawEntityMissingAssetMarkers = (
   context: RenderContext,
   worldState: WorldState,
   characterRenderModes: CharacterRenderModes,
 ): void => {
   const tileSize = worldState.grid.tileSize;
-  const radius = Math.max(5, tileSize * 0.22);
+  const markerSize = Math.max(8, tileSize * 0.36);
   const toCenter = (x: number, y: number): { centerX: number; centerY: number } => ({
     centerX: x * tileSize + tileSize / 2,
     centerY: y * tileSize + tileSize / 2,
   });
 
-  const circles: EntityCircleSpec[] = [];
+  context.entityGraphics.clear();
 
   for (const npc of worldState.npcs) {
+    const spritePath = resolveCharacterSpriteAssetPath(npc);
     if (characterRenderModes.npcsById[npc.id] === 'sprite') {
       continue;
     }
-    circles.push({
-      typeKey: 'npc',
-      ...toCenter(npc.position.x, npc.position.y),
-      radius,
-      color: getColorForEntityType('npc'),
-    });
+    if (!shouldRenderMissingAssetMarker(spritePath, context.spriteLoadStatusByPath)) {
+      continue;
+    }
+    const center = toCenter(npc.position.x, npc.position.y);
+    drawMissingAssetMarker(context.entityGraphics, center.centerX, center.centerY, markerSize);
   }
 
   for (const guard of worldState.guards) {
+    const spritePath = resolveCharacterSpriteAssetPath(
+      guard,
+      guard.facingDirection ?? DEFAULT_RENDER_DIRECTION,
+    );
     if (characterRenderModes.guardsById[guard.id] === 'sprite') {
       continue;
     }
-    circles.push({
-      typeKey: 'guard',
-      ...toCenter(guard.position.x, guard.position.y),
-      radius,
-      color: getColorForEntityType('guard'),
-    });
+    if (!shouldRenderMissingAssetMarker(spritePath, context.spriteLoadStatusByPath)) {
+      continue;
+    }
+    const center = toCenter(guard.position.x, guard.position.y);
+    drawMissingAssetMarker(context.entityGraphics, center.centerX, center.centerY, markerSize);
   }
 
   for (const door of worldState.doors) {
-    circles.push({
-      typeKey: 'door',
-      ...toCenter(door.position.x, door.position.y),
-      radius,
-      color: getColorForEntityType('door'),
-    });
+    const spritePath = resolveCharacterSpriteAssetPath(door);
+    if (characterRenderModes.doorsById[door.id] === 'sprite') {
+      continue;
+    }
+    if (!shouldRenderMissingAssetMarker(spritePath, context.spriteLoadStatusByPath)) {
+      continue;
+    }
+    const center = toCenter(door.position.x, door.position.y);
+    drawMissingAssetMarker(context.entityGraphics, center.centerX, center.centerY, markerSize);
   }
 
   for (const interactiveObject of worldState.interactiveObjects) {
-    const typeKey = `interactive-object:${interactiveObject.interactionType}`;
-    circles.push({
-      typeKey,
-      ...toCenter(interactiveObject.position.x, interactiveObject.position.y),
-      radius,
-      color: getColorForEntityType(typeKey),
-    });
-  }
-
-  context.entityGraphics.clear();
-  for (const circle of circles) {
-    context.entityGraphics.circle(circle.centerX, circle.centerY, circle.radius).fill({ color: circle.color });
-    context.entityGraphics
-      .circle(circle.centerX, circle.centerY, circle.radius)
-      .stroke({ color: 0x102131, width: 2, alpha: 0.9 });
+    const spritePath = resolveCharacterSpriteAssetPath(interactiveObject);
+    if (characterRenderModes.interactiveObjectsById[interactiveObject.id] === 'sprite') {
+      continue;
+    }
+    if (!shouldRenderMissingAssetMarker(spritePath, context.spriteLoadStatusByPath)) {
+      continue;
+    }
+    const center = toCenter(interactiveObject.position.x, interactiveObject.position.y);
+    drawMissingAssetMarker(context.entityGraphics, center.centerX, center.centerY, markerSize);
   }
 };
 
-const drawPlayerMarker = (
+const drawPlayerMissingAssetMarker = (
   context: RenderContext,
   worldState: WorldState,
   characterRenderModes: CharacterRenderModes,
@@ -489,16 +559,22 @@ const drawPlayerMarker = (
     return;
   }
 
+  const playerSpritePath = resolveCharacterSpriteAssetPath(
+    worldState.player,
+    worldState.player.facingDirection ?? DEFAULT_RENDER_DIRECTION,
+  );
+  if (!shouldRenderMissingAssetMarker(playerSpritePath, context.spriteLoadStatusByPath)) {
+    context.playerGraphics.clear();
+    return;
+  }
+
   const tileSize = worldState.grid.tileSize;
   const centerX = worldState.player.position.x * tileSize + tileSize / 2;
   const centerY = worldState.player.position.y * tileSize + tileSize / 2;
-  const radius = Math.max(6, tileSize * 0.28);
+  const markerSize = Math.max(10, tileSize * 0.42);
 
   context.playerGraphics.clear();
-  context.playerGraphics.circle(centerX, centerY, radius).fill({ color: 0xffcf66 });
-  context.playerGraphics
-    .circle(centerX, centerY, radius)
-    .stroke({ color: 0x6a4c13, width: 2, alpha: 1 });
+  drawMissingAssetMarker(context.playerGraphics, centerX, centerY, markerSize);
 };
 
 export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<RenderPort> => {
@@ -548,8 +624,8 @@ export const createPixiRenderPort = async (targets: PixiRenderTargets): Promise<
       drawBoundaryBand(context, worldState);
       drawGrid(context, worldState);
       syncCharacterSprites(context, worldState, characterRenderModes);
-      drawEntityMarkers(context, worldState, characterRenderModes);
-      drawPlayerMarker(context, worldState, characterRenderModes);
+      drawEntityMissingAssetMarkers(context, worldState, characterRenderModes);
+      drawPlayerMissingAssetMarker(context, worldState, characterRenderModes);
       updateCamera(context, worldState);
     },
   };

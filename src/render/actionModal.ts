@@ -16,15 +16,19 @@ export const createActionModal = (
 ): ActionModalHandle => {
   let overlayElement: HTMLDivElement | null = null;
   let escapeHandler: ((event: KeyboardEvent) => void) | null = null;
+  let actionButtons: HTMLButtonElement[] = [];
+  let focusedButtonIndex = 0;
 
   const close = (): void => {
     if (overlayElement && overlayElement.parentElement === hostElement) {
       hostElement.removeChild(overlayElement);
     }
     overlayElement = null;
+    actionButtons = [];
+    focusedButtonIndex = 0;
 
     if (escapeHandler) {
-      document.removeEventListener('keydown', escapeHandler);
+      document.removeEventListener('keydown', escapeHandler, true);
       escapeHandler = null;
     }
   };
@@ -58,36 +62,61 @@ export const createActionModal = (
       const actions = document.createElement('div');
       actions.className = 'action-modal-actions';
 
-      actions.appendChild(
-        buildButton('Chat', () => {
-          callbacks.onActionSelected('chat');
-        }),
-      );
+      const chatButton = buildButton('Chat', () => {
+        callbacks.onActionSelected('chat');
+      });
+      const inventoryButton = buildButton('Inventory', () => {
+        callbacks.onActionSelected('inventory');
+      });
+      const backButton = buildButton('Back', () => {
+        callbacks.onClose();
+      });
 
-      actions.appendChild(
-        buildButton('Inventory', () => {
-          callbacks.onActionSelected('inventory');
-        }),
-      );
-
-      actions.appendChild(
-        buildButton('Back', () => {
-          callbacks.onClose();
-        }),
-      );
+      actionButtons = [chatButton, inventoryButton, backButton];
+      actionButtons.forEach((button, index) => {
+        button.addEventListener('focus', () => {
+          focusedButtonIndex = index;
+        });
+        actions.appendChild(button);
+      });
 
       modal.appendChild(title);
       modal.appendChild(actions);
       overlay.appendChild(modal);
       hostElement.appendChild(overlay);
 
+      focusedButtonIndex = 0;
+      actionButtons[focusedButtonIndex]?.focus();
+
       escapeHandler = (event: KeyboardEvent): void => {
         if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
           callbacks.onClose();
+          return;
+        }
+
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
+          event.preventDefault();
+          focusedButtonIndex = (focusedButtonIndex + 1) % actionButtons.length;
+          actionButtons[focusedButtonIndex]?.focus();
+          return;
+        }
+
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
+          event.preventDefault();
+          focusedButtonIndex = (focusedButtonIndex - 1 + actionButtons.length) % actionButtons.length;
+          actionButtons[focusedButtonIndex]?.focus();
+          return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          actionButtons[focusedButtonIndex]?.click();
         }
       };
 
-      document.addEventListener('keydown', escapeHandler);
+      document.addEventListener('keydown', escapeHandler, true);
       overlayElement = overlay;
     },
 

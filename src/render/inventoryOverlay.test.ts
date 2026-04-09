@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { createInventoryOverlay } from './inventoryOverlay';
 import type { PlayerInventory } from '../world/types';
 
@@ -7,6 +7,7 @@ describe('inventory overlay', () => {
   let hostElement: HTMLDivElement;
   let onCloseCalls: number;
   let onClose: () => void;
+  let onItemSelected: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     hostElement = document.createElement('div');
@@ -15,6 +16,7 @@ describe('inventory overlay', () => {
     onClose = (): void => {
       onCloseCalls += 1;
     };
+    onItemSelected = vi.fn();
   });
 
   afterEach(() => {
@@ -22,7 +24,7 @@ describe('inventory overlay', () => {
   });
 
   it('renders a 3x3 grid of inventory tiles', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose });
+    const overlay = createInventoryOverlay(hostElement, { onClose, onItemSelected });
     const inventory: PlayerInventory = {
       items: [
         { itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 },
@@ -38,7 +40,7 @@ describe('inventory overlay', () => {
   });
 
   it('highlights selected item with distinct styling', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose });
+    const overlay = createInventoryOverlay(hostElement, { onClose, onItemSelected });
     const inventory: PlayerInventory = {
       items: [{ itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 }],
       selectedItem: { slotIndex: 0, itemId: 'key-1' },
@@ -53,7 +55,7 @@ describe('inventory overlay', () => {
   });
 
   it('displays tooltip on tile hover', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose });
+    const overlay = createInventoryOverlay(hostElement, { onClose, onItemSelected });
     const inventory: PlayerInventory = {
       items: [{ itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 }],
       selectedItem: null,
@@ -70,7 +72,7 @@ describe('inventory overlay', () => {
   });
 
   it('closes on ESC key', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose });
+    const overlay = createInventoryOverlay(hostElement, { onClose, onItemSelected });
     const inventory: PlayerInventory = {
       items: [],
       selectedItem: null,
@@ -87,7 +89,7 @@ describe('inventory overlay', () => {
   });
 
   it('displays empty state for tiles without items', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose });
+    const overlay = createInventoryOverlay(hostElement, { onClose, onItemSelected });
     const inventory: PlayerInventory = {
       items: [],
       selectedItem: null,
@@ -103,7 +105,7 @@ describe('inventory overlay', () => {
   });
 
   it('calls onClose callback when closing', () => {
-    const overlay = createInventoryOverlay(hostElement, { onClose });
+    const overlay = createInventoryOverlay(hostElement, { onClose, onItemSelected });
     const inventory: PlayerInventory = {
       items: [],
       selectedItem: null,
@@ -113,5 +115,52 @@ describe('inventory overlay', () => {
     overlay.close();
 
     expect(onCloseCalls).toBe(1);
+  });
+
+  it('selects an item when a filled tile is clicked', () => {
+    const overlay = createInventoryOverlay(hostElement, { onClose, onItemSelected });
+    const inventory: PlayerInventory = {
+      items: [{ itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 }],
+      selectedItem: null,
+    };
+
+    overlay.open(inventory);
+
+    const tile = hostElement.querySelector('.inventory-tile') as HTMLElement;
+    tile.click();
+
+    expect(onItemSelected).toHaveBeenCalledWith(0);
+  });
+
+  it('selects the focused item when Enter is pressed', () => {
+    const overlay = createInventoryOverlay(hostElement, { onClose, onItemSelected });
+    const inventory: PlayerInventory = {
+      items: [{ itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 }],
+      selectedItem: null,
+    };
+
+    overlay.open(inventory);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+    expect(onItemSelected).toHaveBeenCalledWith(0);
+  });
+
+  it('moves focus by row with ArrowDown and ArrowUp', () => {
+    const overlay = createInventoryOverlay(hostElement, { onClose, onItemSelected });
+    const inventory: PlayerInventory = {
+      items: [{ itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 }],
+      selectedItem: { slotIndex: 0, itemId: 'key-1' },
+    };
+
+    overlay.open(inventory);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+    let tiles = hostElement.querySelectorAll<HTMLElement>('.inventory-tile');
+    expect(tiles[3]?.style.outline).toContain('solid');
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    tiles = hostElement.querySelectorAll<HTMLElement>('.inventory-tile');
+    expect(tiles[0]?.style.outline).toContain('solid');
   });
 });

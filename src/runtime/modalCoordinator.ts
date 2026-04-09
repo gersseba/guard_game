@@ -22,7 +22,7 @@ export interface RuntimeModalCoordinatorDependencies {
     | 'openConversation'
     | 'openInventoryOverlay'
   >;
-  world: Pick<{ getState: () => WorldState }, 'getState'>;
+  world: Pick<{ getState: () => WorldState; resetToState: (state: WorldState) => void }, 'getState' | 'resetToState'>;
   viewportPauseOverlay: Pick<ViewportOverlay, 'show' | 'hide'>;
   chatModalHostElement: HTMLElement;
   actionModalHostElement: HTMLElement;
@@ -86,6 +86,30 @@ export const createRuntimeModalCoordinator = (
   });
 
   const inventoryOverlay = createInventoryOverlay(dependencies.inventoryOverlayHostElement, {
+    onItemSelected(slotIndex: number): void {
+      const currentState = dependencies.world.getState();
+      const selectedCandidate = currentState.player.inventory.items[slotIndex] ?? null;
+      if (!selectedCandidate) {
+        return;
+      }
+
+      dependencies.world.resetToState({
+        ...currentState,
+        player: {
+          ...currentState.player,
+          inventory: {
+            ...currentState.player.inventory,
+            selectedItem: {
+              slotIndex,
+              itemId: selectedCandidate.itemId,
+            },
+          },
+        },
+      });
+
+      inventoryOverlay.close();
+    },
+
     onClose(): void {
       dependencies.runtimeController.closeInventoryOverlay();
       dependencies.viewportPauseOverlay.hide();
@@ -120,6 +144,7 @@ export const createRuntimeModalCoordinator = (
     },
 
     onClose(): void {
+      actionModal.close();
       dependencies.runtimeController.closeActionModal();
       dependencies.viewportPauseOverlay.hide();
     },

@@ -257,4 +257,71 @@ describe('createRuntimeModalCoordinator', () => {
     expect(assistantBubbles).toHaveLength(1);
     expect(assistantBubbles[0].textContent).toContain('Permission granted.');
   });
+
+  it('opens inventory from the action modal and selects an item', () => {
+    document.body.innerHTML = `
+      <div id="chat-host"></div>
+      <div id="action-host"></div>
+      <div id="inventory-host"></div>
+    `;
+
+    const session: RuntimeActionModalSession = {
+      targetId: 'guard-1',
+      targetKind: 'guard',
+      displayName: 'Guard One',
+    };
+
+    const runtimeController = createRuntimeControllerMock(session);
+    const pauseOverlay = {
+      show: vi.fn(),
+      hide: vi.fn(),
+    };
+
+    let worldState = {
+      ...createWorldState(),
+      player: {
+        ...createWorldState().player,
+        inventory: {
+          items: [
+            { itemId: 'key-1', displayName: 'Bronze Key', sourceObjectId: 'crate-1', pickedUpAtTick: 1 },
+          ],
+          selectedItem: null,
+        },
+      },
+    };
+
+    const coordinator = createRuntimeModalCoordinator({
+      runtimeController,
+      world: {
+        getState: () => worldState,
+        resetToState: (nextState) => {
+          worldState = nextState;
+        },
+      },
+      viewportPauseOverlay: pauseOverlay,
+      chatModalHostElement: document.querySelector<HTMLElement>('#chat-host')!,
+      actionModalHostElement: document.querySelector<HTMLElement>('#action-host')!,
+      inventoryOverlayHostElement: document.querySelector<HTMLElement>('#inventory-host')!,
+      onOpenConversationForActionSession: vi.fn(() => true),
+      onSendConversationMessage: vi.fn(async () => {}),
+    });
+
+    coordinator.openActionModal(session);
+
+    const inventoryButton = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+      (button) => button.textContent === 'Inventory',
+    );
+    inventoryButton?.click();
+
+    const inventoryTile = document.querySelector<HTMLElement>('.inventory-tile');
+    inventoryTile?.click();
+
+    expect(worldState.player.inventory.selectedItem).toEqual({
+      slotIndex: 0,
+      itemId: 'key-1',
+    });
+    expect(runtimeController.openInventoryOverlay).toHaveBeenCalledWith(session);
+    expect(runtimeController.closeInventoryOverlay).toHaveBeenCalledTimes(1);
+    expect(pauseOverlay.hide).toHaveBeenCalledTimes(1);
+  });
 });

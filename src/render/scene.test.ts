@@ -52,6 +52,9 @@ const createWorldState = (): WorldState => ({
       position: { x: 2, y: 10 },
       doorState: 'closed',
       outcome: 'safe',
+          spriteSet: {
+            default: '/assets/medieval_door_wooden_closed.svg',
+          },
     },
   ],
   interactiveObjects: [
@@ -191,7 +194,7 @@ describe('render entity circle helpers', () => {
     );
   });
 
-  it('selects sprite mode for player, guard, and npc only when the path is loaded', () => {
+  it('selects sprite mode for player, guard, npc, and door only when the path is loaded', () => {
     const worldState: WorldState = {
       ...createWorldState(),
       player: {
@@ -224,6 +227,7 @@ describe('render entity circle helpers', () => {
       ['/assets/medieval_player_town_guard_right.svg', 'loaded' as const],
       ['/assets/medieval_guard_spear.svg', 'loaded' as const],
       ['/assets/medieval_npc_villager.svg', 'loaded' as const],
+      ['/assets/medieval_door_wooden_closed.svg', 'loaded' as const],
     ]);
 
     const modes = buildCharacterRenderModes(worldState, spriteStatuses);
@@ -231,6 +235,7 @@ describe('render entity circle helpers', () => {
     expect(modes.player).toBe('sprite');
     expect(modes.guardsById['guard-1']).toBe('sprite');
     expect(modes.npcsById['npc-1']).toBe('sprite');
+    expect(modes.doorsById['door-1']).toBe('sprite');
   });
 
   it('selects guard directional sprite from guard facing token', () => {
@@ -277,7 +282,7 @@ describe('render entity circle helpers', () => {
     expect(modes.player).toBe('sprite');
   });
 
-  it('falls back to marker mode for player, guard, and npc when loading fails or is unresolved', () => {
+  it('falls back to marker mode for player, guard, npc, and door when loading fails or is unresolved', () => {
     const worldState: WorldState = {
       ...createWorldState(),
       player: {
@@ -314,5 +319,6 @@ describe('render entity circle helpers', () => {
     expect(modes.player).toBe('marker');
     expect(modes.guardsById['guard-1']).toBe('marker');
     expect(modes.npcsById['npc-1']).toBe('marker');
+    expect(modes.doorsById['door-1']).toBe('marker');
   });
 });

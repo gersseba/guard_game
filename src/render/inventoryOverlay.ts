@@ -2,6 +2,7 @@ import type { PlayerInventory } from '../world/types';
 import { buildInventoryGridElement, GRID_COLS, GRID_ROWS, TILE_SIZE } from './inventoryGrid';
 
 export interface InventoryOverlayOptions {
+  onItemSelected(slotIndex: number): void;
   onClose(): void;
 }
 
@@ -21,6 +22,16 @@ export const createInventoryOverlay = (
   let isOpen = false;
   let focusedSlotIndex: number | null = null;
   let disposeListeners: (() => void) | null = null;
+
+  const selectSlot = (slotIndex: number): void => {
+    const item = currentInventory?.items[slotIndex];
+    if (!item) {
+      return;
+    }
+
+    focusedSlotIndex = slotIndex;
+    options.onItemSelected(slotIndex);
+  };
 
   const createTooltip = (): HTMLDivElement => {
     const tooltip = document.createElement('div');
@@ -72,7 +83,7 @@ export const createInventoryOverlay = (
     tooltip.textContent = tileId;
   };
 
-  const renderGrid = (): (() => void) | undefined => {
+  const renderGrid = (): void => {
     if (!currentInventory) return;
 
     // Clear host
@@ -141,6 +152,10 @@ export const createInventoryOverlay = (
           tooltipElement.style.display = 'none';
         }
       });
+
+      tile.addEventListener('click', () => {
+        selectSlot(slotIndex);
+      });
     });
 
     overlay.appendChild(gridContainer);
@@ -156,9 +171,18 @@ export const createInventoryOverlay = (
 
     hostElement.appendChild(overlay);
 
-    // Set up keyboard navigation
+  };
+
+  const open = (inventory: PlayerInventory): void => {
+    currentInventory = inventory;
+    isOpen = true;
+    focusedSlotIndex = inventory.selectedItem?.slotIndex ?? inventory.items.findIndex((item) => item !== undefined);
+    if (focusedSlotIndex === -1) {
+      focusedSlotIndex = 0;
+    }
+    renderGrid();
+
     const onKeyDown = (event: KeyboardEvent) => {
-      // Arrow key navigation
       let nextIndex = focusedSlotIndex ?? 0;
 
       if (event.key === 'ArrowRight') {
@@ -173,6 +197,20 @@ export const createInventoryOverlay = (
       } else if (event.key === 'ArrowUp') {
         nextIndex = (nextIndex - GRID_COLS + GRID_COLS * GRID_ROWS) % (GRID_COLS * GRID_ROWS);
         event.preventDefault();
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        if (focusedSlotIndex !== null) {
+          selectSlot(focusedSlotIndex);
+        }
+        return;
+      } else if (/^[1-9]$/.test(event.key)) {
+        event.preventDefault();
+        selectSlot(Number(event.key) - 1);
+        return;
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        close();
+        return;
       }
 
       if (focusedSlotIndex !== nextIndex) {
@@ -183,30 +221,8 @@ export const createInventoryOverlay = (
 
     window.addEventListener('keydown', onKeyDown);
 
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  };
-
-  const open = (inventory: PlayerInventory): void => {
-    currentInventory = inventory;
-    isOpen = true;
-    focusedSlotIndex = null;
-    const cleanup = renderGrid();
-
-    const onEscapeClose = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        close();
-      }
-    };
-
-    window.addEventListener('keydown', onEscapeClose);
-
-    const previousCleanup = cleanup;
     disposeListeners = (): void => {
-      previousCleanup?.();
-      window.removeEventListener('keydown', onEscapeClose);
+      window.removeEventListener('keydown', onKeyDown);
       if (tooltipElement) {
         tooltipElement.style.display = 'none';
       }
