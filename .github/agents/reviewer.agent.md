@@ -41,6 +41,7 @@ Your job is to review pull requests against GitHub issue scope with two modes:
 - Enforce 1 ticket = 1 PR for implementation work. Reject slice-based delivery plans.
 - PR is expected to satisfy the ticket's scope and acceptance criteria.
 - Allow minor adjacent improvements (for example docs clarifications) when coherent and low risk.
+- If the PR or review request is explicitly marked as an incremental/non-final checkpoint, return a blocking verdict and request a ticket split or scope adjustment before merge.
 - Check that the PR label matches the actual diff content:
   - `AI_BEHAVIOR`: only agent/skill/instruction workflow files
   - `ENHANCEMENT`: feature logic/content changes

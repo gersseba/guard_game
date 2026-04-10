@@ -24,8 +24,12 @@ Perform a structured self-review of an opened PR.
 - No slice-PR `Refs` usage for implementation delivery.
 - If ticket is a sub ticket, parent linkage is present and post-merge parent comment plan is clear.
 6. Label policy:
-- Exactly one category label is present: `DOCUMENTATION`, `BUGS`, `ENHANCEMENT`, `AI_BEHAVIOR`, or `REFACTORING`.
+- Exactly one category label is present: `DOCUMENTATION`, `BUGS`, `ENHANCEMENT`, `LEVEL`, `AI_BEHAVIOR`, or `REFACTORING`.
 - `AI_BEHAVIOR` is used only for AI workflow customization changes.
+- `LEVEL` is required for level-definition delivery from game designer specifications.
+
+## Readiness Rule
+- If any checklist item fails, the PR is not ready and must be updated before handoff or merge.
 
 ## Cleanup Actions
 - Make any necessary cleanup commits.

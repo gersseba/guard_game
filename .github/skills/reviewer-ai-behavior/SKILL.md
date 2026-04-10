@@ -28,11 +28,7 @@ Review PRs labeled `AI_BEHAVIOR` that change agent, skill, instruction, prompt, 
 - **Complete examples**: Do code examples or workflow steps show full, concrete scenarios?
 - **Testability**: Can another person follow the instructions without guessing about intent?
 - **Consistency in terminology**: Are the same concepts referred to with consistent names throughout?
-
-### Clarity
-- Check for ambiguous wording or incomplete workflow steps.
-- Ensure branch and PR guidance are explicit and testable.
-- Confirm the intended behavior can be followed without guessing.
+- **Flow completeness**: Ensure any required sequence (plan -> edit -> validate -> PR -> label) is explicit with no skipped gate.
 
 ## Decision Labels
 - `VALID_PARTIAL_SLICE` — Focused AI customization change, consistent and clear
