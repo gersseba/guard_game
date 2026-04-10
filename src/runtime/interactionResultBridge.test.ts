@@ -416,7 +416,7 @@ describe('createRuntimeInteractionResultBridge', () => {
       dispatch: vi.fn((_target, _worldState, playerMessage) => {
         if (!playerMessage) {
           return {
-            kind: 'npc',
+            kind: 'npc' as const,
             targetId: 'npc-1',
             displayName: 'Archivist',
             isConversational: false,
@@ -424,7 +424,7 @@ describe('createRuntimeInteractionResultBridge', () => {
         }
 
         return Promise.resolve({
-          kind: 'npc',
+          kind: 'npc' as const,
           targetId: 'npc-1',
           displayName: 'Archivist',
           updatedWorldState,
@@ -435,7 +435,7 @@ describe('createRuntimeInteractionResultBridge', () => {
       }),
       resolveConversationalTarget: vi.fn((worldStateCandidate: WorldState, targetId: string) => {
         const npc = worldStateCandidate.npcs.find((candidate) => candidate.id === targetId);
-        return npc ? { kind: 'npc', target: npc } : null;
+        return npc ? { kind: 'npc' as const, target: npc } : null;
       }),
     };
 

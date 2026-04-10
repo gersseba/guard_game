@@ -110,6 +110,7 @@ describe('createRuntimeModalCoordinator', () => {
       runtimeController,
       world: {
         getState: () => createWorldState(),
+        resetToState: vi.fn(),
       },
       viewportPauseOverlay: pauseOverlay,
       chatModalHostElement: document.querySelector<HTMLElement>('#chat-host')!,
@@ -164,6 +165,7 @@ describe('createRuntimeModalCoordinator', () => {
       runtimeController,
       world: {
         getState: () => createWorldState(),
+        resetToState: vi.fn(),
       },
       viewportPauseOverlay: pauseOverlay,
       chatModalHostElement: document.querySelector<HTMLElement>('#chat-host')!,
@@ -226,6 +228,7 @@ describe('createRuntimeModalCoordinator', () => {
       runtimeController,
       world: {
         getState: () => createWorldState(),
+        resetToState: vi.fn(),
       },
       viewportPauseOverlay: pauseOverlay,
       chatModalHostElement: document.querySelector<HTMLElement>('#chat-host')!,
@@ -279,7 +282,7 @@ describe('createRuntimeModalCoordinator', () => {
       hide: vi.fn(),
     };
 
-    let worldState = {
+    let worldState: WorldState = {
       ...createWorldState(),
       player: {
         ...createWorldState().player,
@@ -344,6 +347,7 @@ describe('createRuntimeModalCoordinator', () => {
       runtimeController,
       world: {
         getState: () => createWorldState(),
+        resetToState: vi.fn(),
       },
       viewportPauseOverlay: pauseOverlay,
       chatModalHostElement: document.querySelector<HTMLElement>('#chat-host')!,
