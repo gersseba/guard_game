@@ -225,8 +225,7 @@ describe('createGeminiLlmClient', () => {
       displayName: 'Archivist',
       position: { x: 1, y: 1 },
       npcType: 'archivist',
-      facing: 'down',
-      conversationId: 'conversation-1',
+      dialogueContextKey: 'archivist_default',
     });
 
     await client.complete({
@@ -235,7 +234,13 @@ describe('createGeminiLlmClient', () => {
     });
 
     expect(fetchImpl).toHaveBeenCalledTimes(1);
-    const [, requestInit] = fetchImpl.mock.calls[0] as [string, { body?: unknown }];
+    const firstCall = fetchImpl.mock.calls.at(0) as unknown[] | undefined;
+    expect(firstCall).toBeDefined();
+    const requestInitCandidate = firstCall && firstCall.length > 1 ? firstCall[1] : {};
+    const requestInit =
+      typeof requestInitCandidate === 'object' && requestInitCandidate !== null
+        ? (requestInitCandidate as { body?: unknown })
+        : {};
     const requestBody = JSON.parse(String(requestInit.body)) as {
       tools?: Array<{ functionDeclarations?: Array<{ name: string }> }>;
       toolConfig?: { functionCallingConfig?: { mode?: string } };

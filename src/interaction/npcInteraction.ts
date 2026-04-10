@@ -165,12 +165,17 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
     }
 
     const assistantText = llmResult.text ?? '';
+    const assistantMessageRecord: ConversationMessage = {
+      role: 'assistant',
+      text: assistantText,
+    };
+    const nextHistoryForNpc: ConversationMessage[] = assistantText
+      ? [...historyWithPlayerMessage, assistantMessageRecord]
+      : historyWithPlayerMessage;
 
-    const updatedHistoryByActorId = {
+    const updatedHistoryByActorId: WorldState['actorConversationHistoryByActorId'] = {
       ...request.worldState.actorConversationHistoryByActorId,
-      [request.npc.id]: assistantText
-        ? [...historyWithPlayerMessage, { role: 'assistant', text: assistantText }]
-        : historyWithPlayerMessage,
+      [request.npc.id]: nextHistoryForNpc,
     };
 
     const stateWithUpdatedHistory: WorldState = {
