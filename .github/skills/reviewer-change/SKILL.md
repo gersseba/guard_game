@@ -1,12 +1,12 @@
 ---
 name: reviewer-change
-description: "Use when reviewing a PR labeled CHANGE for AC alignment, correctness, and completeness."
+description: "Use when reviewing a PR labeled ENHANCEMENT, BUGS, LEVEL, or implementation-scoped DOCUMENTATION for AC alignment, correctness, and completeness."
 ---
 
 # Reviewer Change
 
 ## Purpose
-Review PRs labeled `CHANGE` that implement feature, logic, or content changes to the game. Verify that changes align with ticket acceptance criteria, are functionally correct, and are complete within their scope.
+Review PRs labeled `ENHANCEMENT`, `BUGS`, `LEVEL`, or implementation-scoped `DOCUMENTATION` that implement feature, logic, content, or delivery documentation changes. Verify that changes align with ticket acceptance criteria, are functionally correct, and are complete within their scope.
 
 ## Review Checklist
 
@@ -41,7 +41,7 @@ Review PRs labeled `CHANGE` that implement feature, logic, or content changes to
 
 ## Output Template
 - PR:
-- Label: CHANGE
+- Label: ENHANCEMENT / BUGS / LEVEL / DOCUMENTATION
 - Related ACs: (which ticket ACs does this advance?)
 - AC alignment: (which ACs met, which deferred and why?)
 - Correctness check: (any logic errors or regressions?)

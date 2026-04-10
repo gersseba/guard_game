@@ -18,6 +18,10 @@ Handle review feedback methodically and transparently.
 4. Respond to each comment with clear resolution.
 5. Push updates and summarize what changed.
 
+## Completion Rule
+- Do not mark feedback handling complete while unresolved must-fix comments remain.
+- If a must-fix request cannot be addressed within scope, escalate to the user with explicit options.
+
 ## Output
 - Comment-by-comment resolution log
 - Code/validation updates made

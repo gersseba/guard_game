@@ -18,6 +18,10 @@ Open a high-quality PR that is easy to review.
 - If this is a sub ticket, include one parent link line (for example: `Parent: #<parent-issue>`).
 5. Add required labels.
 
+## Label Rule
+- Apply exactly one primary category label per PR: `DOCUMENTATION`, `BUGS`, `ENHANCEMENT`, `LEVEL`, `AI_BEHAVIOR`, or `REFACTORING`.
+- For implementation tickets, do not open PRs without `Closes #<issue>` in the body.
+
 ## Output
 - PR title and body
 - Labels applied

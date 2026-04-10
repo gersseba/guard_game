@@ -90,6 +90,15 @@ Categorize each work package into exactly one type:
   - include documentation fixes when behavior or architecture explanations become outdated
   - re-validate impacted behavior
 
+## Phase Gates
+The implementation flow is complete only when all gates pass in order:
+1. Plan gate: issue scope and AC are documented in a concrete step-by-step plan.
+2. Implement gate: all planned steps are implemented with focused commits and per-step validation.
+3. PR gate: PR is opened with `Closes #<issue-number>`, validation evidence, and exactly one category label.
+4. Check gate: self-review confirms scope, correctness, labels, and issue linkage are consistent.
+5. Feedback gate: all blocking review feedback is resolved or explicitly escalated to the user.
+6. Finish gate: PR is merged, branches are cleaned up, and ticket state is verified as `Done`/`Completed`.
+
 ## Finish PR Workflow
 If the user asks you to finish a PR, follow this exact sequence:
 1. Check the PR status, comments, review threads, and checks.

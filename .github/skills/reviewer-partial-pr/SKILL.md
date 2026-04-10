@@ -1,20 +1,20 @@
 ---
 name: reviewer-partial-pr
-description: "Use when reviewing a partial PR for a Jira ticket; verify the PR is a focused incremental slice that contributes to the ticket goal without requiring full feature completion."
+description: "Use only when a user explicitly requests a non-merge checkpoint review; verify focus and risk while preserving one-ticket-one-PR merge policy for implementation delivery."
 ---
 
 # Reviewer Partial PR
 
 ## Purpose
-Use this skill to review a single PR as a partial delivery for a ticket.
+Use this skill only for explicit checkpoint feedback requests. It must not approve implementation PRs that are intentionally partial for merge.
 
 ## Workflow
 1. Read the Jira ticket and identify outcome, scope boundaries, and acceptance criteria.
 2. Read the PR diff and summarize its single dominant concern.
 3. Determine review basis:
-	- `ticket-delivery` for product/runtime/test/refactor slices
-	- `workflow-reasonableness` for PRs that change only agents, skills, prompts, or review workflow files
-4. Verify contribution to the ticket goal even if ACs are not fully met yet.
+   - `implementation-checkpoint` for non-final implementation progress requested by the user
+   - `workflow-reasonableness` for PRs that change only agents, skills, prompts, or review workflow files
+4. Verify contribution to the ticket goal, and explicitly state that implementation merge readiness is blocked until full AC completion.
 5. For workflow-only PRs, judge the changes on coherence, usefulness, and broader reasonableness instead of runtime AC progress.
 6. Check that the PR remains focused (one concern) and reviewable.
 7. Flag scope creep and cross-layer coupling.
@@ -33,13 +33,14 @@ Use this skill to review a single PR as a partial delivery for a ticket.
 - `NEEDS_SPLIT`
 - `OUT_OF_SCOPE`
 - `BLOCKED_BY_MISSING_CONTEXT`
+- `NOT_MERGE_READY_BY_POLICY`
 
 ## Integration with Category-Specific Skills
 For partial PR reviews, use the appropriate category skill based on the PR label:
-1. Verify PR has exactly one primary review label: `CHANGE`, `REFACTORING`, or `AI_BEHAVIOR`
+1. Verify PR has exactly one primary review label: `ENHANCEMENT`, `BUGS`, `LEVEL`, `DOCUMENTATION`, `REFACTORING`, or `AI_BEHAVIOR`
 2. Use the category-specific skill:
    - `reviewer-ai-behavior` for `AI_BEHAVIOR` PRs
-   - `reviewer-change` for `CHANGE` PRs
+   - `reviewer-change` for `ENHANCEMENT`, `BUGS`, `LEVEL`, or implementation-scoped `DOCUMENTATION` PRs
    - `reviewer-refactoring` for `REFACTORING` PRs
 3. Follow that skill's review checklist and decision process
 
