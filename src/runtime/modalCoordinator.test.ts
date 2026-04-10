@@ -116,7 +116,7 @@ describe('createRuntimeModalCoordinator', () => {
       actionModalHostElement: document.querySelector<HTMLElement>('#action-host')!,
       inventoryOverlayHostElement: document.querySelector<HTMLElement>('#inventory-host')!,
       onOpenConversationForActionSession: vi.fn(() => false),
-      onSendConversationMessage: vi.fn(async () => {}),
+      onSendConversationMessage: vi.fn(async () => ({ endedConversation: false })),
     });
 
     coordinator.openActionModal(session);
@@ -156,6 +156,7 @@ describe('createRuntimeModalCoordinator', () => {
         onLlmError?: (error: { kind: 'llm_request_error'; message: string; statusCode?: number }) => void,
       ) => {
         onLlmError?.({ kind: 'llm_request_error', message: 'LLM request failed.', statusCode: 503 });
+        return { endedConversation: false };
       },
     );
 
@@ -213,10 +214,11 @@ describe('createRuntimeModalCoordinator', () => {
         callCount += 1;
         if (callCount === 1) {
           onLlmError?.({ kind: 'llm_request_error', message: 'Network request failed.' });
-          return;
+          return { endedConversation: false };
         }
 
         onAssistantMessage('Permission granted.');
+        return { endedConversation: false };
       },
     );
 
@@ -303,7 +305,7 @@ describe('createRuntimeModalCoordinator', () => {
       actionModalHostElement: document.querySelector<HTMLElement>('#action-host')!,
       inventoryOverlayHostElement: document.querySelector<HTMLElement>('#inventory-host')!,
       onOpenConversationForActionSession: vi.fn(() => true),
-      onSendConversationMessage: vi.fn(async () => {}),
+      onSendConversationMessage: vi.fn(async () => ({ endedConversation: false })),
     });
 
     coordinator.openActionModal(session);
@@ -322,6 +324,49 @@ describe('createRuntimeModalCoordinator', () => {
     });
     expect(runtimeController.openInventoryOverlay).toHaveBeenCalledWith(session);
     expect(runtimeController.closeInventoryOverlay).toHaveBeenCalledTimes(1);
+    expect(pauseOverlay.hide).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the chat modal cleanly when the conversation send reports endedChat', async () => {
+    document.body.innerHTML = `
+      <div id="chat-host"></div>
+      <div id="action-host"></div>
+      <div id="inventory-host"></div>
+    `;
+
+    const runtimeController = createRuntimeControllerMock(null);
+    const pauseOverlay = {
+      show: vi.fn(),
+      hide: vi.fn(),
+    };
+
+    const coordinator = createRuntimeModalCoordinator({
+      runtimeController,
+      world: {
+        getState: () => createWorldState(),
+      },
+      viewportPauseOverlay: pauseOverlay,
+      chatModalHostElement: document.querySelector<HTMLElement>('#chat-host')!,
+      actionModalHostElement: document.querySelector<HTMLElement>('#action-host')!,
+      inventoryOverlayHostElement: document.querySelector<HTMLElement>('#inventory-host')!,
+      onOpenConversationForActionSession: vi.fn(() => true),
+      onSendConversationMessage: vi.fn(async (_actorId, _playerMessage, onAssistantMessage) => {
+        onAssistantMessage('We are done here.');
+        return { endedConversation: true };
+      }),
+    });
+
+    coordinator.openConversation('guard-1', 'Guard One', [], 'guard');
+
+    const input = document.querySelector<HTMLInputElement>('.chat-modal-input');
+    const sendButton = document.querySelector<HTMLButtonElement>('.chat-modal-send-btn');
+    input!.value = 'Understood.';
+    sendButton?.click();
+    await Promise.resolve();
+
+    const overlay = document.querySelector<HTMLElement>('.chat-modal-overlay');
+    expect(overlay?.hidden).toBe(true);
+    expect(runtimeController.closeConversation).toHaveBeenCalledTimes(1);
     expect(pauseOverlay.hide).toHaveBeenCalledTimes(1);
   });
 });

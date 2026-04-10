@@ -33,7 +33,7 @@ export interface RuntimeInteractionResultBridge {
     playerMessage: string,
     onAssistantMessage: (message: string) => void,
     onLlmError?: (error: LlmRequestError) => void,
-  ): Promise<void>;
+  ): Promise<{ endedConversation: boolean }>;
 }
 
 export const createRuntimeInteractionResultBridge = (
@@ -114,14 +114,14 @@ export const createRuntimeInteractionResultBridge = (
       playerMessage: string,
       onAssistantMessage: (message: string) => void,
       onLlmError?: (error: LlmRequestError) => void,
-    ): Promise<void> {
+    ): Promise<{ endedConversation: boolean }> {
       const currentWorldState = dependencies.world.getState();
       const target = dependencies.interactionDispatcher.resolveConversationalTarget(
         currentWorldState,
         actorId,
       );
       if (!target) {
-        return;
+        return { endedConversation: false };
       }
 
       const result = await dependencies.interactionDispatcher.dispatch(
@@ -135,7 +135,7 @@ export const createRuntimeInteractionResultBridge = (
           dependencies.world.resetToState(result.updatedWorldState);
         }
         onLlmError?.(result.llmError);
-        return;
+        return { endedConversation: false };
       }
 
       const history = getActorConversationHistory(
@@ -150,6 +150,10 @@ export const createRuntimeInteractionResultBridge = (
       if (result.updatedWorldState) {
         dependencies.world.resetToState(result.updatedWorldState);
       }
+
+      return {
+        endedConversation: result.actionExecutionTrace?.endedChat ?? false,
+      };
     },
   };
 };

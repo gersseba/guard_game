@@ -139,6 +139,7 @@ export const createNpcHandler = (llmClient: LlmClient): ConditionalInteractionHa
         updatedWorldState: result.updatedWorldState,
         isConversational: true,
         llmError: result.llmError,
+        actionExecutionTrace: result.actionExecutionTrace,
       }));
   };
 };

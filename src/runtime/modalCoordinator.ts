@@ -33,7 +33,7 @@ export interface RuntimeModalCoordinatorDependencies {
     playerMessage: string,
     onAssistantMessage: (message: string) => void,
     onLlmError?: (error: LlmRequestError) => void,
-  ) => Promise<void>;
+  ) => Promise<{ endedConversation: boolean }>;
 }
 
 export interface RuntimeModalCoordinator {
@@ -64,7 +64,7 @@ export const createRuntimeModalCoordinator = (
       chatModal.appendMessage('player', playerMessage);
 
       void (async () => {
-        await dependencies.onSendConversationMessage(
+        const result = await dependencies.onSendConversationMessage(
           interaction.actorId,
           playerMessage,
           (assistantMessage: string) => {
@@ -74,6 +74,11 @@ export const createRuntimeModalCoordinator = (
             chatModal.setError('Request failed. Please try again.');
           },
         );
+
+        if (result.endedConversation) {
+          chatModal.close();
+          return;
+        }
 
         chatModal.setLoading(false);
       })();
