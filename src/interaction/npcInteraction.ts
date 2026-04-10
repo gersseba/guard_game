@@ -1,6 +1,15 @@
 import { isLlmRequestError, type LlmRequestError, type LlmClient } from '../llm/client';
 import { Item } from '../world/entities/items/Item';
 import type { ConversationMessage, Npc, Player, WorldState } from '../world/types';
+import {
+  createDefaultNpcFunctionRegistry,
+  type NpcFunctionRegistry,
+} from './npcActionFunctions';
+import {
+  createNpcActionExecutor,
+  type NpcActionExecutionResult,
+  type NpcActionExecutor,
+} from './npcActionExecutor';
 import { buildNpcPromptContext } from './npcPromptContext';
 
 interface NpcInteractionOutcome {
@@ -118,13 +127,26 @@ export interface NpcInteractionResult {
   responseText: string;
   updatedWorldState: WorldState;
   llmError?: LlmRequestError;
+  actionExecutionTrace?: NpcActionExecutionResult;
 }
 
 export interface NpcInteractionService {
   handleNpcInteraction(request: NpcInteractionRequest): Promise<NpcInteractionResult>;
 }
 
-export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractionService => ({
+export interface NpcInteractionServiceOptions {
+  actionExecutor?: NpcActionExecutor;
+  functionRegistry?: NpcFunctionRegistry;
+}
+
+export const createNpcInteractionService = (
+  llmClient: LlmClient,
+  options: NpcInteractionServiceOptions = {},
+): NpcInteractionService => {
+  const actionExecutor = options.actionExecutor ?? createNpcActionExecutor();
+  const functionRegistry = options.functionRegistry ?? createDefaultNpcFunctionRegistry();
+
+  return {
   handleNpcInteraction: async (request: NpcInteractionRequest): Promise<NpcInteractionResult> => {
     const previousHistory =
       request.worldState.actorConversationHistoryByActorId[request.npc.id] ?? [];
@@ -140,6 +162,7 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
         context: buildNpcPromptContext(request.npc, request.player, request.worldState),
         playerMessage: request.playerMessage,
         conversationHistory: historyWithPlayerMessage,
+        availableFunctions: functionRegistry.resolveFunctions(request.npc),
       })
       .catch((err: unknown): LlmRequestError => ({
         kind: 'llm_request_error',
@@ -200,13 +223,23 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
       ),
     };
 
+    const actionExecutionTrace = llmResult.actions?.length
+      ? actionExecutor.execute({
+          npcId: request.npc.id,
+          worldState: updatedWorldState,
+          actions: llmResult.actions,
+        })
+      : undefined;
+
     return {
       npcId: request.npc.id,
       responseText: assistantText ? `${request.npc.displayName}: ${assistantText}` : '',
-      updatedWorldState,
+      updatedWorldState: actionExecutionTrace?.updatedWorldState ?? updatedWorldState,
+      actionExecutionTrace,
     };
   },
-});
+  };
+};
 
 export const handleNpcInteraction = async (
   request: NpcInteractionRequest,

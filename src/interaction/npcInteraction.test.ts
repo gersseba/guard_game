@@ -66,6 +66,141 @@ describe('createNpcInteractionService', () => {
       { role: 'player', text: 'Where are the archives?' },
       { role: 'assistant', text: 'The archives are west of here.' },
     ]);
+    expect(
+      (complete.mock.calls.at(0)?.at(0) as { availableFunctions?: Array<{ name: string }> } | undefined)
+        ?.availableFunctions?.map((fn) => fn.name),
+    ).toEqual(['end_chat', 'move', 'interact', 'use_item']);
+  });
+
+  it('executes actions-only npc responses without appending an empty assistant message', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({
+        actions: [{ name: 'move', arguments: { x: 9, y: 3 } }],
+      }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = worldState.npcs[0];
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: worldState.player,
+      worldState,
+      playerMessage: 'Move aside.',
+    });
+
+    expect(result.responseText).toBe('');
+    expect(result.updatedWorldState.npcs[0].position).toEqual({ x: 9, y: 3 });
+    expect(result.updatedWorldState.actorConversationHistoryByActorId[npc.id]).toEqual([
+      { role: 'player', text: 'Move aside.' },
+    ]);
+    expect(result.actionExecutionTrace?.steps).toHaveLength(1);
+    expect(result.actionExecutionTrace?.steps[0]).toMatchObject({
+      status: 'success',
+      code: 'executed',
+    });
+  });
+
+  it('supports mixed text and actions in a single npc turn', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({
+        text: 'I will open the seal.',
+        actions: [{ name: 'use_item', arguments: { itemId: 'seal-key', targetId: 'seal-door' } }],
+      }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      inventory: [
+        {
+          itemId: 'seal-key',
+          displayName: 'Seal Key',
+          sourceObjectId: 'npc-1',
+          pickedUpAtTick: 0,
+        },
+      ],
+      position: { x: 8, y: 3 },
+    };
+    const stateWithDoor = {
+      ...worldState,
+      npcs: [npc],
+      doors: [
+        {
+          id: 'seal-door',
+          displayName: 'Seal Door',
+          position: { x: 8, y: 4 },
+          isOpen: false,
+          isLocked: true,
+          requiredItemId: 'seal-key',
+        },
+      ],
+    };
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: stateWithDoor.player,
+      worldState: stateWithDoor,
+      playerMessage: 'Can you open this?',
+    });
+
+    expect(result.responseText).toBe('Archivist: I will open the seal.');
+    expect(result.updatedWorldState.actorConversationHistoryByActorId[npc.id]).toEqual([
+      { role: 'player', text: 'Can you open this?' },
+      { role: 'assistant', text: 'I will open the seal.' },
+    ]);
+    expect(result.updatedWorldState.doors[0]).toMatchObject({
+      isOpen: true,
+      isLocked: false,
+    });
+    expect(result.actionExecutionTrace?.steps[0]).toMatchObject({
+      status: 'success',
+      code: 'executed',
+      targetId: 'seal-door',
+    });
+  });
+
+  it('records failed action traces without crashing npc interaction flow', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({
+        text: 'I cannot reach that from here.',
+        actions: [{ name: 'interact', arguments: { targetId: 'far-door' } }],
+      }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = worldState.npcs[0];
+    const stateWithFarDoor = {
+      ...worldState,
+      doors: [
+        {
+          id: 'far-door',
+          displayName: 'Far Door',
+          position: { x: 11, y: 7 },
+          isOpen: false,
+          isLocked: false,
+        },
+      ],
+    };
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: stateWithFarDoor.player,
+      worldState: stateWithFarDoor,
+      playerMessage: 'Try the door.',
+    });
+
+    expect(result.responseText).toBe('Archivist: I cannot reach that from here.');
+    expect(result.updatedWorldState.actorConversationHistoryByActorId[npc.id]).toEqual([
+      { role: 'player', text: 'Try the door.' },
+      { role: 'assistant', text: 'I cannot reach that from here.' },
+    ]);
+    expect(result.updatedWorldState.levelOutcome).toBeNull();
+    expect(result.actionExecutionTrace?.steps[0]).toMatchObject({
+      status: 'failed',
+      code: 'not_adjacent',
+      targetId: 'far-door',
+    });
   });
 
   it('preserves prior per-npc history when appending a new turn', async () => {
