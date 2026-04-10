@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createRuntimeInteractionResultBridge } from './interactionResultBridge';
 import type { InteractionDispatcher, InteractionHandlerResult } from '../interaction/interactionDispatcher';
+import type { NpcActionExecutionResult } from '../interaction/npcActionExecutor';
 import type { WorldState } from '../world/types';
 import type { Guard } from '../world/types';
 import type { LlmRequestError } from '../llm/client';
@@ -190,10 +191,11 @@ describe('createRuntimeInteractionResultBridge', () => {
     });
 
     const onAssistantMessage = vi.fn();
-    await bridge.sendConversationMessage('guard-1', 'Can I pass?', onAssistantMessage);
+    const sendResult = await bridge.sendConversationMessage('guard-1', 'Can I pass?', onAssistantMessage);
 
     expect(onAssistantMessage).toHaveBeenCalledWith('Not yet.');
     expect(resetToState).toHaveBeenCalledWith(updatedWorldState);
+    expect(sendResult).toEqual({ endedConversation: false });
   });
 
   it('returns false when action-modal chat target can no longer be resolved', () => {
@@ -274,11 +276,17 @@ describe('createRuntimeInteractionResultBridge', () => {
 
     const onAssistantMessage = vi.fn();
     const onLlmError = vi.fn();
-    await bridge.sendConversationMessage('guard-1', 'Can I pass?', onAssistantMessage, onLlmError);
+    const sendResult = await bridge.sendConversationMessage(
+      'guard-1',
+      'Can I pass?',
+      onAssistantMessage,
+      onLlmError,
+    );
 
     expect(onAssistantMessage).not.toHaveBeenCalled();
     expect(onLlmError).toHaveBeenCalledWith(llmError);
     expect(resetToState).toHaveBeenCalledWith(stateWithPlayerMessage);
+    expect(sendResult).toEqual({ endedConversation: false });
   });
 
   it('does not call onLlmError or reset state when result has no error', async () => {
@@ -329,10 +337,124 @@ describe('createRuntimeInteractionResultBridge', () => {
 
     const onAssistantMessage = vi.fn();
     const onLlmError = vi.fn();
-    await bridge.sendConversationMessage('guard-1', 'Can I pass?', onAssistantMessage, onLlmError);
+    const sendResult = await bridge.sendConversationMessage(
+      'guard-1',
+      'Can I pass?',
+      onAssistantMessage,
+      onLlmError,
+    );
 
     expect(onLlmError).not.toHaveBeenCalled();
     expect(onAssistantMessage).toHaveBeenCalledWith('Not yet.');
     expect(resetToState).toHaveBeenCalledWith(updatedWorldState);
+    expect(sendResult).toEqual({ endedConversation: false });
+  });
+
+  it('returns endedConversation=true after npc action execution ends the chat and commits world updates', async () => {
+    const initialState = createWorldState({
+      guards: [],
+      npcs: [
+        {
+          id: 'npc-1',
+          displayName: 'Archivist',
+          position: { x: 4, y: 4 },
+          npcType: 'archive_keeper',
+          dialogueContextKey: 'archive_keeper_intro',
+        },
+      ],
+      actorConversationHistoryByActorId: {
+        'npc-1': [
+          { role: 'player', text: 'Hello?' },
+          { role: 'assistant', text: 'Proceed.' },
+        ],
+      },
+    });
+    const updatedWorldState: WorldState = {
+      ...initialState,
+      npcs: [
+        {
+          ...initialState.npcs[0],
+          position: { x: 5, y: 4 },
+        },
+      ],
+      actorConversationHistoryByActorId: {
+        'npc-1': [
+          { role: 'player', text: 'Hello?' },
+          { role: 'assistant', text: 'Proceed.' },
+          { role: 'player', text: 'Move and end this.' },
+          { role: 'assistant', text: 'Understood.' },
+        ],
+      },
+    };
+    const actionExecutionTrace: NpcActionExecutionResult = {
+      updatedWorldState,
+      endedChat: true,
+      steps: [
+        {
+          index: 0,
+          action: { name: 'move', arguments: { x: 5, y: 4 } },
+          status: 'success',
+          code: 'executed',
+          message: 'Moved to (5, 4).',
+        },
+        {
+          index: 1,
+          action: { name: 'end_chat', arguments: {} },
+          status: 'success',
+          code: 'executed',
+          message: 'Conversation ended.',
+        },
+      ],
+    };
+
+    let worldState = initialState;
+    const resetToState = vi.fn((nextState: WorldState) => {
+      worldState = nextState;
+    });
+
+    const interactionDispatcher: InteractionDispatcher = {
+      dispatch: vi.fn((_target, _worldState, playerMessage) => {
+        if (!playerMessage) {
+          return {
+            kind: 'npc' as const,
+            targetId: 'npc-1',
+            displayName: 'Archivist',
+            isConversational: false,
+          };
+        }
+
+        return Promise.resolve({
+          kind: 'npc' as const,
+          targetId: 'npc-1',
+          displayName: 'Archivist',
+          updatedWorldState,
+          responseText: 'Archivist: Understood.',
+          isConversational: true,
+          actionExecutionTrace,
+        });
+      }),
+      resolveConversationalTarget: vi.fn((worldStateCandidate: WorldState, targetId: string) => {
+        const npc = worldStateCandidate.npcs.find((candidate) => candidate.id === targetId);
+        return npc ? { kind: 'npc' as const, target: npc } : null;
+      }),
+    };
+
+    const bridge = createRuntimeInteractionResultBridge({
+      world: { getState: () => worldState, resetToState },
+      interactionDispatcher,
+      onActionModalStarted: vi.fn(),
+      onConversationStarted: vi.fn(),
+    });
+
+    const onAssistantMessage = vi.fn();
+    const sendResult = await bridge.sendConversationMessage(
+      'npc-1',
+      'Move and end this.',
+      onAssistantMessage,
+    );
+
+    expect(onAssistantMessage).toHaveBeenCalledWith('Understood.');
+    expect(resetToState).toHaveBeenCalledWith(updatedWorldState);
+    expect(sendResult).toEqual({ endedConversation: true });
   });
 });

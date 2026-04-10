@@ -1,6 +1,7 @@
 import type { LlmClient, LlmRequestError } from '../llm/client';
 import type { ConversationMessage, WorldState } from '../world/types';
 import type { AdjacentTarget } from './adjacencyResolver';
+import type { NpcActionExecutionResult } from './npcActionExecutor';
 
 export interface InteractionHandlerResult {
   kind: AdjacentTarget['kind'];
@@ -11,6 +12,7 @@ export interface InteractionHandlerResult {
   levelOutcome?: 'win' | 'lose' | null;
   isConversational: boolean;
   llmError?: LlmRequestError;
+  actionExecutionTrace?: NpcActionExecutionResult;
 }
 
 export type InteractionDispatchResult = InteractionHandlerResult | Promise<InteractionHandlerResult>;
