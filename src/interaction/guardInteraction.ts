@@ -82,23 +82,21 @@ export const createGuardInteractionService = (llmClient: LlmClient): GuardIntera
       };
     }
 
-    const assistantText = llmResult.text;
-    const assistantMessageRecord: ConversationMessage = {
-      role: 'assistant',
-      text: assistantText,
-    };
+    const assistantText = llmResult.text ?? '';
 
     const updatedWorldState: WorldState = {
       ...request.worldState,
       actorConversationHistoryByActorId: {
         ...request.worldState.actorConversationHistoryByActorId,
-        [request.guard.id]: [...historyWithPlayerMessage, assistantMessageRecord],
+        [request.guard.id]: assistantText
+          ? [...historyWithPlayerMessage, { role: 'assistant', text: assistantText }]
+          : historyWithPlayerMessage,
       },
     };
 
     return {
       guardId: request.guard.id,
-      responseText: `${request.guard.displayName}: ${assistantText}`,
+      responseText: assistantText ? `${request.guard.displayName}: ${assistantText}` : '',
       updatedWorldState,
     };
   },
