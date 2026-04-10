@@ -50,8 +50,8 @@ const createWorldState = (): WorldState => ({
       id: 'door-1',
       displayName: 'West Door',
       position: { x: 2, y: 10 },
-      doorState: 'closed',
-      outcome: 'safe',
+      isOpen: false, isLocked: false,
+      isSafe: true,
           spriteSet: {
             default: '/assets/medieval_door_wooden_closed.svg',
           },

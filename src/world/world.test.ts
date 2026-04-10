@@ -113,7 +113,7 @@ describe('createWorld', () => {
         {
           id: 'door-blocker',
           displayName: 'Door blocker',
-          doorState: 'closed',
+          isOpen: false, isLocked: false,
           position: { x: 2, y: 1 },
         },
       ],

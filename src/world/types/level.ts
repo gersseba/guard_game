@@ -32,8 +32,12 @@ export interface LevelDoorDto {
   displayName: string;
   x: number;
   y: number;
-  doorState: 'open' | 'closed' | 'locked';
-  outcome?: 'safe' | 'danger';
+  /** Whether the door starts open. */
+  isOpen: boolean;
+  /** Whether the door starts locked. */
+  isLocked: boolean;
+  /** Deterministic level outcome trigger for this door. true => win, false => lose. */
+  isSafe?: boolean;
   /** Item ID required to unlock this door */
   requiredItemId?: string;
   spriteAssetPath?: string;

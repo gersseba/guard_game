@@ -74,6 +74,19 @@ export const createDefaultItemUseResolver = (): ItemUseResolver => {
       if (adjacentTarget.kind === 'door') {
         const door = adjacentTarget.target;
 
+        if (door.isOpen || !door.isLocked) {
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'no-target',
+            target: {
+              kind: 'door',
+              targetId: door.id,
+            },
+          };
+        }
+
         // Door has no required item: item-use has no effect on this door
         if (!door.requiredItemId) {
           return {

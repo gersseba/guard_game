@@ -61,7 +61,7 @@ export const createTestDoor = (id: string, overrides?: Partial<Door>): Door => (
   id,
   displayName: 'Test Door',
   position: { x: 1, y: 0 },
-  doorState: 'open',
+  isOpen: true, isLocked: false,
   ...(overrides ?? {}),
 });
 

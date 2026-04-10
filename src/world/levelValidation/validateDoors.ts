@@ -18,16 +18,23 @@ export const validateDoors = (raw: Record<string, unknown>): void => {
       typeof door['displayName'] !== 'string' ||
       typeof door['x'] !== 'number' ||
       typeof door['y'] !== 'number' ||
-      typeof door['doorState'] !== 'string'
+      typeof door['isOpen'] !== 'boolean' ||
+      typeof door['isLocked'] !== 'boolean'
     ) {
       throw new Error(
-        `Invalid level data: door at index ${i} must have id, displayName, x, y, and doorState`,
+        `Invalid level data: door at index ${i} must have id, displayName, x, y, isOpen, and isLocked`,
       );
     }
 
-    if (door['outcome'] !== undefined && door['outcome'] !== 'safe' && door['outcome'] !== 'danger') {
+    if (door['isSafe'] !== undefined && typeof door['isSafe'] !== 'boolean') {
       throw new Error(
-        `Invalid level data: door at index ${i} has invalid outcome (must be 'safe' or 'danger')`,
+        `Invalid level data: door at index ${i} has invalid isSafe (must be a boolean when provided)`,
+      );
+    }
+
+    if (door['isOpen'] === true && door['isLocked'] === true) {
+      throw new Error(
+        `Invalid level data: door at index ${i} cannot be both open and locked`,
       );
     }
 

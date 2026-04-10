@@ -54,8 +54,9 @@
       "displayName": "Left Door",
       "x": 7,
       "y": 8,
-      "doorState": "closed",
-      "outcome": "safe",
+      "isOpen": false,
+      "isLocked": false,
+      "isSafe": true,
       "spriteSet": {
         "default": "/assets/medieval_door_wooden_closed.svg"
       }
@@ -65,8 +66,9 @@
       "displayName": "Right Door",
       "x": 13,
       "y": 8,
-      "doorState": "closed",
-      "outcome": "danger",
+      "isOpen": false,
+      "isLocked": false,
+      "isSafe": false,
       "spriteSet": {
         "default": "/assets/medieval_door_wooden_closed.svg"
       }

@@ -107,7 +107,7 @@ describe('itemUseResolver', () => {
           id: 'door-1',
           displayName: 'West Door',
           position: { x: 5, y: 6 },
-          doorState: 'locked',
+          isOpen: false, isLocked: true,
         },
       ],
     });

@@ -265,20 +265,20 @@ describe('deserializeLevel', () => {
     });
   });
 
-  it('maps door flat fields to nested Door with correct position and doorState', () => {
+  it('maps door flat fields to nested Door with explicit open/locked booleans', () => {
     const level: LevelData = {
       ...minimalLevel,
       doors: [
-        { id: 'door-1', displayName: 'Main Gate', x: 0, y: 10, doorState: 'locked', outcome: 'safe' },
-        { id: 'door-2', displayName: 'Side Door', x: 19, y: 0, doorState: 'open', outcome: 'danger' },
+        { id: 'door-1', displayName: 'Main Gate', x: 0, y: 10, isOpen: false, isLocked: true, isSafe: true },
+        { id: 'door-2', displayName: 'Side Door', x: 19, y: 0, isOpen: true, isLocked: false, isSafe: false },
       ],
     };
 
     const state = deserializeLevel(level);
 
     expect(state.doors).toEqual([
-      { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, doorState: 'locked', outcome: 'safe', isUnlocked: false },
-      { id: 'door-2', displayName: 'Side Door', position: { x: 19, y: 0 }, doorState: 'open', outcome: 'danger', isUnlocked: false },
+      { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, isOpen: false, isLocked: true, isSafe: true },
+      { id: 'door-2', displayName: 'Side Door', position: { x: 19, y: 0 }, isOpen: true, isLocked: false, isSafe: false },
     ]);
   });
 
@@ -291,8 +291,8 @@ describe('deserializeLevel', () => {
           displayName: 'Main Gate',
           x: 0,
           y: 10,
-          doorState: 'closed',
-          outcome: 'safe',
+          isOpen: false, isLocked: false,
+          isSafe: true,
           spriteSet: {
             default: '/assets/medieval_door_wooden_closed.svg',
           },
@@ -322,8 +322,8 @@ describe('deserializeLevel', () => {
           displayName: 'Main Gate',
           x: 0,
           y: 10,
-          doorState: 'closed',
-          outcome: 'safe',
+          isOpen: false, isLocked: false,
+          isSafe: true,
           spriteSet: {
             default: '/assets/medieval_door_wooden_closed.svg',
           },
@@ -380,8 +380,8 @@ describe('deserializeLevel', () => {
           displayName: 'Overlap Door',
           x: 2,
           y: 3,
-          doorState: 'closed',
-          outcome: 'safe',
+          isOpen: false, isLocked: false,
+          isSafe: true,
         },
       ],
     };
@@ -517,7 +517,7 @@ describe('validateLevelData', () => {
   it('throws when interactiveObject pickupItem is invalid', () => {
     const bad = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
       interactiveObjects: [
         {
           id: 'crate-1',
@@ -564,7 +564,7 @@ describe('validateLevelData', () => {
   it('throws when interactiveObject itemUseRules has invalid rule shape', () => {
     const bad = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
       interactiveObjects: [
         {
           id: 'crate-1',
@@ -592,7 +592,7 @@ describe('validateLevelData', () => {
   it('accepts mechanism interactive objects and preserves their sprite asset path', () => {
     const level: LevelData = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
       interactiveObjects: [
         {
           id: 'mechanism-1',
@@ -681,7 +681,7 @@ describe('riddle level', () => {
     expect(state.grid.height).toBe(20);
   });
 
-  it('all guards start in idle state and all doors start closed', () => {
+  it('all guards start idle and all doors start closed/unlocked', () => {
     const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
@@ -689,7 +689,8 @@ describe('riddle level', () => {
       expect(guard.guardState).toBe('idle');
     }
     for (const door of state.doors) {
-      expect(door.doorState).toBe('closed');
+      expect(door.isOpen).toBe(false);
+      expect(door.isLocked).toBe(false);
     }
   });
 
@@ -708,12 +709,12 @@ describe('riddle level', () => {
     expect(state.interactiveObjects).toEqual([]);
   });
 
-  it('preserves guard traits and door outcomes from level json', () => {
+  it('preserves guard traits and door safety values from level json', () => {
     const level = validateLevelData(riddleRaw);
     const state = deserializeLevel(level);
 
     expect(state.guards.map((guard) => guard.traits?.truthMode)).toEqual(['truth-teller', 'liar']);
-    expect(state.doors.map((door) => door.outcome)).toEqual(['safe', 'danger']);
+    expect(state.doors.map((door) => door.isSafe)).toEqual([true, false]);
   });
 });
 
@@ -722,7 +723,7 @@ describe('traits field', () => {
     const level: LevelData = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Truthful', x: 5, y: 7, guardState: 'idle', traits: { truthMode: 'truth-teller' } }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -735,7 +736,7 @@ describe('traits field', () => {
     const level: LevelData = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Lying', x: 5, y: 7, guardState: 'idle', traits: { truthMode: 'liar' } }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -748,7 +749,7 @@ describe('traits field', () => {
     const level: LevelData = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Unknown', x: 5, y: 7, guardState: 'idle' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -761,7 +762,7 @@ describe('traits field', () => {
     const bad = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Bad', x: 5, y: 7, guardState: 'idle', traits: 'dishonest' as unknown }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('invalid traits (must be a plain object when provided)');
@@ -771,7 +772,7 @@ describe('traits field', () => {
     const bad = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Bad', x: 5, y: 7, guardState: 'idle', traits: { truthMode: 42 } as unknown }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('traits.truthMode must be a string');
@@ -781,7 +782,7 @@ describe('traits field', () => {
     const bad = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Bad', x: 5, y: 7, guardState: 'idle', spriteAssetPath: 42 }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('invalid spriteAssetPath');
@@ -800,60 +801,60 @@ describe('traits field', () => {
           spriteSet: { front: 42 },
         },
       ],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 2, y: 3, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('spriteSet.front must be a string');
   });
 });
 
-describe('outcome field', () => {
-  it('accepts doors with outcome: "safe"', () => {
+describe('isSafe field', () => {
+  it('accepts doors with isSafe=true', () => {
     const level: LevelData = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'Safe', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Safe', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
     const state = deserializeLevel(validated);
 
-    expect(state.doors[0].outcome).toBe('safe');
+    expect(state.doors[0].isSafe).toBe(true);
   });
 
-  it('accepts doors with outcome: "danger"', () => {
+  it('accepts doors with isSafe=false', () => {
     const level: LevelData = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'Danger', x: 0, y: 10, doorState: 'open', outcome: 'danger' }],
+      doors: [{ id: 'door-1', displayName: 'Danger', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: false }],
     };
 
     const validated = validateLevelData(level);
     const state = deserializeLevel(validated);
 
-    expect(state.doors[0].outcome).toBe('danger');
+    expect(state.doors[0].isSafe).toBe(false);
   });
 
-  it('accepts doors without outcome field (outcome is optional for locked/key-based doors)', () => {
+  it('accepts doors without isSafe field (optional for locked/key-based doors)', () => {
     const noOutcome = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'No outcome', x: 0, y: 10, doorState: 'locked' }],
+      doors: [{ id: 'door-1', displayName: 'No outcome', x: 0, y: 10, isOpen: false, isLocked: true }],
     };
 
     expect(() => validateLevelData(noOutcome)).not.toThrow();
   });
 
-  it('rejects doors with invalid outcome value', () => {
+  it('rejects doors with non-boolean isSafe', () => {
     const bad = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'Bad', x: 0, y: 10, doorState: 'open', outcome: 'unclear' }],
+      doors: [{ id: 'door-1', displayName: 'Bad', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: 'unclear' }],
     };
 
-    expect(() => validateLevelData(bad)).toThrowError('invalid outcome');
+    expect(() => validateLevelData(bad)).toThrowError('invalid isSafe');
   });
 
   it('rejects doors with non-string spriteSet default', () => {
     const bad = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'Bad', x: 0, y: 10, doorState: 'open', outcome: 'safe', spriteSet: { default: 7 } }],
+      doors: [{ id: 'door-1', displayName: 'Bad', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true, spriteSet: { default: 7 } }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('spriteSet.default must be a string');
@@ -864,7 +865,7 @@ describe('levelOutcome field', () => {
   it('initializes to null when level is deserialized', () => {
     const level: LevelData = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const state = deserializeLevel(validateLevelData(level));
@@ -877,7 +878,7 @@ describe('npcs field', () => {
   it('accepts level data without npcs field (backward compatibility)', () => {
     const level: LevelData = {
       ...minimalLevel,
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -890,7 +891,7 @@ describe('npcs field', () => {
     const level: LevelData = {
       ...minimalLevel,
       npcs: [],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -906,7 +907,7 @@ describe('npcs field', () => {
         { id: 'npc-1', displayName: 'Archivist', x: 8, y: 3, npcType: 'archive_keeper' },
         { id: 'npc-2', displayName: 'Scholar', x: 12, y: 5, npcType: 'scholar' },
       ],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -934,7 +935,7 @@ describe('npcs field', () => {
     const level: LevelData = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Guard', x: 5, y: 5, npcType: 'GUARD_CAPTAIN' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -947,7 +948,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: { id: 'npc-1' },
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('npcs must be an array');
@@ -957,7 +958,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ displayName: 'Npc', x: 5, y: 5, npcType: 'archivist' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError(
@@ -969,7 +970,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', x: 5, y: 5, npcType: 'archivist' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError(
@@ -981,7 +982,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', y: 5, npcType: 'archivist' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError(
@@ -993,7 +994,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, npcType: 'archivist' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError(
@@ -1005,7 +1006,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5 }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError(
@@ -1017,7 +1018,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 123 }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError(
@@ -1029,7 +1030,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', x: 'five', y: 5, npcType: 'archivist' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError(
@@ -1041,7 +1042,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 'five', npcType: 'archivist' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError(
@@ -1053,7 +1054,7 @@ describe('npcs field', () => {
     const level: LevelData = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Guardian', x: 5, y: 5, npcType: 'gate_guardian' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -1075,7 +1076,7 @@ describe('npcs field', () => {
           spriteAssetPath: '/assets/medieval_npc_villager.svg',
         },
       ],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -1088,7 +1089,7 @@ describe('npcs field', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 'archivist', spriteAssetPath: 123 }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('invalid spriteAssetPath');
@@ -1110,7 +1111,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
           instanceBehavior: 'Speaks in riddles.',
         },
       ],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -1134,7 +1135,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
           instanceBehavior: 'Speaks formally at all times.',
         },
       ],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const validated = validateLevelData(level);
@@ -1148,7 +1149,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
     const level: LevelData = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Guard', x: 5, y: 7, guardState: 'idle' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const state = deserializeLevel(validateLevelData(level));
@@ -1161,7 +1162,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
     const level: LevelData = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 'archive_keeper' }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const state = deserializeLevel(validateLevelData(level));
@@ -1174,7 +1175,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
     const bad = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Guard', x: 5, y: 7, guardState: 'idle', instanceKnowledge: 42 }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('invalid instanceKnowledge');
@@ -1184,7 +1185,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
     const bad = {
       ...minimalLevel,
       guards: [{ id: 'guard-1', displayName: 'Guard', x: 5, y: 7, guardState: 'idle', instanceBehavior: true }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('invalid instanceBehavior');
@@ -1194,7 +1195,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 'archivist', instanceKnowledge: [] }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('invalid instanceKnowledge');
@@ -1204,7 +1205,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
     const bad = {
       ...minimalLevel,
       npcs: [{ id: 'npc-1', displayName: 'Npc', x: 5, y: 5, npcType: 'archivist', instanceBehavior: 0 }],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('invalid instanceBehavior');
@@ -1235,7 +1236,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
           instanceBehavior: 'Refuses to discuss recent events.',
         },
       ],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const state = deserializeLevel(validateLevelData(level));
@@ -1280,7 +1281,7 @@ describe('NPC capability fields', () => {
           ],
         },
       ],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     const state = deserializeLevel(validateLevelData(level));
@@ -1323,7 +1324,7 @@ describe('NPC capability fields', () => {
           },
         },
       ],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('patrol.path[0] is out of bounds');
@@ -1347,7 +1348,7 @@ describe('NPC capability fields', () => {
           },
         },
       ],
-      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, doorState: 'open', outcome: 'safe' }],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
     expect(() => validateLevelData(bad)).toThrowError('triggers.onTalk.setFact must be a non-empty string');

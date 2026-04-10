@@ -38,8 +38,8 @@ describe('action modal routing', () => {
         id: 'door-1',
         displayName: 'North Door',
         position: { x: 1, y: 2 },
-        doorState: 'closed',
-        outcome: 'safe',
+        isOpen: false, isLocked: false,
+        isSafe: true,
       },
     };
     const objectTarget: AdjacentTarget = {

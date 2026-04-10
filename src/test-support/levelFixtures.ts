@@ -18,7 +18,7 @@ export const keyArmoryLevelFixture: LevelData = {
       displayName: 'Armory Door',
       x: 11,
       y: 8,
-      doorState: 'locked',
+      isOpen: false, isLocked: true,
       requiredItemId: 'armory-key',
     },
   ],

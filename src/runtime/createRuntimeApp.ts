@@ -119,7 +119,7 @@ export const createRuntimeApp = (appElement: HTMLDivElement): RuntimeApp => {
         updatedState = {
           ...updatedState,
           doors: updatedState.doors.map((door) =>
-            door.id === event.doorUnlockedId ? { ...door, isUnlocked: true } : door,
+            door.id === event.doorUnlockedId ? { ...door, isLocked: false, isOpen: true } : door,
           ),
         };
       }

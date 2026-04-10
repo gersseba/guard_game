@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { mapNpcWithRiddleClue } from './mapNpcWithRiddleClue';
 
-const safeDoor = { id: 'door-safe', displayName: 'Safe Door', x: 0, y: 10, doorState: 'closed' as const, outcome: 'safe' as const };
-const dangerDoor = { id: 'door-danger', displayName: 'Danger Door', x: 19, y: 10, doorState: 'closed' as const, outcome: 'danger' as const };
+const safeDoor = { id: 'door-safe', displayName: 'Safe Door', x: 0, y: 10, isOpen: false, isLocked: false as const, isSafe: true as const };
+const dangerDoor = { id: 'door-danger', displayName: 'Danger Door', x: 19, y: 10, isOpen: false, isLocked: false as const, isSafe: false as const };
 
 const baseNpc = {
   id: 'npc-1',

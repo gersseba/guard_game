@@ -39,8 +39,8 @@ const makeDoor = (x: number, y: number): Door => ({
   id: `door-${x}-${y}`,
   displayName: 'Door',
   position: { x, y },
-  doorState: 'closed',
-  outcome: 'safe',
+  isOpen: false, isLocked: false,
+  isSafe: true,
 });
 
 const makeNpc = (x: number, y: number): Npc => ({

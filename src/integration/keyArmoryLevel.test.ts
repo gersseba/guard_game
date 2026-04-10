@@ -22,7 +22,7 @@ describe('key-armory level integration', () => {
     expect(worldState.player.position).toEqual({ x: 10, y: 12 });
     expect(worldState.doors).toHaveLength(1);
     expect(worldState.doors[0].id).toBe('armory-door');
-    expect(worldState.doors[0].doorState).toBe('locked');
+    expect(worldState.doors[0].isLocked).toBe(true);
     expect(worldState.interactiveObjects).toHaveLength(1);
     expect(worldState.interactiveObjects[0].id).toBe('old-crate');
     expect(worldState.interactiveObjects[0].pickupItem?.itemId).toBe('armory-key');
@@ -91,11 +91,13 @@ describe('key-armory level integration', () => {
 
   it('armory door state persists through JSON serialization roundtrip', () => {
     const worldState = createLevelState();
-    worldState.doors[0].isUnlocked = true;
+    worldState.doors[0].isOpen = true;
+    worldState.doors[0].isLocked = false;
 
     const serialized = JSON.stringify(worldState);
     const parsed: WorldState = JSON.parse(serialized);
 
-    expect(parsed.doors[0].isUnlocked).toBe(true);
+    expect(parsed.doors[0].isOpen).toBe(true);
+    expect(parsed.doors[0].isLocked).toBe(false);
   });
 });

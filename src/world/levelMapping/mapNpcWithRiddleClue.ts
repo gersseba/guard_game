@@ -1,6 +1,10 @@
 import type { LevelDoorDto, LevelNpcDto, Npc } from '../types';
 import { mapNpcDtoToRuntime } from '../entities/dtoRuntimeSeams';
 
+const resolveDoorSafety = (door: LevelDoorDto): boolean => {
+  return door.isSafe === true;
+};
+
 /**
  * Maps a LevelNpcDto to a runtime Npc, resolving the riddleClue when present.
  * Requires the doors array to resolve the mustStateDoorAs claim for riddleClue NPCs.
@@ -24,7 +28,7 @@ export const mapNpcWithRiddleClue = (dto: LevelNpcDto, doors: LevelDoorDto[]): N
     }
 
     const mustStateDoorAs: 'safe' | 'danger' =
-      (door.outcome === 'safe') === (dto.riddleClue.truthBehavior === 'truthful')
+      resolveDoorSafety(door) === (dto.riddleClue.truthBehavior === 'truthful')
         ? 'safe'
         : 'danger';
 

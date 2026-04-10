@@ -11,21 +11,26 @@ export interface DoorInteractionResult {
   levelOutcome?: 'win' | 'lose';
 }
 
-const DOOR_STATE_RESPONSES: Record<Door['doorState'], string> = {
-  open: 'The door is open.',
-  closed: 'The door is closed.',
-  locked: 'The door is locked.',
+const getDoorStateResponse = (door: Door): string => {
+  if (door.isOpen) {
+    return 'The door is open.';
+  }
+
+  if (door.isLocked) {
+    return 'The door is locked.';
+  }
+
+  return 'The door is closed.';
 };
 
 export const handleDoorInteraction = (request: DoorInteractionRequest): DoorInteractionResult => {
   const baseResult: DoorInteractionResult = {
     doorId: request.door.id,
-    responseText: DOOR_STATE_RESPONSES[request.door.doorState],
+    responseText: getDoorStateResponse(request.door),
   };
 
-  // Add levelOutcome if door has outcome field
-  if (request.door.outcome) {
-    baseResult.levelOutcome = request.door.outcome === 'safe' ? 'win' : 'lose';
+  if (request.door.isSafe !== undefined) {
+    baseResult.levelOutcome = request.door.isSafe ? 'win' : 'lose';
   }
 
   return baseResult;

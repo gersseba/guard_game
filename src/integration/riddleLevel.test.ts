@@ -74,11 +74,11 @@ describe('riddle level integration pipeline', () => {
 
     const safeDoor = worldState.doors.find((door) => door.id === 'door-safe');
     expect(safeDoor).toBeDefined();
-    expect(safeDoor?.outcome).toBe('safe');
+    expect(safeDoor?.isSafe).toBe(true);
 
     const dangerDoor = worldState.doors.find((door) => door.id === 'door-danger');
     expect(dangerDoor).toBeDefined();
-    expect(dangerDoor?.outcome).toBe('danger');
+    expect(dangerDoor?.isSafe).toBe(false);
   });
 
   it('initializes with levelOutcome as null', () => {
@@ -141,7 +141,7 @@ describe('riddle level integration pipeline', () => {
     expect(first).not.toBe(second);
   });
 
-  it('guards are idle and doors are open', () => {
+  it('guards are idle and doors are closed', () => {
     const worldState = createRiddleState();
 
     worldState.guards.forEach((guard) => {
@@ -149,7 +149,7 @@ describe('riddle level integration pipeline', () => {
     });
 
     worldState.doors.forEach((door) => {
-      expect(door.doorState).toBe('closed');
+      expect(door.isOpen).toBe(false);
     });
   });
 });

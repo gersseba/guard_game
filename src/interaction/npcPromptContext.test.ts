@@ -155,8 +155,8 @@ describe('buildNpcPromptContext', () => {
         id: 'door-1',
         displayName: 'North Door',
         position: { x: 2, y: 1 },
-        doorState: 'closed',
-        outcome: 'safe',
+        isOpen: false, isLocked: false,
+        isSafe: true,
       },
     ];
 

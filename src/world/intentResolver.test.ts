@@ -163,9 +163,9 @@ describe('intentResolver', () => {
           {
             id: 'door-1',
             displayName: 'Locked Door',
-            doorState: 'closed',
+            isOpen: false,
+            isLocked: true,
             position: { x: 0, y: 1 }, // directly west of player
-            isUnlocked: false,
           },
         ],
       });
@@ -193,9 +193,9 @@ describe('intentResolver', () => {
           {
             id: 'door-1',
             displayName: 'Unlocked Door',
-            doorState: 'closed',
+            isOpen: true,
+            isLocked: false,
             position: { x: 0, y: 1 }, // directly west of player
-            isUnlocked: true,
           },
         ],
       });

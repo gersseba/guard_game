@@ -349,7 +349,7 @@ describe('InteractionDispatcher', () => {
       const dispatcher = createInteractionDispatcher({ llmClient });
       const door: Door = {
         ...createTestDoor('door-1'),
-        outcome: 'safe',
+        isSafe: true,
       };
       const worldState = createTestWorldState({ doors: [door] });
       const target = { kind: 'door' as const, target: door };

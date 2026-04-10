@@ -32,15 +32,15 @@ describe('buildGuardWorldContextPayload', () => {
         id: 'door-2',
         displayName: 'South Door',
         position: { x: 4, y: 7 },
-        doorState: 'closed',
-        outcome: 'danger',
+        isOpen: false, isLocked: false,
+        isSafe: false,
       },
       {
         id: 'door-1',
         displayName: 'North Door',
         position: { x: 5, y: 6 },
-        doorState: 'open',
-        outcome: 'safe',
+        isOpen: true, isLocked: false,
+        isSafe: true,
       },
     ];
 

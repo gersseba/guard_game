@@ -154,7 +154,7 @@ export const ACTOR_TYPE_WORLD_KNOWLEDGE_BUILDERS: Record<string, ActorTypeWorldK
         id: door.id,
         displayName: door.displayName,
         position: { x: door.position.x, y: door.position.y },
-        safe: door.outcome === 'safe',
+        safe: door.isSafe === true,
       }));
 
     return {

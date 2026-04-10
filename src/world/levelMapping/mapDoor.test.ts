@@ -6,7 +6,8 @@ const baseDoor = {
   displayName: 'Main Gate',
   x: 0,
   y: 10,
-  doorState: 'closed' as const,
+  isOpen: false,
+  isLocked: false,
 };
 
 describe('mapDoorDtoToRuntime', () => {
@@ -16,30 +17,31 @@ describe('mapDoorDtoToRuntime', () => {
     expect(result.position).toEqual({ x: 0, y: 10 });
   });
 
-  it('preserves id, displayName, and doorState', () => {
+  it('preserves id, displayName, isOpen, and isLocked', () => {
     const result = mapDoorDtoToRuntime(baseDoor);
 
     expect(result.id).toBe('door-1');
     expect(result.displayName).toBe('Main Gate');
-    expect(result.doorState).toBe('closed');
+    expect(result.isOpen).toBe(false);
+    expect(result.isLocked).toBe(false);
   });
 
-  it('initializes isUnlocked to false', () => {
+  it('does not inject legacy unlock state', () => {
     const result = mapDoorDtoToRuntime(baseDoor);
 
-    expect(result.isUnlocked).toBe(false);
+    expect('isUnlocked' in result).toBe(false);
   });
 
-  it('passes through outcome when provided', () => {
-    const result = mapDoorDtoToRuntime({ ...baseDoor, outcome: 'safe' });
+  it('maps isSafe when provided', () => {
+    const result = mapDoorDtoToRuntime({ ...baseDoor, isSafe: true });
 
-    expect(result.outcome).toBe('safe');
+    expect(result.isSafe).toBe(true);
   });
 
-  it('omits outcome when not provided', () => {
+  it('omits isSafe when no safety outcome is provided', () => {
     const result = mapDoorDtoToRuntime(baseDoor);
 
-    expect(result.outcome).toBeUndefined();
+    expect(result.isSafe).toBeUndefined();
   });
 
   it('passes through requiredItemId when provided', () => {
@@ -68,7 +70,7 @@ describe('mapDoorDtoToRuntime', () => {
   });
 
   it('is deterministic — same input always produces the same output', () => {
-    const dto = { ...baseDoor, outcome: 'danger' as const };
+    const dto = { ...baseDoor, isSafe: false as const };
 
     expect(mapDoorDtoToRuntime(dto)).toEqual(mapDoorDtoToRuntime(dto));
   });

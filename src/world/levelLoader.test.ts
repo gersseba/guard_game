@@ -170,8 +170,8 @@ describe('fetchAndLoadLevel', () => {
           displayName: 'Overlap Door',
           x: 2,
           y: 3,
-          doorState: 'closed',
-          outcome: 'safe',
+          isOpen: false, isLocked: false,
+          isSafe: true,
         },
       ],
     });
