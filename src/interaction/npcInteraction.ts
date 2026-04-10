@@ -164,16 +164,18 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
       };
     }
 
-    const assistantText = llmResult.text;
-
+    const assistantText = llmResult.text ?? '';
     const assistantMessageRecord: ConversationMessage = {
       role: 'assistant',
       text: assistantText,
     };
+    const nextHistoryForNpc: ConversationMessage[] = assistantText
+      ? [...historyWithPlayerMessage, assistantMessageRecord]
+      : historyWithPlayerMessage;
 
-    const updatedHistoryByActorId = {
+    const updatedHistoryByActorId: WorldState['actorConversationHistoryByActorId'] = {
       ...request.worldState.actorConversationHistoryByActorId,
-      [request.npc.id]: [...historyWithPlayerMessage, assistantMessageRecord],
+      [request.npc.id]: nextHistoryForNpc,
     };
 
     const stateWithUpdatedHistory: WorldState = {
@@ -187,7 +189,7 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
     const inventoryResult = applyInventoryOutcome(
       npcAfterTalkTrigger,
       stateWithUpdatedHistory.player,
-      'outcome' in llmResult ? llmResult.outcome : undefined,
+      llmResult.outcome,
     );
 
     const updatedWorldState: WorldState = {
@@ -200,7 +202,7 @@ export const createNpcInteractionService = (llmClient: LlmClient): NpcInteractio
 
     return {
       npcId: request.npc.id,
-      responseText: `${request.npc.displayName}: ${assistantText}`,
+      responseText: assistantText ? `${request.npc.displayName}: ${assistantText}` : '',
       updatedWorldState,
     };
   },

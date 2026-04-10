@@ -3,6 +3,7 @@ import {
   createGeminiLlmClient,
   isLlmRequestError,
 } from './client';
+import { createDefaultNpcFunctionRegistry } from '../interaction/npcActionFunctions';
 
 const prompt = {
   actorId: 'npc-1',
@@ -35,6 +36,227 @@ describe('createGeminiLlmClient', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(response).toEqual({ text: 'Welcome, traveler.' });
+  });
+
+  it('returns one normalized function call when Gemini responds with a single tool call', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  functionCall: {
+                    name: 'move',
+                    args: { x: 5, y: 2 },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    }));
+
+    const client = createGeminiLlmClient({
+      apiKey: 'test-key',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    const response = await client.complete(prompt);
+
+    expect(response).toEqual({
+      actions: [
+        {
+          name: 'move',
+          arguments: { x: 5, y: 2 },
+        },
+      ],
+    });
+  });
+
+  it('preserves multiple function calls in Gemini part order', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  functionCall: {
+                    name: 'interact',
+                    args: { targetId: 'lever-1' },
+                  },
+                },
+                {
+                  functionCall: {
+                    name: 'end_chat',
+                    args: { reason: 'interaction complete' },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    }));
+
+    const client = createGeminiLlmClient({
+      apiKey: 'test-key',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    const response = await client.complete(prompt);
+
+    expect(response).toEqual({
+      actions: [
+        {
+          name: 'interact',
+          arguments: { targetId: 'lever-1' },
+        },
+        {
+          name: 'end_chat',
+          arguments: { reason: 'interaction complete' },
+        },
+      ],
+    });
+  });
+
+  it('returns mixed text and normalized function calls from Gemini parts', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                { text: 'I can open the way. ' },
+                {
+                  functionCall: {
+                    name: 'use_item',
+                    args: { itemId: 'seal-key', targetId: 'gate-1' },
+                  },
+                },
+                { text: 'Stand back.' },
+              ],
+            },
+          },
+        ],
+      }),
+    }));
+
+    const client = createGeminiLlmClient({
+      apiKey: 'test-key',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    const response = await client.complete(prompt);
+
+    expect(response).toEqual({
+      text: 'I can open the way. Stand back.',
+      actions: [
+        {
+          name: 'use_item',
+          arguments: { itemId: 'seal-key', targetId: 'gate-1' },
+        },
+      ],
+    });
+  });
+
+  it('returns deterministic structured error for malformed function payloads', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  functionCall: {
+                    name: 'move',
+                    args: { x: 'east', y: 2 },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    }));
+
+    const client = createGeminiLlmClient({
+      apiKey: 'test-key',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    const response = await client.complete(prompt);
+
+    expect(isLlmRequestError(response)).toBe(true);
+    if (isLlmRequestError(response)) {
+      expect(response).toEqual({
+        kind: 'llm_request_error',
+        message: 'Malformed function call payload from LLM.',
+      });
+    }
+  });
+
+  it('includes Gemini tool declarations when available functions are supplied', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: 'Acknowledged.' }],
+            },
+          },
+        ],
+      }),
+    }));
+
+    const client = createGeminiLlmClient({
+      apiKey: 'test-key',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    const availableFunctions = createDefaultNpcFunctionRegistry().resolveFunctions({
+      id: 'npc-1',
+      displayName: 'Archivist',
+      position: { x: 1, y: 1 },
+      npcType: 'archivist',
+      dialogueContextKey: 'archivist_default',
+    });
+
+    await client.complete({
+      ...prompt,
+      availableFunctions,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const firstCall = fetchImpl.mock.calls.at(0) as unknown[] | undefined;
+    expect(firstCall).toBeDefined();
+    const requestInitCandidate = firstCall && firstCall.length > 1 ? firstCall[1] : {};
+    const requestInit =
+      typeof requestInitCandidate === 'object' && requestInitCandidate !== null
+        ? (requestInitCandidate as { body?: unknown })
+        : {};
+    const requestBody = JSON.parse(String(requestInit.body)) as {
+      tools?: Array<{ functionDeclarations?: Array<{ name: string }> }>;
+      toolConfig?: { functionCallingConfig?: { mode?: string } };
+    };
+
+    expect(requestBody.toolConfig).toEqual({
+      functionCallingConfig: {
+        mode: 'AUTO',
+      },
+    });
+    expect(requestBody.tools?.[0]?.functionDeclarations?.map((definition) => definition.name)).toEqual([
+      'end_chat',
+      'move',
+      'interact',
+      'use_item',
+    ]);
   });
 
   it('returns deterministic fallback when API key is missing', async () => {
