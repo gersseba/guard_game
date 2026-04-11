@@ -7,7 +7,7 @@ describe('inventory overlay', () => {
   let hostElement: HTMLDivElement;
   let onCloseCalls: number;
   let onClose: () => void;
-  let onItemSelected: ReturnType<typeof vi.fn>;
+  let onItemSelected: ReturnType<typeof vi.fn<(slotIndex: number) => void>>;
 
   beforeEach(() => {
     hostElement = document.createElement('div');
@@ -16,7 +16,7 @@ describe('inventory overlay', () => {
     onClose = (): void => {
       onCloseCalls += 1;
     };
-    onItemSelected = vi.fn();
+    onItemSelected = vi.fn<(slotIndex: number) => void>();
   });
 
   afterEach(() => {
