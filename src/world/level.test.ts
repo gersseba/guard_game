@@ -15,7 +15,6 @@ const minimalLevel: LevelData = {
   name: 'Test Level',
   premise: 'A deterministic test premise.',
   goal: 'Reach the safe test door.',
-  layoutPath: './test.layout.txt',
   player: { x: 2, y: 3 },
   guards: [],
   doors: [],
@@ -503,16 +502,8 @@ describe('validateLevelData', () => {
     expect(() => validateLevelData({ ...minimalLevel, goal: '' })).toThrowError('goal must be a non-empty string');
   });
 
-  it('throws when layoutPath is missing or empty', () => {
-    const missingLayoutPath = { ...minimalLevel } as Omit<LevelData, 'layoutPath'>;
-    delete (missingLayoutPath as Record<string, unknown>).layoutPath;
-
-    expect(() => validateLevelData(missingLayoutPath)).toThrowError(
-      'layoutPath must be a non-empty string',
-    );
-    expect(() => validateLevelData({ ...minimalLevel, layoutPath: '   ' })).toThrowError(
-      'layoutPath must be a non-empty string',
-    );
+  it('allows level headers without layout path metadata', () => {
+    expect(() => validateLevelData(minimalLevel)).not.toThrow();
   });
 
   it('throws when player is missing x or y', () => {

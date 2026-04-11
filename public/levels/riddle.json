@@ -3,7 +3,6 @@
   "name": "Two Guards, Two Doors",
   "premise": "Two guards stand by two doors, but one guard lies while the other tells the truth.",
   "goal": "Question the guards and choose the door that leads to safety.",
-  "layoutPath": "./riddle.layout.txt",
   "player": {
     "x": 10,
     "y": 15,

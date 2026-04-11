@@ -110,7 +110,6 @@ export interface LevelData {
   premise: string;
   goal: string;
   objective?: string;
-  layoutPath: string;
   player: LevelPlayerDto;
   guards: LevelGuardDto[];
   doors: LevelDoorDto[];

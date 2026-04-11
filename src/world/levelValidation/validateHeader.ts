@@ -1,6 +1,6 @@
 /**
  * Validates the top-level level header fields:
- * version, name, premise, goal, and layoutPath.
+ * version, name, premise, and goal.
  */
 export const validateLevelHeader = (raw: Record<string, unknown>): void => {
   if (raw['version'] === undefined) {
@@ -21,9 +21,5 @@ export const validateLevelHeader = (raw: Record<string, unknown>): void => {
 
   if (typeof raw['goal'] !== 'string' || raw['goal'].trim() === '') {
     throw new Error('Invalid level data: goal must be a non-empty string');
-  }
-
-  if (typeof raw['layoutPath'] !== 'string' || raw['layoutPath'].trim() === '') {
-    throw new Error('Invalid level data: layoutPath must be a non-empty string');
   }
 };

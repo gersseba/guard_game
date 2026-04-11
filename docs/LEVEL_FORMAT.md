@@ -26,7 +26,6 @@ Required top-level fields:
 - `name: string`
 - `premise: string`
 - `goal: string`
-- `layoutPath: string` (required relative path to layout file)
 - `player`
 - `guards`
 - `doors`
@@ -40,8 +39,9 @@ Optional top-level fields:
 
 Notes:
 
-- `layoutPath` is resolved relative to the level JSON file location.
-- Absolute `layoutPath` values and traversal segments (`..`) are rejected.
+- Runtime resolves layout by filename convention from the selected JSON URL:
+  - `<level-id>.json` -> `<level-id>.layout.txt` in the same directory.
+- Example: `/levels/riddle.json` loads `/levels/riddle.layout.txt` first.
 - `width`/`height` are no longer part of runtime level authoring.
 
 ## Deterministic Load Order
@@ -80,7 +80,6 @@ For placeable entities (`player`, `guards`, `doors`, `npcs`, `interactiveObjects
   "name": "Example",
   "premise": "A compact layout + entity sample.",
   "goal": "Reach the safe door.",
-  "layoutPath": "./example.layout.txt",
   "player": { "x": 2, "y": 1 },
   "guards": [
     {
@@ -111,7 +110,7 @@ To migrate an old single-JSON level:
 
 1. Create `<level-id>.layout.txt` and encode geometry using only `#` and `.`.
 2. Remove `width` and `height` from level JSON.
-3. Add `layoutPath` in JSON (for example `"./<level-id>.layout.txt"`).
+3. Ensure level JSON filename and layout filename share the same `<level-id>` stem.
 4. Ensure all placeable entities are inside bounds and not on `#`.
 5. Run tests and fix any placement/layout validation errors.
 

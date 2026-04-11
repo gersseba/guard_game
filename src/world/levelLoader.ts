@@ -7,6 +7,17 @@ export interface LevelEntry {
   name: string;
 }
 
+const resolveLayoutUrlFromLevelUrl = (levelUrl: string): string => {
+  const parsed = new URL(levelUrl, 'https://guard-game.local');
+
+  if (!parsed.pathname.endsWith('.json')) {
+    throw new Error(`Invalid level URL: expected a .json level path in "${levelUrl}"`);
+  }
+
+  const layoutPathname = parsed.pathname.replace(/\.json$/, '.layout.txt');
+  return `${layoutPathname}${parsed.search}${parsed.hash}`;
+};
+
 /**
  * Fetches the level manifest (an array of LevelEntry) from the given URL.
  * Returns an empty array when the manifest is not found (404) so callers
@@ -58,43 +69,23 @@ export async function fetchAndLoadLevel(levelUrl: string): Promise<WorldState> {
     throw new Error(`Invalid level URL: path traversal detected in "${levelUrl}"`);
   }
 
+  const layoutUrl = resolveLayoutUrlFromLevelUrl(levelUrl);
+
+  const layoutResponse = await fetch(layoutUrl);
+  if (!layoutResponse.ok) {
+    throw new Error(`Failed to fetch layout: ${layoutResponse.status} ${layoutResponse.statusText} (${layoutUrl})`);
+  }
+
+  const layoutText = await layoutResponse.text();
+  const parsedLayout = parseLayoutText(layoutText);
+
   const response = await fetch(levelUrl);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch level: ${response.status} ${response.statusText}`);
   }
 
-  const levelJsonText = await response.text();
-  const layoutPathMatch = levelJsonText.match(/"layoutPath"\s*:\s*"([^"]+)"/);
-  const layoutPath = layoutPathMatch?.[1];
-
-  if (!layoutPath || layoutPath.trim() === '') {
-    throw new Error('Invalid level data: layoutPath must be a non-empty string');
-  }
-
-  if (layoutPath.startsWith('/')) {
-    throw new Error(`Invalid layoutPath "${layoutPath}": expected a relative path`);
-  }
-
-  if (layoutPath.split('/').some((segment) => segment === '..')) {
-    throw new Error(`Invalid layoutPath "${layoutPath}": path traversal is not allowed`);
-  }
-
-  const baseUrl = new URL(levelUrl, 'https://guard-game.local');
-  const resolvedLayoutUrl = new URL(layoutPath, baseUrl);
-  const layoutFetchUrl = `${resolvedLayoutUrl.pathname}${resolvedLayoutUrl.search}${resolvedLayoutUrl.hash}`;
-
-  const layoutResponse = await fetch(layoutFetchUrl);
-  if (!layoutResponse.ok) {
-    throw new Error(
-      `Failed to fetch layout: ${layoutResponse.status} ${layoutResponse.statusText} (${layoutFetchUrl})`,
-    );
-  }
-
-  const layoutText = await layoutResponse.text();
-  const parsedLayout = parseLayoutText(layoutText);
-
-  const data: unknown = JSON.parse(levelJsonText);
+  const data: unknown = JSON.parse(await response.text());
 
   const levelData = validateLevelData(data, {
     width: parsedLayout.width,

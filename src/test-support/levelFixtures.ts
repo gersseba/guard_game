@@ -32,7 +32,6 @@ export const keyArmoryLevelFixture: LevelData = {
   name: 'The Locked Armory',
   premise: 'A locked armory holds the supplies you need. You spotted a key in an old crate nearby.',
   goal: 'Find the key, unlock the armory door, and step through to safety.',
-  layoutPath: './key-armory.layout.txt',
   player: {
     x: 10,
     y: 12,
@@ -74,7 +73,6 @@ export const guardBribeLevelFixture: LevelData = {
   name: 'The Persuasive Bribe',
   premise: 'A guard blocks the only passage through the old gate. Rumour has it they can be persuaded with enough coin.',
   goal: 'Offer the gold coin to the guard and slip through the gate.',
-  layoutPath: './guard-bribe.layout.txt',
   player: {
     x: 10,
     y: 12,
@@ -125,7 +123,6 @@ export const brokenMechanismLevelFixture: LevelData = {
   name: 'The Broken Mechanism',
   premise: 'An ancient door mechanism is jammed. The corridor beyond holds your escape, but only the right tool can fix the mechanism.',
   goal: 'Find the iron wrench and repair the mechanism to open the path forward.',
-  layoutPath: './broken-mechanism.layout.txt',
   player: {
     x: 5,
     y: 10,
