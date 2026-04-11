@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { resolveAdjacentTarget } from '../interaction/adjacencyResolver';
 import { createDefaultItemUseResolver } from '../interaction/itemUse';
 import { createLevelStateFromData } from '../test-support/levels';
-import { brokenMechanismLevelFixture } from '../test-support/levelFixtures';
+import {
+  brokenMechanismLevelFixture,
+  brokenMechanismLevelLayout,
+} from '../test-support/levelFixtures';
 import { createTestInventoryItem } from '../test-support/worldState';
 import type { WorldState } from '../world/types';
 
 const createLevelState = (): WorldState => {
-  return createLevelStateFromData(brokenMechanismLevelFixture);
+  return createLevelStateFromData(brokenMechanismLevelFixture, brokenMechanismLevelLayout);
 };
 
 describe('broken-mechanism level integration', () => {

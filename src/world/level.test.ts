@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import riddleJson from '../../public/levels/riddle.json';
+import { parseLayoutText } from './layout';
 import { deserializeLevel, validateLevelData } from './level';
 import { Environment } from './entities/environment/Environment';
 import { Item } from './entities/items/Item';
@@ -14,16 +15,43 @@ const minimalLevel: LevelData = {
   name: 'Test Level',
   premise: 'A deterministic test premise.',
   goal: 'Reach the safe test door.',
-  width: 20,
-  height: 20,
+  layoutPath: './test.layout.txt',
   player: { x: 2, y: 3 },
   guards: [],
   doors: [],
 };
 
+const defaultParsedLayout = parseLayoutText(
+  [
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+  ].join('\n'),
+);
+
+const deserializeLevelWithDefaultLayout = (levelData: LevelData) =>
+  deserializeLevel(levelData, defaultParsedLayout);
+
 describe('deserializeLevel', () => {
   it('maps flat player x/y to nested GridPosition with default id and displayName', () => {
-    const state = deserializeLevel(minimalLevel);
+    const state = deserializeLevelWithDefaultLayout(minimalLevel);
 
     expect(state.player).toEqual({
       id: 'player',
@@ -38,7 +66,7 @@ describe('deserializeLevel', () => {
   });
 
   it('maps optional player spriteAssetPath when configured', () => {
-    const state = deserializeLevel({
+    const state = deserializeLevelWithDefaultLayout({
       ...minimalLevel,
       player: { x: 2, y: 3, spriteAssetPath: '/assets/medieval_player_town_guard.svg' },
     });
@@ -47,7 +75,7 @@ describe('deserializeLevel', () => {
   });
 
   it('maps optional player spriteSet when configured', () => {
-    const state = deserializeLevel({
+    const state = deserializeLevelWithDefaultLayout({
       ...minimalLevel,
       player: {
         x: 2,
@@ -68,7 +96,7 @@ describe('deserializeLevel', () => {
   });
 
   it('sets grid dimensions from level width/height and preserves a fixed tileSize', () => {
-    const state = deserializeLevel(minimalLevel);
+    const state = deserializeLevelWithDefaultLayout(minimalLevel);
 
     expect(state.grid.width).toBe(20);
     expect(state.grid.height).toBe(20);
@@ -77,7 +105,7 @@ describe('deserializeLevel', () => {
   });
 
   it('maps level premise and goal into serializable world metadata', () => {
-    const state = deserializeLevel(minimalLevel);
+    const state = deserializeLevelWithDefaultLayout(minimalLevel);
 
     expect(state.levelMetadata).toEqual({
       name: 'Test Level',
@@ -91,7 +119,7 @@ describe('deserializeLevel', () => {
   });
 
   it('starts tick at 0 and returns empty npcs and interactiveObjects', () => {
-    const state = deserializeLevel(minimalLevel);
+    const state = deserializeLevelWithDefaultLayout(minimalLevel);
 
     expect(state.tick).toBe(0);
     expect(state.levelMetadata.goal).toBe('Reach the safe test door.');
@@ -101,7 +129,7 @@ describe('deserializeLevel', () => {
   });
 
   it('deserializes environments when provided', () => {
-    const state = deserializeLevel({
+    const state = deserializeLevelWithDefaultLayout({
       ...minimalLevel,
       environments: [
         {
@@ -126,14 +154,14 @@ describe('deserializeLevel', () => {
   });
 
   it('keeps player inventory JSON-serializable after deserialization', () => {
-    const state = deserializeLevel(minimalLevel);
+    const state = deserializeLevelWithDefaultLayout(minimalLevel);
 
     const roundTrip = JSON.parse(JSON.stringify(state)) as typeof state;
     expect(roundTrip.player.inventory.items).toEqual([]);
   });
 
   it('handles empty guard and door arrays', () => {
-    const state = deserializeLevel(minimalLevel);
+    const state = deserializeLevelWithDefaultLayout(minimalLevel);
 
     expect(state.guards).toEqual([]);
     expect(state.doors).toEqual([]);
@@ -148,7 +176,7 @@ describe('deserializeLevel', () => {
       ],
     };
 
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     expect(state.guards).toEqual([
       { id: 'guard-1', displayName: 'North Guard', position: { x: 5, y: 7 }, guardState: 'patrolling' },
@@ -157,7 +185,7 @@ describe('deserializeLevel', () => {
   });
 
   it('maps optional guard spriteAssetPath when configured', () => {
-    const state = deserializeLevel({
+    const state = deserializeLevelWithDefaultLayout({
       ...minimalLevel,
       guards: [
         {
@@ -175,7 +203,7 @@ describe('deserializeLevel', () => {
   });
 
   it('maps optional guard spriteSet when configured', () => {
-    const state = deserializeLevel({
+    const state = deserializeLevelWithDefaultLayout({
       ...minimalLevel,
       guards: [
         {
@@ -201,7 +229,7 @@ describe('deserializeLevel', () => {
   });
 
   it('instantiates guards as GuardNpc runtime classes with existing guard behavior fields', () => {
-    const state = deserializeLevel({
+    const state = deserializeLevelWithDefaultLayout({
       ...minimalLevel,
       guards: [
         {
@@ -238,7 +266,7 @@ describe('deserializeLevel', () => {
   });
 
   it('maps guard itemUseRules when configured', () => {
-    const state = deserializeLevel({
+    const state = deserializeLevelWithDefaultLayout({
       ...minimalLevel,
       guards: [
         {
@@ -274,7 +302,7 @@ describe('deserializeLevel', () => {
       ],
     };
 
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     expect(state.doors).toEqual([
       { id: 'door-1', displayName: 'Main Gate', position: { x: 0, y: 10 }, isOpen: false, isLocked: true, isSafe: true },
@@ -283,7 +311,7 @@ describe('deserializeLevel', () => {
   });
 
   it('maps optional door spriteSet when configured', () => {
-    const state = deserializeLevel({
+    const state = deserializeLevelWithDefaultLayout({
       ...minimalLevel,
       doors: [
         {
@@ -306,7 +334,7 @@ describe('deserializeLevel', () => {
   });
 
   it('keeps spriteSet data JSON-serializable in deserialized world state', () => {
-    const state = deserializeLevel({
+    const state = deserializeLevelWithDefaultLayout({
       ...minimalLevel,
       player: {
         x: 2,
@@ -337,8 +365,8 @@ describe('deserializeLevel', () => {
   });
 
   it('is deterministic — same input always produces the same output', () => {
-    const stateA = deserializeLevel(minimalLevel);
-    const stateB = deserializeLevel(minimalLevel);
+    const stateA = deserializeLevelWithDefaultLayout(minimalLevel);
+    const stateB = deserializeLevelWithDefaultLayout(minimalLevel);
 
     expect(stateA).toEqual(stateB);
   });
@@ -346,7 +374,7 @@ describe('deserializeLevel', () => {
   it('preserves the schema version field in the input (does not discard it)', () => {
     const level: LevelData = { ...minimalLevel, version: 2 };
     // The function consumes version; ensure it still accepts it without error
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     // WorldState does not expose version, but deserialization must succeed
     expect(state).toBeDefined();
@@ -366,9 +394,9 @@ describe('deserializeLevel', () => {
       ],
     };
 
-    expect(() => deserializeLevel(invalid)).toThrowError(
-      'Invalid world layout: guard:guard-1 is out of bounds at (20, 3)',
-    );
+      expect(() => deserializeLevelWithDefaultLayout(invalid)).toThrowError(
+        'Invalid level data: guard:guard-1 is out of bounds at (20, 3) for layout 20x20',
+      );
   });
 
   it('fails deterministically when entities overlap at the same coordinate', () => {
@@ -386,7 +414,7 @@ describe('deserializeLevel', () => {
       ],
     };
 
-    expect(() => deserializeLevel(invalid)).toThrowError(
+    expect(() => deserializeLevelWithDefaultLayout(invalid)).toThrowError(
       'Invalid world layout: overlapping coordinates at (2, 3) between player:player and door:door-1',
     );
   });
@@ -394,7 +422,7 @@ describe('deserializeLevel', () => {
   it('uses the shared spatial rules path during level deserialization', () => {
     const validateSpy = vi.spyOn(spatialRules, 'validateSpatialLayout');
 
-    deserializeLevel(minimalLevel);
+    deserializeLevelWithDefaultLayout(minimalLevel);
 
     expect(validateSpy).toHaveBeenCalledTimes(1);
   });
@@ -475,13 +503,16 @@ describe('validateLevelData', () => {
     expect(() => validateLevelData({ ...minimalLevel, goal: '' })).toThrowError('goal must be a non-empty string');
   });
 
-  it('throws when width is zero or negative', () => {
-    expect(() => validateLevelData({ ...minimalLevel, width: 0 })).toThrowError('width must be a positive number');
-    expect(() => validateLevelData({ ...minimalLevel, width: -5 })).toThrowError('width must be a positive number');
-  });
+  it('throws when layoutPath is missing or empty', () => {
+    const missingLayoutPath = { ...minimalLevel } as Omit<LevelData, 'layoutPath'>;
+    delete (missingLayoutPath as Record<string, unknown>).layoutPath;
 
-  it('throws when height is zero or negative', () => {
-    expect(() => validateLevelData({ ...minimalLevel, height: 0 })).toThrowError('height must be a positive number');
+    expect(() => validateLevelData(missingLayoutPath)).toThrowError(
+      'layoutPath must be a non-empty string',
+    );
+    expect(() => validateLevelData({ ...minimalLevel, layoutPath: '   ' })).toThrowError(
+      'layoutPath must be a non-empty string',
+    );
   });
 
   it('throws when player is missing x or y', () => {
@@ -608,7 +639,7 @@ describe('validateLevelData', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.interactiveObjects[0].objectType).toBe('mechanism');
     expect(state.interactiveObjects[0].spriteAssetPath).toBe('/assets/medieval_mechanism_door.svg');
@@ -653,7 +684,7 @@ describe('riddle level', () => {
 
   it('deserializes to a WorldState with two guards and two doors', () => {
     const level = validateLevelData(riddleRaw);
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     expect(state.guards).toHaveLength(2);
     expect(state.doors).toHaveLength(2);
@@ -661,21 +692,21 @@ describe('riddle level', () => {
 
   it('places the player at (10, 15)', () => {
     const level = validateLevelData(riddleRaw);
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     expect(state.player.position).toEqual({ x: 10, y: 15 });
   });
 
   it('does not project objective text into runtime world state', () => {
     const level = validateLevelData(riddleRaw);
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     expect(state.levelObjective).toBeUndefined();
   });
 
   it('has a 20×20 grid', () => {
     const level = validateLevelData(riddleRaw);
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     expect(state.grid.width).toBe(20);
     expect(state.grid.height).toBe(20);
@@ -683,7 +714,7 @@ describe('riddle level', () => {
 
   it('all guards start idle and all doors start closed/unlocked', () => {
     const level = validateLevelData(riddleRaw);
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     for (const guard of state.guards) {
       expect(guard.guardState).toBe('idle');
@@ -696,7 +727,7 @@ describe('riddle level', () => {
 
   it('guard ids and door ids match expected descriptive values', () => {
     const level = validateLevelData(riddleRaw);
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     expect(state.guards.map((g) => g.id)).toEqual(['guard-truth', 'guard-liar']);
     expect(state.doors.map((d) => d.id)).toEqual(['door-safe', 'door-danger']);
@@ -704,14 +735,14 @@ describe('riddle level', () => {
 
   it('has no interactive objects by default', () => {
     const level = validateLevelData(riddleRaw);
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     expect(state.interactiveObjects).toEqual([]);
   });
 
   it('preserves guard traits and door safety values from level json', () => {
     const level = validateLevelData(riddleRaw);
-    const state = deserializeLevel(level);
+    const state = deserializeLevelWithDefaultLayout(level);
 
     expect(state.guards.map((guard) => guard.traits?.truthMode)).toEqual(['truth-teller', 'liar']);
     expect(state.doors.map((door) => door.isSafe)).toEqual([true, false]);
@@ -727,7 +758,7 @@ describe('traits field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.guards[0].traits?.truthMode).toBe('truth-teller');
   });
@@ -740,7 +771,7 @@ describe('traits field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.guards[0].traits?.truthMode).toBe('liar');
   });
@@ -753,7 +784,7 @@ describe('traits field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.guards[0].traits).toBeUndefined();
   });
@@ -816,7 +847,7 @@ describe('isSafe field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.doors[0].isSafe).toBe(true);
   });
@@ -828,7 +859,7 @@ describe('isSafe field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.doors[0].isSafe).toBe(false);
   });
@@ -868,7 +899,7 @@ describe('levelOutcome field', () => {
       doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
-    const state = deserializeLevel(validateLevelData(level));
+    const state = deserializeLevelWithDefaultLayout(validateLevelData(level));
 
     expect(state.levelOutcome).toBeNull();
   });
@@ -882,7 +913,7 @@ describe('npcs field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.npcs).toEqual([]);
   });
@@ -895,7 +926,7 @@ describe('npcs field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.npcs).toEqual([]);
   });
@@ -911,7 +942,7 @@ describe('npcs field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.npcs).toHaveLength(2);
     expect(state.npcs[0]).toBeInstanceOf(Npc);
@@ -939,7 +970,7 @@ describe('npcs field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.npcs[0].dialogueContextKey).toBe('npc_guard_captain');
   });
@@ -1058,7 +1089,7 @@ describe('npcs field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.npcs[0].npcType).toBe('gate_guardian');
   });
@@ -1080,7 +1111,7 @@ describe('npcs field', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.npcs[0].spriteAssetPath).toBe('/assets/medieval_npc_villager.svg');
   });
@@ -1115,7 +1146,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.guards[0].instanceKnowledge).toBe('This guard knows door-1 is safe.');
     expect(state.guards[0].instanceBehavior).toBe('Speaks in riddles.');
@@ -1139,7 +1170,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
     };
 
     const validated = validateLevelData(level);
-    const state = deserializeLevel(validated);
+    const state = deserializeLevelWithDefaultLayout(validated);
 
     expect(state.npcs[0].instanceKnowledge).toBe('Knows the archive holds records of the last five kings.');
     expect(state.npcs[0].instanceBehavior).toBe('Speaks formally at all times.');
@@ -1152,7 +1183,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
       doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
-    const state = deserializeLevel(validateLevelData(level));
+    const state = deserializeLevelWithDefaultLayout(validateLevelData(level));
 
     expect(Object.prototype.hasOwnProperty.call(state.guards[0], 'instanceKnowledge')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(state.guards[0], 'instanceBehavior')).toBe(false);
@@ -1165,7 +1196,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
       doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
-    const state = deserializeLevel(validateLevelData(level));
+    const state = deserializeLevelWithDefaultLayout(validateLevelData(level));
 
     expect(Object.prototype.hasOwnProperty.call(state.npcs[0], 'instanceKnowledge')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(state.npcs[0], 'instanceBehavior')).toBe(false);
@@ -1239,7 +1270,7 @@ describe('instanceKnowledge and instanceBehavior fields', () => {
       doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
-    const state = deserializeLevel(validateLevelData(level));
+    const state = deserializeLevelWithDefaultLayout(validateLevelData(level));
 
     expect(state.guards[0].instanceKnowledge).toBe('Door-1 leads to safety.');
     expect(state.guards[0].instanceBehavior).toBe('Always answers in rhyme.');
@@ -1284,7 +1315,7 @@ describe('NPC capability fields', () => {
       doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
-    const state = deserializeLevel(validateLevelData(level));
+    const state = deserializeLevelWithDefaultLayout(validateLevelData(level));
 
     expect(state.npcs[0].patrol).toEqual({
       path: [
@@ -1327,7 +1358,13 @@ describe('NPC capability fields', () => {
       doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
     };
 
-    expect(() => validateLevelData(bad)).toThrowError('patrol.path[0] is out of bounds');
+    expect(
+      () =>
+        validateLevelData(bad, {
+          width: defaultParsedLayout.width,
+          height: defaultParsedLayout.height,
+        }),
+    ).toThrowError('patrol.path[0] is out of bounds');
   });
 
   it('rejects npc triggers with invalid shape', () => {

@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { resolveAdjacentTarget } from '../interaction/adjacencyResolver';
 import { createDefaultItemUseResolver } from '../interaction/itemUse';
 import { createLevelStateFromData } from '../test-support/levels';
-import { guardBribeLevelFixture } from '../test-support/levelFixtures';
+import { guardBribeLevelFixture, guardBribeLevelLayout } from '../test-support/levelFixtures';
 import { createTestInventoryItem } from '../test-support/worldState';
 import type { WorldState } from '../world/types';
 
 const createLevelState = (): WorldState => {
-  return createLevelStateFromData(guardBribeLevelFixture);
+  return createLevelStateFromData(guardBribeLevelFixture, guardBribeLevelLayout);
 };
 
 describe('guard-bribe level integration', () => {

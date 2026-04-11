@@ -1,4 +1,5 @@
 import { deserializeLevel, validateLevelData } from './level';
+import { parseLayoutText } from './layout';
 import type { WorldState } from './types';
 
 export interface LevelEntry {
@@ -63,7 +64,41 @@ export async function fetchAndLoadLevel(levelUrl: string): Promise<WorldState> {
     throw new Error(`Failed to fetch level: ${response.status} ${response.statusText}`);
   }
 
-  const data: unknown = await response.json();
-  const levelData = validateLevelData(data);
-  return deserializeLevel(levelData);
+  const levelJsonText = await response.text();
+  const layoutPathMatch = levelJsonText.match(/"layoutPath"\s*:\s*"([^"]+)"/);
+  const layoutPath = layoutPathMatch?.[1];
+
+  if (!layoutPath || layoutPath.trim() === '') {
+    throw new Error('Invalid level data: layoutPath must be a non-empty string');
+  }
+
+  if (layoutPath.startsWith('/')) {
+    throw new Error(`Invalid layoutPath "${layoutPath}": expected a relative path`);
+  }
+
+  if (layoutPath.split('/').some((segment) => segment === '..')) {
+    throw new Error(`Invalid layoutPath "${layoutPath}": path traversal is not allowed`);
+  }
+
+  const baseUrl = new URL(levelUrl, 'https://guard-game.local');
+  const resolvedLayoutUrl = new URL(layoutPath, baseUrl);
+  const layoutFetchUrl = `${resolvedLayoutUrl.pathname}${resolvedLayoutUrl.search}${resolvedLayoutUrl.hash}`;
+
+  const layoutResponse = await fetch(layoutFetchUrl);
+  if (!layoutResponse.ok) {
+    throw new Error(
+      `Failed to fetch layout: ${layoutResponse.status} ${layoutResponse.statusText} (${layoutFetchUrl})`,
+    );
+  }
+
+  const layoutText = await layoutResponse.text();
+  const parsedLayout = parseLayoutText(layoutText);
+
+  const data: unknown = JSON.parse(levelJsonText);
+
+  const levelData = validateLevelData(data, {
+    width: parsedLayout.width,
+    height: parsedLayout.height,
+  });
+  return deserializeLevel(levelData, parsedLayout);
 }

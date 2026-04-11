@@ -11,14 +11,41 @@ const minimalLevel: LevelData = {
   name: 'Test Level',
   premise: 'A deterministic test premise.',
   goal: 'Verify level loading behavior.',
-  width: 20,
-  height: 20,
+  layoutPath: './test.layout.txt',
   player: { x: 2, y: 3 },
   guards: [],
   doors: [],
 };
 
-const mockFetch = (body: unknown, status = 200): void => {
+const openLayout = [
+  '....................',
+  '....................',
+  '....................',
+  '....................',
+  '....................',
+].join('\n');
+
+const mockLevelAndLayoutFetch = (levelData: unknown, layoutText: string): void => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: () => Promise.resolve(JSON.stringify(levelData)),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: () => Promise.resolve(layoutText),
+      }),
+  );
+};
+
+const mockManifestFetch = (body: unknown, status = 200): void => {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({
@@ -26,6 +53,7 @@ const mockFetch = (body: unknown, status = 200): void => {
       status,
       statusText: status === 200 ? 'OK' : 'Not Found',
       json: () => Promise.resolve(body),
+      text: () => Promise.resolve(''),
     }),
   );
 };
@@ -35,53 +63,56 @@ afterEach(() => {
 });
 
 describe('fetchAndLoadLevel', () => {
-  it('fetches a URL, validates, and returns a WorldState', async () => {
-    mockFetch({
-      ...minimalLevel,
-      npcs: [
-        {
-          id: 'npc-1',
-          displayName: 'Archivist',
-          x: 2,
-          y: 4,
-          npcType: 'archive_keeper',
-          inventory: [
-            {
-              itemId: 'token',
-              displayName: 'Token',
-              sourceObjectId: 'npc-1',
-              pickedUpAtTick: 0,
-            },
-          ],
-        },
-      ],
-      interactiveObjects: [
-        {
-          id: 'statue-1',
-          displayName: 'Statue',
-          x: 3,
-          y: 3,
-          objectType: 'decoration',
-          interactionType: 'inspect',
-          state: 'idle',
-        },
-      ],
-      environments: [
-        {
-          id: 'wall-1',
-          displayName: 'Stone Wall',
-          x: 1,
-          y: 1,
-          isBlocking: true,
-        },
-      ],
-    });
+  it('loads layout first and composes deterministic world state from layout + JSON', async () => {
+    mockLevelAndLayoutFetch(
+      {
+        ...minimalLevel,
+        npcs: [
+          {
+            id: 'npc-1',
+            displayName: 'Archivist',
+            x: 2,
+            y: 4,
+            npcType: 'archive_keeper',
+            inventory: [
+              {
+                itemId: 'token',
+                displayName: 'Token',
+                sourceObjectId: 'npc-1',
+                pickedUpAtTick: 0,
+              },
+            ],
+          },
+        ],
+        interactiveObjects: [
+          {
+            id: 'statue-1',
+            displayName: 'Statue',
+            x: 3,
+            y: 3,
+            objectType: 'decoration',
+            interactionType: 'inspect',
+            state: 'idle',
+          },
+        ],
+        environments: [
+          {
+            id: 'wall-1',
+            displayName: 'Stone Wall',
+            x: 1,
+            y: 1,
+            isBlocking: true,
+          },
+        ],
+      },
+      openLayout,
+    );
 
     const state = await fetchAndLoadLevel('/levels/test.json');
 
     expect(state.player.position).toEqual({ x: 2, y: 3 });
     expect(state.grid.width).toBe(20);
-    expect(state.grid.height).toBe(20);
+    expect(state.grid.height).toBe(5);
     expect(state.tick).toBe(0);
     expect(state.levelMetadata).toEqual({
       name: 'Test Level',
@@ -94,12 +125,7 @@ describe('fetchAndLoadLevel', () => {
     expect(state.environments?.[0]).toBeInstanceOf(Environment);
   });
 
-  it('returns equivalent deterministic runtime state across repeated identical DTO loads', async () => {
-    const sameLevel: LevelData = {
-      ...minimalLevel,
-      npcs: [{ id: 'npc-1', displayName: 'Archivist', x: 2, y: 4, npcType: 'archive_keeper' }],
-    };
-
+  it('returns equivalent state across repeated identical level and layout loads', async () => {
     vi.stubGlobal(
       'fetch',
       vi
@@ -108,13 +134,25 @@ describe('fetchAndLoadLevel', () => {
           ok: true,
           status: 200,
           statusText: 'OK',
-          json: () => Promise.resolve(sameLevel),
+          text: () => Promise.resolve(JSON.stringify(minimalLevel)),
         })
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
           statusText: 'OK',
-          json: () => Promise.resolve(sameLevel),
+          text: () => Promise.resolve(openLayout),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: () => Promise.resolve(JSON.stringify(minimalLevel)),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: () => Promise.resolve(openLayout),
         }),
     );
 
@@ -125,7 +163,15 @@ describe('fetchAndLoadLevel', () => {
   });
 
   it('throws when the server returns a non-ok status', async () => {
-    mockFetch(null, 404);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        text: () => Promise.resolve(''),
+      }),
+    );
 
     await expect(fetchAndLoadLevel('/levels/missing.json')).rejects.toThrow('Failed to fetch level');
   });
@@ -136,48 +182,108 @@ describe('fetchAndLoadLevel', () => {
     );
   });
 
-  it('throws when the JSON does not pass validateLevelData', async () => {
-    mockFetch({ version: 2, name: 'Bad' });
+  it('throws when layoutPath is missing', async () => {
+    mockLevelAndLayoutFetch(
+      {
+        version: 2,
+        name: 'Bad Level',
+        premise: 'Bad',
+        goal: 'Bad',
+        player: { x: 1, y: 1 },
+        guards: [],
+        doors: [],
+      },
+      openLayout,
+    );
 
-    await expect(fetchAndLoadLevel('/levels/bad.json')).rejects.toThrow();
-  });
-
-  it('fails deterministically when loaded coordinates are out of bounds', async () => {
-    mockFetch({
-      ...minimalLevel,
-      guards: [
-        {
-          id: 'guard-1',
-          displayName: 'Out Guard',
-          x: 20,
-          y: 2,
-          guardState: 'idle',
-        },
-      ],
-    });
-
-    await expect(fetchAndLoadLevel('/levels/out-of-bounds.json')).rejects.toThrow(
-      'Invalid world layout: guard:guard-1 is out of bounds at (20, 2)',
+    await expect(fetchAndLoadLevel('/levels/bad.json')).rejects.toThrow(
+      'layoutPath must be a non-empty string',
     );
   });
 
-  it('fails deterministically when loaded entities overlap', async () => {
-    mockFetch({
-      ...minimalLevel,
-      doors: [
-        {
-          id: 'door-1',
-          displayName: 'Overlap Door',
-          x: 2,
-          y: 3,
-          isOpen: false, isLocked: false,
-          isSafe: true,
-        },
-      ],
-    });
+  it('throws when layoutPath contains path traversal', async () => {
+    mockLevelAndLayoutFetch(
+      {
+        ...minimalLevel,
+        layoutPath: '../outside.layout.txt',
+      },
+      openLayout,
+    );
 
-    await expect(fetchAndLoadLevel('/levels/overlap.json')).rejects.toThrow(
-      'Invalid world layout: overlapping coordinates at (2, 3) between player:player and door:door-1',
+    await expect(fetchAndLoadLevel('/levels/bad-path.json')).rejects.toThrow(
+      'path traversal is not allowed',
+    );
+  });
+
+  it('throws when the relative layout path cannot be fetched', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: () => Promise.resolve(JSON.stringify({ ...minimalLevel, layoutPath: './missing.layout.txt' })),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+          text: () => Promise.resolve(''),
+        }),
+    );
+
+    await expect(fetchAndLoadLevel('/levels/bad-layout-path.json')).rejects.toThrow(
+      'Failed to fetch layout: 404 Not Found (/levels/missing.layout.txt)',
+    );
+  });
+
+  it('throws for unknown layout symbols', async () => {
+    mockLevelAndLayoutFetch(minimalLevel, '..x');
+
+    await expect(fetchAndLoadLevel('/levels/bad-layout-symbol.json')).rejects.toThrow('unknown symbol');
+  });
+
+  it('throws for empty layout content', async () => {
+    mockLevelAndLayoutFetch(minimalLevel, '');
+
+    await expect(fetchAndLoadLevel('/levels/empty-layout.json')).rejects.toThrow(
+      'layout must contain at least one row',
+    );
+  });
+
+  it('throws for ragged layout rows', async () => {
+    mockLevelAndLayoutFetch(minimalLevel, '...\n..');
+
+    await expect(fetchAndLoadLevel('/levels/ragged-layout.json')).rejects.toThrow('has width 2, expected 3');
+  });
+
+  it('fails when an entity is out of layout bounds', async () => {
+    mockLevelAndLayoutFetch(
+      {
+        ...minimalLevel,
+        guards: [
+          {
+            id: 'guard-1',
+            displayName: 'Out Guard',
+            x: 30,
+            y: 2,
+            guardState: 'idle',
+          },
+        ],
+      },
+      openLayout,
+    );
+
+    await expect(fetchAndLoadLevel('/levels/out-of-bounds.json')).rejects.toThrow('is out of bounds');
+  });
+
+  it('fails when an entity is placed on a blocking layout cell', async () => {
+    mockLevelAndLayoutFetch(minimalLevel, '...\n...\n...\n..#\n...');
+
+    await expect(fetchAndLoadLevel('/levels/blocking-cell.json')).rejects.toThrow(
+      'player is on blocking layout cell',
     );
   });
 });
@@ -188,7 +294,7 @@ describe('fetchLevelManifest', () => {
       { id: 'level-01', name: 'Level 01' },
       { id: 'level-02', name: 'Level 02' },
     ];
-    mockFetch(manifest);
+    mockManifestFetch(manifest);
 
     const result = await fetchLevelManifest('/levels/manifest.json');
 
@@ -197,7 +303,7 @@ describe('fetchLevelManifest', () => {
   });
 
   it('returns an empty array when the manifest is 404', async () => {
-    mockFetch(null, 404);
+    mockManifestFetch(null, 404);
 
     const result = await fetchLevelManifest('/levels/manifest.json');
 
@@ -205,7 +311,7 @@ describe('fetchLevelManifest', () => {
   });
 
   it('throws when an entry is missing a required field', async () => {
-    mockFetch([{ id: 'level-01' }]);
+    mockManifestFetch([{ id: 'level-01' }]);
 
     await expect(fetchLevelManifest('/levels/manifest.json')).rejects.toThrow(
       'Level manifest entry at index 0 is invalid',
@@ -213,7 +319,7 @@ describe('fetchLevelManifest', () => {
   });
 
   it('throws when the response is not an array', async () => {
-    mockFetch({ not: 'an array' });
+    mockManifestFetch({ not: 'an array' });
 
     await expect(fetchLevelManifest('/levels/manifest.json')).rejects.toThrow(
       'Level manifest must be a JSON array',
@@ -221,7 +327,7 @@ describe('fetchLevelManifest', () => {
   });
 
   it('throws when the server returns a non-ok, non-404 status', async () => {
-    mockFetch(null, 500);
+    mockManifestFetch(null, 500);
 
     await expect(fetchLevelManifest('/levels/manifest.json')).rejects.toThrow(
       'Failed to fetch level manifest',

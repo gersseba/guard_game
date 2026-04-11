@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { resolveAdjacentTarget } from '../interaction/adjacencyResolver';
 import { createDefaultItemUseResolver } from '../interaction/itemUse';
 import { createLevelStateFromData } from '../test-support/levels';
-import { keyArmoryLevelFixture } from '../test-support/levelFixtures';
+import { keyArmoryLevelFixture, keyArmoryLevelLayout } from '../test-support/levelFixtures';
 import { createTestInventoryItem } from '../test-support/worldState';
 import type { WorldState } from '../world/types';
 
 const createLevelState = (): WorldState => {
-  return createLevelStateFromData(keyArmoryLevelFixture);
+  return createLevelStateFromData(keyArmoryLevelFixture, keyArmoryLevelLayout);
 };
 
 describe('key-armory level integration', () => {

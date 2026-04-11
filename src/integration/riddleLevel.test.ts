@@ -1,19 +1,27 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import riddleJson from '../../public/levels/riddle.json';
 import { resolveAdjacentTarget } from '../interaction/adjacencyResolver';
 import { handleDoorInteraction } from '../interaction/doorInteraction';
+import { parseLayoutText } from '../world/layout';
 import { deserializeLevel, validateLevelData } from '../world/level';
 import type { WorldState } from '../world/types';
 
+const riddleLayoutText = readFileSync(new URL('../../public/levels/riddle.layout.txt', import.meta.url), 'utf8');
+const riddleLayout = parseLayoutText(riddleLayoutText);
+
 const createRiddleState = (): WorldState => {
-  const validated = validateLevelData(riddleJson);
-  return deserializeLevel(validated);
+  const validated = validateLevelData(riddleJson, { width: riddleLayout.width, height: riddleLayout.height });
+  return deserializeLevel(validated, riddleLayout);
 };
 
 describe('riddle level integration pipeline', () => {
   it('loads riddle level into a valid WorldState with expected entity positions', () => {
-    const validated = validateLevelData(riddleJson);
-    const worldState = deserializeLevel(validated);
+    const validated = validateLevelData(riddleJson, {
+      width: riddleLayout.width,
+      height: riddleLayout.height,
+    });
+    const worldState = deserializeLevel(validated, riddleLayout);
 
     expect(worldState).toBeDefined();
     expect(worldState.levelMetadata).toEqual({
@@ -134,8 +142,14 @@ describe('riddle level integration pipeline', () => {
   });
 
   it('returns equal canonical initial states across repeated deserializations', () => {
-    const first = deserializeLevel(validateLevelData(riddleJson));
-    const second = deserializeLevel(validateLevelData(riddleJson));
+    const first = deserializeLevel(
+      validateLevelData(riddleJson, { width: riddleLayout.width, height: riddleLayout.height }),
+      riddleLayout,
+    );
+    const second = deserializeLevel(
+      validateLevelData(riddleJson, { width: riddleLayout.width, height: riddleLayout.height }),
+      riddleLayout,
+    );
 
     expect(first).toEqual(second);
     expect(first).not.toBe(second);
