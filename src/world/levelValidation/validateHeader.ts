@@ -11,6 +11,10 @@ export const validateLevelHeader = (raw: Record<string, unknown>): void => {
     throw new Error(`Level format version ${raw['version']} is not supported. Expected version 2.`);
   }
 
+  if (typeof raw['layoutPath'] !== 'string' || raw['layoutPath'].trim() === '') {
+    throw new Error('Invalid level data: layoutPath must be a non-empty string');
+  }
+
   if (typeof raw['name'] !== 'string' || raw['name'].trim() === '') {
     throw new Error('Invalid level data: name must be a non-empty string');
   }

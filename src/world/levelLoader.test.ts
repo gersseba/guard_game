@@ -8,6 +8,7 @@ import type { LevelData } from './types';
 
 const minimalLevel: LevelData = {
   version: 2,
+  layoutPath: 'test.layout.txt',
   name: 'Test Level',
   premise: 'A deterministic test premise.',
   goal: 'Verify level loading behavior.',
@@ -252,11 +253,56 @@ describe('fetchAndLoadLevel', () => {
     await expect(fetchAndLoadLevel('/levels/ragged-layout.json')).rejects.toThrow('has width 2, expected 3');
   });
 
+  it('fails when layoutPath is missing in level JSON', async () => {
+    const levelWithoutLayoutPath = { ...minimalLevel } as Partial<LevelData>;
+    delete levelWithoutLayoutPath.layoutPath;
+
+    mockLayoutAndLevelFetch(openLayout, levelWithoutLayoutPath);
+
+    await expect(fetchAndLoadLevel('/levels/test.json')).rejects.toThrow(
+      'Invalid level data: layoutPath must be a non-empty string',
+    );
+  });
+
+  it('fails when layoutPath resolves to a different layout than the runtime-loaded layout', async () => {
+    mockLayoutAndLevelFetch(openLayout, {
+      ...minimalLevel,
+      layoutPath: 'different.layout.txt',
+    });
+
+    await expect(fetchAndLoadLevel('/levels/test.json')).rejects.toThrow(
+      'layoutPath resolves to "/levels/different.layout.txt" but runtime loaded "/levels/test.layout.txt"',
+    );
+  });
+
+  it('fails when layoutPath is absolute instead of relative', async () => {
+    mockLayoutAndLevelFetch(openLayout, {
+      ...minimalLevel,
+      layoutPath: '/levels/test.layout.txt',
+    });
+
+    await expect(fetchAndLoadLevel('/levels/test.json')).rejects.toThrow(
+      'Invalid level data: layoutPath must be a relative path',
+    );
+  });
+
+  it('fails when layoutPath contains path traversal segments', async () => {
+    mockLayoutAndLevelFetch(openLayout, {
+      ...minimalLevel,
+      layoutPath: '../outside.layout.txt',
+    });
+
+    await expect(fetchAndLoadLevel('/levels/test.json')).rejects.toThrow(
+      'Invalid level data: layoutPath must not contain path traversal segments',
+    );
+  });
+
   it('fails when an entity is out of layout bounds', async () => {
     mockLayoutAndLevelFetch(
       openLayout,
       {
         ...minimalLevel,
+        layoutPath: 'out-of-bounds.layout.txt',
         guards: [
           {
             id: 'guard-1',
@@ -273,7 +319,10 @@ describe('fetchAndLoadLevel', () => {
   });
 
   it('fails when an entity is placed on a blocking layout cell', async () => {
-    mockLayoutAndLevelFetch('...\n...\n...\n..#\n...', minimalLevel);
+    mockLayoutAndLevelFetch('...\n...\n...\n..#\n...', {
+      ...minimalLevel,
+      layoutPath: 'blocking-cell.layout.txt',
+    });
 
     await expect(fetchAndLoadLevel('/levels/blocking-cell.json')).rejects.toThrow(
       'player is on blocking layout cell',

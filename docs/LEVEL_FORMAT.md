@@ -23,6 +23,7 @@ Guard Game levels now use a two-file package:
 Required top-level fields:
 
 - `version: 2`
+- `layoutPath: string` (required relative path to layout file, resolved from level JSON location)
 - `name: string`
 - `premise: string`
 - `goal: string`
@@ -39,9 +40,10 @@ Optional top-level fields:
 
 Notes:
 
-- Runtime resolves layout by filename convention from the selected JSON URL:
+- Runtime loads layout first using deterministic filename convention:
   - `<level-id>.json` -> `<level-id>.layout.txt` in the same directory.
-- Example: `/levels/riddle.json` loads `/levels/riddle.layout.txt` first.
+- After JSON loads, `layoutPath` is required and must resolve (relative to the level JSON URL) to the same layout resource already loaded.
+- Example: `/levels/riddle.json` loads `/levels/riddle.layout.txt` first, and JSON must contain `"layoutPath": "riddle.layout.txt"`.
 - `width`/`height` are no longer part of runtime level authoring.
 
 ## Deterministic Load Order
@@ -77,6 +79,7 @@ For placeable entities (`player`, `guards`, `doors`, `npcs`, `interactiveObjects
 ```json
 {
   "version": 2,
+  "layoutPath": "example.layout.txt",
   "name": "Example",
   "premise": "A compact layout + entity sample.",
   "goal": "Reach the safe door.",
@@ -109,9 +112,10 @@ For placeable entities (`player`, `guards`, `doors`, `npcs`, `interactiveObjects
 To migrate an old single-JSON level:
 
 1. Create `<level-id>.layout.txt` and encode geometry using only `#` and `.`.
-2. Remove `width` and `height` from level JSON.
-3. Ensure level JSON filename and layout filename share the same `<level-id>` stem.
-4. Ensure all placeable entities are inside bounds and not on `#`.
-5. Run tests and fix any placement/layout validation errors.
+2. Add `layoutPath` to level JSON with a relative path (for example, `"riddle.layout.txt"`).
+3. Remove `width` and `height` from level JSON.
+4. Ensure level JSON filename and layout filename share the same `<level-id>` stem.
+5. Ensure all placeable entities are inside bounds and not on `#`.
+6. Run tests and fix any placement/layout validation errors.
 
 There is no runtime compatibility path for legacy no-layout levels.

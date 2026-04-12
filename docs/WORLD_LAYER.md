@@ -152,7 +152,7 @@ Deterministic rules:
 
 | Module | Responsibility |
 |---|---|
-| `validateHeader.ts` | `version`, `name`, `premise`, `goal` |
+| `validateHeader.ts` | `version`, `layoutPath`, `name`, `premise`, `goal` |
 | `validatePlayer.ts` | player `x`/`y`, optional `spriteAssetPath` and `spriteSet` |
 | `validateGuards.ts` | guards array: identity, position, guardState, traits, sprites, instance fields, itemUseRules |
 | `validateDoors.ts` | doors array: identity, position, doorState, outcome, requiredItemId, sprites |

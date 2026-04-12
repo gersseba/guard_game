@@ -106,6 +106,8 @@ export interface LevelEnvironmentDto {
 /** Flat JSON representation of a level file (public/levels/*.json). Version-stamped for future migrations. */
 export interface LevelData {
   version: number;
+  /** Required relative path to the layout text file, resolved against the level JSON URL. */
+  layoutPath: string;
   name: string;
   premise: string;
   goal: string;

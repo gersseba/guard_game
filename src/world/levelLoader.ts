@@ -7,8 +7,10 @@ export interface LevelEntry {
   name: string;
 }
 
+const BASE_ORIGIN = 'https://guard-game.local';
+
 const resolveLayoutUrlFromLevelUrl = (levelUrl: string): string => {
-  const parsed = new URL(levelUrl, 'https://guard-game.local');
+  const parsed = new URL(levelUrl, BASE_ORIGIN);
 
   if (!parsed.pathname.endsWith('.json')) {
     throw new Error(`Invalid level URL: expected a .json level path in "${levelUrl}"`);
@@ -16,6 +18,27 @@ const resolveLayoutUrlFromLevelUrl = (levelUrl: string): string => {
 
   const layoutPathname = parsed.pathname.replace(/\.json$/, '.layout.txt');
   return `${layoutPathname}${parsed.search}${parsed.hash}`;
+};
+
+const hasPathTraversal = (path: string): boolean => path.split('/').some((segment) => segment === '..');
+
+const resolveLayoutUrlFromLayoutPath = (levelUrl: string, layoutPath: string): string => {
+  if (layoutPath.startsWith('/')) {
+    throw new Error('Invalid level data: layoutPath must be a relative path');
+  }
+
+  if (/^https?:\/\//.test(layoutPath)) {
+    throw new Error('Invalid level data: layoutPath must be a relative path');
+  }
+
+  if (hasPathTraversal(layoutPath)) {
+    throw new Error(`Invalid level data: layoutPath must not contain path traversal segments: "${layoutPath}"`);
+  }
+
+  const parsedLevelUrl = new URL(levelUrl, BASE_ORIGIN);
+  const resolvedLayoutUrl = new URL(layoutPath, parsedLevelUrl);
+
+  return `${resolvedLayoutUrl.pathname}${resolvedLayoutUrl.search}${resolvedLayoutUrl.hash}`;
 };
 
 /**
@@ -65,7 +88,7 @@ export async function fetchLevelManifest(manifestUrl: string): Promise<LevelEntr
  */
 export async function fetchAndLoadLevel(levelUrl: string): Promise<WorldState> {
   // Guard against path traversal: reject URLs containing '..' path segments.
-  if (levelUrl.split('/').some((segment) => segment === '..')) {
+  if (hasPathTraversal(levelUrl)) {
     throw new Error(`Invalid level URL: path traversal detected in "${levelUrl}"`);
   }
 
@@ -86,6 +109,22 @@ export async function fetchAndLoadLevel(levelUrl: string): Promise<WorldState> {
   }
 
   const data: unknown = JSON.parse(await response.text());
+
+  if (typeof data !== 'object' || data === null) {
+    throw new Error('Invalid level data: expected an object');
+  }
+
+  const rawLevel = data as Record<string, unknown>;
+  if (typeof rawLevel['layoutPath'] !== 'string' || rawLevel['layoutPath'].trim() === '') {
+    throw new Error('Invalid level data: layoutPath must be a non-empty string');
+  }
+
+  const resolvedLayoutUrlFromLevelData = resolveLayoutUrlFromLayoutPath(levelUrl, rawLevel['layoutPath']);
+  if (resolvedLayoutUrlFromLevelData !== layoutUrl) {
+    throw new Error(
+      `Invalid level data: layoutPath resolves to "${resolvedLayoutUrlFromLevelData}" but runtime loaded "${layoutUrl}"`,
+    );
+  }
 
   const levelData = validateLevelData(data, {
     width: parsedLayout.width,

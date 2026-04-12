@@ -12,6 +12,7 @@ import type { LevelData } from './types';
 
 const minimalLevel: LevelData = {
   version: 2,
+  layoutPath: 'test.layout.txt',
   name: 'Test Level',
   premise: 'A deterministic test premise.',
   goal: 'Reach the safe test door.',
