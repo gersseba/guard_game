@@ -1,11 +1,11 @@
 # World Layer
 
-The world layer owns deterministic, JSON-serializable state and validation/deserialization of level files.
+The world layer owns deterministic, JSON-serializable state and validation/deserialization of level packages (layout text + level JSON).
 
 ## Responsibilities
 - Define and maintain `WorldState` as the source of truth
-- Validate flat level JSON payloads (`LevelData`)
-- Deserialize level data into runtime world state
+- Validate level JSON payloads (`LevelData`) against parsed layout bounds
+- Deserialize level package data into runtime world state
 - Preserve determinism for interaction and movement outcomes
 - Derive player-facing direction from movement intent as deterministic world data
 - Keep world state independent from rendering and LLM infrastructure
@@ -152,7 +152,7 @@ Deterministic rules:
 
 | Module | Responsibility |
 |---|---|
-| `validateHeader.ts` | `version`, `name`, `premise`, `goal`, `width`, `height` |
+| `validateHeader.ts` | `version`, `layoutPath`, `name`, `premise`, `goal` |
 | `validatePlayer.ts` | player `x`/`y`, optional `spriteAssetPath` and `spriteSet` |
 | `validateGuards.ts` | guards array: identity, position, guardState, traits, sprites, instance fields, itemUseRules |
 | `validateDoors.ts` | doors array: identity, position, doorState, outcome, requiredItemId, sprites |
@@ -172,6 +172,7 @@ Deterministic rules:
 
 Validation boundary rule:
 - validation remains DTO-only and does not instantiate runtime classes
+- layout geometry validation (`#` / `.` parsing, rectangular checks, and dimensions) is handled by `src/world/layout.ts`
 
 To add validation for a new domain field: add it to the matching `src/world/levelValidation/` module. Add a new module for entirely new domains. Add shared utilities to `shared.ts` when they are used by two or more domain validators.
 
@@ -223,6 +224,10 @@ To add mapping for a new domain entity: add a mapping helper in `src/world/level
 Deserialization boundary rule:
 - validated DTOs are mapped into runtime class instances via seam helpers
 - JSON ingress/egress boundaries remain DTO-shaped; class instances are not required at file I/O boundaries
+
+Layout composition rule:
+- `WorldState.grid.width` and `WorldState.grid.height` are derived from parsed layout dimensions only
+- blocking `#` cells are converted into deterministic blocking environment entries during deserialization
 
 Deserialization now passes through both optional sprite forms:
 - `spriteAssetPath`

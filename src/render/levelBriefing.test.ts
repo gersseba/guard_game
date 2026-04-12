@@ -1,9 +1,23 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import riddleJson from '../../public/levels/riddle.json';
+import { parseLayoutText } from '../world/layout';
 import { deserializeLevel, validateLevelData } from '../world/level';
 import { createLevelBriefingPanel } from './levelBriefing';
 import { createBodyContainer } from '../test-support/dom';
+
+const riddleLayoutText = readFileSync('public/levels/riddle.layout.txt', 'utf8');
+const riddleLayout = parseLayoutText(riddleLayoutText);
+
+const createWorldStateFromLevelData = (levelData: unknown) =>
+  deserializeLevel(
+    validateLevelData(levelData, {
+      width: riddleLayout.width,
+      height: riddleLayout.height,
+    }),
+    riddleLayout,
+  );
 
 describe('createLevelBriefingPanel', () => {
   let container: HTMLDivElement;
@@ -14,7 +28,7 @@ describe('createLevelBriefingPanel', () => {
 
   it('renders premise and goal labels with metadata content from world state', () => {
     const panel = createLevelBriefingPanel(container);
-    const riddleWorldState = deserializeLevel(validateLevelData(riddleJson));
+    const riddleWorldState = createWorldStateFromLevelData(riddleJson);
 
     panel.render(riddleWorldState.levelMetadata);
 
@@ -34,15 +48,13 @@ describe('createLevelBriefingPanel', () => {
 
   it('updates panel content when active level metadata changes', () => {
     const panel = createLevelBriefingPanel(container);
-    const updatedWorldState = deserializeLevel(
-      validateLevelData({
-        ...riddleJson,
-        name: 'Two Guards Redux',
-        premise: 'A refreshed premise.',
-        goal: 'A refreshed goal.',
-      }),
-    );
-    const riddleWorldState = deserializeLevel(validateLevelData(riddleJson));
+    const updatedWorldState = createWorldStateFromLevelData({
+      ...riddleJson,
+      name: 'Two Guards Redux',
+      premise: 'A refreshed premise.',
+      goal: 'A refreshed goal.',
+    });
+    const riddleWorldState = createWorldStateFromLevelData(riddleJson);
 
     panel.render(riddleWorldState.levelMetadata);
     panel.render(updatedWorldState.levelMetadata);
