@@ -1,7 +1,4 @@
 import { isLlmRequestError, type LlmRequestError, type LlmClient } from '../llm/client';
-import { Item } from '../world/entities/items/Item';
-import { applyKnowledgeTokenOutcomeIfValid } from '../world/knowledgeState';
-import { resolveNpcTrade } from '../world/npcTrade';
 import type { ConversationMessage, Npc, Player, WorldState } from '../world/types';
 import {
   createDefaultNpcFunctionRegistry,
@@ -12,14 +9,11 @@ import {
   type NpcActionExecutionResult,
   type NpcActionExecutor,
 } from './npcActionExecutor';
+import {
+  applyNpcDialogueConsequences,
+  type NpcDialogueConsequenceTrace,
+} from './npcDialogueConsequenceHook';
 import { buildNpcPromptContext } from './npcPromptContext';
-
-interface NpcInteractionOutcome {
-  giveItem?: string;
-  takeItem?: string;
-  requireKnowledgeTokens?: string[];
-  grantKnowledgeTokens?: string[];
-}
 
 const applyTalkTrigger = (npc: Npc): Npc => {
   const talkTrigger = npc.triggers?.onTalk;
@@ -36,89 +30,6 @@ const applyTalkTrigger = (npc: Npc): Npc => {
   };
 };
 
-const reindexSelectedSlotAfterRemoval = (
-  selectedItem: Player['inventory']['selectedItem'],
-  removedSlotIndex: number,
-): Player['inventory']['selectedItem'] => {
-  if (!selectedItem) {
-    return selectedItem;
-  }
-
-  if (selectedItem.slotIndex === removedSlotIndex) {
-    return null;
-  }
-
-  if (selectedItem.slotIndex > removedSlotIndex) {
-    return {
-      ...selectedItem,
-      slotIndex: selectedItem.slotIndex - 1,
-    };
-  }
-
-  return selectedItem;
-};
-
-const applyInventoryOutcome = (
-  npc: Npc,
-  player: Player,
-  outcome: NpcInteractionOutcome | undefined,
-): { npc: Npc; player: Player } => {
-  if (!outcome) {
-    return { npc, player };
-  }
-
-  const npcItems = [...(npc.inventory ?? [])];
-  const playerItems = [...player.inventory.items];
-  let selectedItem = player.inventory.selectedItem ?? null;
-  let npcInventoryChanged = false;
-  let playerInventoryChanged = false;
-
-  if (typeof outcome.giveItem === 'string') {
-    const transferResult = Item.takeFirstByItemId(npcItems, outcome.giveItem);
-    npcItems.splice(0, npcItems.length, ...transferResult.remainingItems);
-    if (transferResult.item) {
-      playerItems.push(transferResult.item.toInventoryItem());
-      npcInventoryChanged = true;
-      playerInventoryChanged = true;
-    }
-  }
-
-  if (typeof outcome.takeItem === 'string') {
-    const playerItemIndex = playerItems.findIndex((item) => item.itemId === outcome.takeItem);
-    const transferResult = Item.takeFirstByItemId(playerItems, outcome.takeItem);
-    playerItems.splice(0, playerItems.length, ...transferResult.remainingItems);
-    if (transferResult.item) {
-      selectedItem = reindexSelectedSlotAfterRemoval(selectedItem, playerItemIndex) ?? null;
-      npcItems.push(transferResult.item.toInventoryItem());
-      npcInventoryChanged = true;
-      playerInventoryChanged = true;
-    }
-  }
-
-  const nextNpc = npcInventoryChanged
-    ? {
-        ...npc,
-        inventory: npcItems,
-      }
-    : npc;
-
-  const nextPlayer = playerInventoryChanged
-    ? {
-        ...player,
-        inventory: {
-          ...player.inventory,
-          items: playerItems,
-          selectedItem,
-        },
-      }
-    : player;
-
-  return {
-    npc: nextNpc,
-    player: nextPlayer,
-  };
-};
-
 export interface NpcInteractionRequest {
   npc: Npc;
   player: Player;
@@ -132,6 +43,7 @@ export interface NpcInteractionResult {
   updatedWorldState: WorldState;
   llmError?: LlmRequestError;
   actionExecutionTrace?: NpcActionExecutionResult;
+  consequenceTrace?: NpcDialogueConsequenceTrace;
 }
 
 export interface NpcInteractionService {
@@ -210,43 +122,23 @@ export const createNpcInteractionService = (
       actorConversationHistoryByActorId: updatedHistoryByActorId,
     };
 
-    const knowledgeOutcomeResolution = applyKnowledgeTokenOutcomeIfValid(
-      stateWithUpdatedHistory.knowledgeState,
-      llmResult.outcome,
-      {
-        tick: stateWithUpdatedHistory.tick,
-        grantedByActorId: request.npc.id,
-      },
-    );
-
-    const stateWithKnowledgeTokens: WorldState = {
-      ...stateWithUpdatedHistory,
-      knowledgeState: knowledgeOutcomeResolution.knowledgeState,
-    };
-
     const npcFromWorldState =
-      stateWithKnowledgeTokens.npcs.find((candidate) => candidate.id === request.npc.id) ?? request.npc;
+      stateWithUpdatedHistory.npcs.find((candidate) => candidate.id === request.npc.id) ?? request.npc;
     const npcAfterTalkTrigger = applyTalkTrigger(npcFromWorldState);
-    const tradeResult = resolveNpcTrade(
-      npcAfterTalkTrigger,
-      stateWithKnowledgeTokens.player,
-      stateWithKnowledgeTokens.tick,
-    );
-    const inventoryResult = applyInventoryOutcome(
-      tradeResult.npc,
-      tradeResult.player,
-      knowledgeOutcomeResolution.isValid && !(tradeResult.npc.tradeRules?.length)
-        ? llmResult.outcome
-        : undefined,
-    );
-
-    const updatedWorldState: WorldState = {
-      ...stateWithKnowledgeTokens,
-      player: inventoryResult.player,
-      npcs: stateWithKnowledgeTokens.npcs.map((npc) =>
-        npc.id === request.npc.id ? inventoryResult.npc : npc,
+    const worldStateWithTalkTrigger: WorldState = {
+      ...stateWithUpdatedHistory,
+      npcs: stateWithUpdatedHistory.npcs.map((npc) =>
+        npc.id === request.npc.id ? npcAfterTalkTrigger : npc,
       ),
     };
+
+    const consequenceResult = applyNpcDialogueConsequences({
+      npcId: request.npc.id,
+      worldState: worldStateWithTalkTrigger,
+      outcome: llmResult.outcome,
+    });
+
+    const updatedWorldState = consequenceResult.updatedWorldState;
 
     const actionExecutionTrace = llmResult.actions?.length
       ? actionExecutor.execute({
@@ -261,6 +153,7 @@ export const createNpcInteractionService = (
       responseText: assistantText ? `${request.npc.displayName}: ${assistantText}` : '',
       updatedWorldState: actionExecutionTrace?.updatedWorldState ?? updatedWorldState,
       actionExecutionTrace,
+      consequenceTrace: consequenceResult.trace,
     };
   },
   };
