@@ -631,4 +631,73 @@ describe('createNpcInteractionService', () => {
 
     expect(result.updatedWorldState.knowledgeState?.tokensById['seal-b']).toBeUndefined();
   });
+
+  it('blocks give/take inventory outcomes when knowledge token requirements are not satisfied', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({
+        text: 'You cannot trade yet.',
+        outcome: {
+          requireKnowledgeTokens: ['seal-a'],
+          giveItem: 'npc-token',
+          takeItem: 'player-token',
+        },
+      }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      inventory: [
+        {
+          itemId: 'npc-token',
+          displayName: 'NPC Token',
+          sourceObjectId: 'npc-1',
+          pickedUpAtTick: 0,
+        },
+      ],
+    };
+    const player = {
+      ...worldState.player,
+      inventory: {
+        ...worldState.player.inventory,
+        items: [
+          {
+            itemId: 'player-token',
+            displayName: 'Player Token',
+            sourceObjectId: 'object-2',
+            pickedUpAtTick: 1,
+          },
+        ],
+      },
+    };
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player,
+      worldState: {
+        ...worldState,
+        player,
+        npcs: [npc],
+      },
+      playerMessage: 'Trade?',
+    });
+
+    expect(result.updatedWorldState.player.inventory.items).toEqual([
+      {
+        itemId: 'player-token',
+        displayName: 'Player Token',
+        sourceObjectId: 'object-2',
+        pickedUpAtTick: 1,
+      },
+    ]);
+    expect(result.updatedWorldState.npcs[0].inventory).toEqual([
+      {
+        itemId: 'npc-token',
+        displayName: 'NPC Token',
+        sourceObjectId: 'npc-1',
+        pickedUpAtTick: 0,
+      },
+    ]);
+    expect(result.updatedWorldState.knowledgeState?.tokensById['seal-a']).toBeUndefined();
+  });
 });

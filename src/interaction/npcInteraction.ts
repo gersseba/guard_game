@@ -229,7 +229,7 @@ export const createNpcInteractionService = (
     const inventoryResult = applyInventoryOutcome(
       npcAfterTalkTrigger,
       stateWithKnowledgeTokens.player,
-      llmResult.outcome,
+      knowledgeOutcomeResolution.isValid ? llmResult.outcome : undefined,
     );
 
     const updatedWorldState: WorldState = {
