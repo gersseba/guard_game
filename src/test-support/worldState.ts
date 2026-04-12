@@ -1,4 +1,5 @@
 import type { Door, Guard, InteractiveObject, InventoryItem, Npc, WorldState } from '../world/types';
+import { createQuestState } from '../world/questState';
 
 export type TestWorldStateOverrides = Omit<Partial<WorldState>, 'player'> & {
   player?: Partial<WorldState['player']>;
@@ -26,6 +27,7 @@ export const createTestWorldState = (overrides?: TestWorldStateOverrides): World
     doors: [],
     npcs: [],
     interactiveObjects: [],
+    questState: createQuestState(),
     actorConversationHistoryByActorId: {},
     levelOutcome: null,
   };

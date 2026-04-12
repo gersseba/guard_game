@@ -6,6 +6,7 @@ import type { InteractiveObject } from './object.js';
 import type { Environment } from './environment.js';
 import type { ActorConversationHistoryByActorId } from './conversation.js';
 import type { ItemUseAttemptResultEvent } from './inventory.js';
+import type { QuestState } from './quest.js';
 
 export interface WorldGrid {
   width: number;
@@ -30,6 +31,7 @@ export interface WorldState {
   doors: Door[];
   interactiveObjects: InteractiveObject[];
   environments?: Environment[];
+  questState?: QuestState;
   actorConversationHistoryByActorId: ActorConversationHistoryByActorId;
   lastItemUseAttemptEvent?: ItemUseAttemptResultEvent | null;
   levelOutcome: 'win' | 'lose' | null;
