@@ -19,6 +19,8 @@ export interface LlmResponse {
   outcome?: {
     giveItem?: string;
     takeItem?: string;
+    requireKnowledgeTokens?: string[];
+    grantKnowledgeTokens?: string[];
   };
 }
 

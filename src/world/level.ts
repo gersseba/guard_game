@@ -18,6 +18,7 @@ import { mapPlayerDtoToRuntime } from './levelMapping/mapPlayer';
 import { mapDoorDtoToRuntime } from './levelMapping/mapDoor';
 import { mapNpcWithRiddleClue } from './levelMapping/mapNpcWithRiddleClue';
 import { createQuestState } from './questState';
+import { createKnowledgeState } from './knowledgeState';
 
 interface LayoutBounds {
   width: number;
@@ -143,6 +144,7 @@ export function deserializeLevel(levelData: LevelData, parsedLayout: ParsedLayou
       mapEnvironmentDtoToRuntime(environment),
     ),
     questState: createQuestState(levelData.questChains ?? []),
+    knowledgeState: createKnowledgeState(),
     actorConversationHistoryByActorId: {},
     lastItemUseAttemptEvent: null,
     levelOutcome: null,

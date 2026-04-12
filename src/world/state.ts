@@ -1,5 +1,6 @@
 import type { WorldState } from './types';
 import { createQuestState } from './questState';
+import { createKnowledgeState } from './knowledgeState';
 
 export const createInitialWorldState = (): WorldState => ({
   tick: 0,
@@ -49,6 +50,7 @@ export const createInitialWorldState = (): WorldState => ({
   ],
   environments: [],
   questState: createQuestState(),
+  knowledgeState: createKnowledgeState(),
   actorConversationHistoryByActorId: {},
   lastItemUseAttemptEvent: null,
   levelOutcome: null,
