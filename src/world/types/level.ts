@@ -1,6 +1,6 @@
 import type { GridPosition, SpriteSet } from './grid.js';
 import type { InventoryItem, ItemUseRule } from './inventory.js';
-import type { NpcTriggers } from './npc.js';
+import type { NpcTradeRule, NpcTriggers } from './npc.js';
 import type { QuestChainDefinition } from './quest.js';
 
 export interface LevelPlayerDto {
@@ -60,6 +60,7 @@ export interface LevelNpcDto {
   patrol?: { path: GridPosition[] };
   triggers?: NpcTriggers;
   inventory?: InventoryItem[];
+  tradeRules?: NpcTradeRule[];
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
   /** Instance-specific knowledge this NPC has. */

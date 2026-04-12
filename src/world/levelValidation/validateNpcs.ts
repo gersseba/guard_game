@@ -1,6 +1,7 @@
 import {
   validateGridPositionInBounds,
   validateInventoryItems,
+  validateNpcTradeRules,
   validateNpcTriggers,
   validateSpriteSet,
 } from './shared';
@@ -79,6 +80,10 @@ export const validateNpcs = (
 
     if (npc['inventory'] !== undefined) {
       validateInventoryItems(npc['inventory'], `npc at index ${i} inventory`);
+    }
+
+    if (npc['tradeRules'] !== undefined) {
+      validateNpcTradeRules(npc['tradeRules'], `npc at index ${i} tradeRules`);
     }
 
     if (npc['instanceKnowledge'] !== undefined && typeof npc['instanceKnowledge'] !== 'string') {

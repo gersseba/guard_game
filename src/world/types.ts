@@ -59,7 +59,16 @@ export type {
 export type { Guard } from './types/guard.js';
 
 // NPC types
-export type { RiddleClue, RiddleClueConstraint, TriggerEffect, NpcTriggers, Npc } from './types/npc.js';
+export type {
+  RiddleClue,
+  RiddleClueConstraint,
+  TriggerEffect,
+  NpcTriggers,
+  NpcTradeRewardItem,
+  NpcTradeRule,
+  NpcTradeState,
+  Npc,
+} from './types/npc.js';
 
 // Door types
 export type { Door } from './types/door.js';

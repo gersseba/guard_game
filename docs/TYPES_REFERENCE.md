@@ -9,7 +9,7 @@ Source of truth:
   - `src/world/types/player.ts` - Player
   - `src/world/types/inventory.ts` - Inventory and item-use types
   - `src/world/types/guard.ts` - Guard
-  - `src/world/types/npc.ts` - Npc, RiddleClue, RiddleClueConstraint
+  - `src/world/types/npc.ts` - Npc, NpcTradeRule, NpcTradeState, RiddleClue, RiddleClueConstraint
   - `src/world/types/door.ts` - Door
   - `src/world/types/object.ts` - InteractiveObject, ObjectCapabilities
   - `src/world/types/environment.ts` - Environment
@@ -90,13 +90,15 @@ Extends `ActorInit`:
 - `patrol?: { path: Array<{ x: number; y: number }> }`
 - `triggers?: NpcTriggers`
 - `inventory?: InventoryItem[]`
+- `tradeRules?: NpcTradeRule[]`
+- `tradeState?: NpcTradeState`
 - `instanceKnowledge?: string`
 - `instanceBehavior?: string`
 - `riddleClue?: RiddleClue`
 
 ### GuardNpcInit
 Extends `NpcInit` with guard-specialized constraints:
-- omits `npcType`, `dialogueContextKey`, `patrol`, `triggers`, `inventory`, `riddleClue` from constructor input
+- omits `npcType`, `dialogueContextKey`, `patrol`, `triggers`, `inventory`, `tradeRules`, `tradeState`, `riddleClue` from constructor input
 - `guardState: 'idle' | 'patrolling' | 'alert'`
 - `itemUseRules?: Record<string, ItemUseRule>`
 
@@ -235,6 +237,24 @@ Serializable trigger mutation used by NPC approach/talk hooks.
 - `onTalk?: TriggerEffect`
 
 Optional trigger hooks for deterministic NPC state updates.
+
+### NpcTradeRewardItem
+- `itemId: string`
+- `displayName: string`
+
+Serializable reward descriptor used by deterministic NPC trade rules.
+
+### NpcTradeRule
+- `ruleId: string`
+- `requiredItemIds: string[]`
+- `rewardItems: NpcTradeRewardItem[]`
+
+Declarative deterministic NPC exchange rule. Satisfied requirements consume player inventory items and grant reward items through world logic.
+
+### NpcTradeState
+- `completedRuleIds: string[]`
+
+Serializable replay guard for one-time NPC trade rewards.
 
 ### Player
 - `id: string`

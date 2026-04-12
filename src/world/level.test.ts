@@ -1034,6 +1034,50 @@ describe('npcs field', () => {
     expect(state.npcs[0].dialogueContextKey).toBe('npc_guard_captain');
   });
 
+  it('maps optional npc trade rules into serializable runtime state', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      npcs: [
+        {
+          id: 'npc-1',
+          displayName: 'Archivist',
+          x: 5,
+          y: 5,
+          npcType: 'archive_keeper',
+          tradeRules: [
+            {
+              ruleId: 'swap-pass-for-key',
+              requiredItemIds: ['gate-pass'],
+              rewardItems: [{ itemId: 'archive-key', displayName: 'Archive Key' }],
+            },
+          ],
+        },
+      ],
+      doors: [{ id: 'door-1', displayName: 'Door', x: 0, y: 10, isOpen: true, isLocked: false, isSafe: true }],
+    };
+
+    const validated = validateLevelData(level);
+    const state = deserializeLevelWithDefaultLayout(validated);
+
+    expect(state.npcs[0].tradeRules).toEqual([
+      {
+        ruleId: 'swap-pass-for-key',
+        requiredItemIds: ['gate-pass'],
+        rewardItems: [{ itemId: 'archive-key', displayName: 'Archive Key' }],
+      },
+    ]);
+    expect(JSON.parse(JSON.stringify(state.npcs[0]))).toMatchObject({
+      id: 'npc-1',
+      tradeRules: [
+        {
+          ruleId: 'swap-pass-for-key',
+          requiredItemIds: ['gate-pass'],
+          rewardItems: [{ itemId: 'archive-key', displayName: 'Archive Key' }],
+        },
+      ],
+    });
+  });
+
   it('throws when npcs is not an array', () => {
     const bad = {
       ...minimalLevel,
