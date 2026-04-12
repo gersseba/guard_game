@@ -17,6 +17,11 @@ import { createDefaultItemUseResolver } from '../interaction/itemUse';
 import { createInteractionDispatcher } from '../interaction/interactionDispatcher';
 import { createWorld } from '../world/world';
 import type { ConversationMessage } from '../world/types';
+import {
+  applyQuestProgressEvent,
+  ensureQuestState,
+  toQuestProgressEventFromItemUseAttempt,
+} from '../world/questState';
 import { createFixedTickLoop } from './fixedTickLoop';
 import { createLevelLoadOrchestration } from './levelLoadOrchestration';
 import { createRuntimeInteractionResultBridge } from './interactionResultBridge';
@@ -110,9 +115,14 @@ export const createRuntimeApp = (appElement: HTMLDivElement): RuntimeApp => {
     itemUseResolver,
     onItemUseAttemptResolved: (event) => {
       const currentState = world.getState();
+      const questState = applyQuestProgressEvent(
+        ensureQuestState(currentState.questState),
+        toQuestProgressEventFromItemUseAttempt(event),
+      );
       let updatedState = {
         ...currentState,
         lastItemUseAttemptEvent: event,
+        questState,
       };
 
       if (event.doorUnlockedId) {

@@ -13,9 +13,11 @@ import { validateDoors } from './levelValidation/validateDoors';
 import { validateNpcs } from './levelValidation/validateNpcs';
 import { validateObjects } from './levelValidation/validateObjects';
 import { validateEnvironments } from './levelValidation/validateEnvironments';
+import { validateQuestChains } from './levelValidation/validateQuestChains';
 import { mapPlayerDtoToRuntime } from './levelMapping/mapPlayer';
 import { mapDoorDtoToRuntime } from './levelMapping/mapDoor';
 import { mapNpcWithRiddleClue } from './levelMapping/mapNpcWithRiddleClue';
+import { createQuestState } from './questState';
 
 interface LayoutBounds {
   width: number;
@@ -104,6 +106,7 @@ export function validateLevelData(input: unknown, layoutBounds?: LayoutBounds): 
   }
   validateObjects(raw);
   validateEnvironments(raw);
+  validateQuestChains(raw);
 
   return raw as unknown as LevelData;
 }
@@ -139,6 +142,7 @@ export function deserializeLevel(levelData: LevelData, parsedLayout: ParsedLayou
     environments: [...layoutWallEnvironments, ...(levelData.environments ?? [])].map((environment) =>
       mapEnvironmentDtoToRuntime(environment),
     ),
+    questState: createQuestState(levelData.questChains ?? []),
     actorConversationHistoryByActorId: {},
     lastItemUseAttemptEvent: null,
     levelOutcome: null,

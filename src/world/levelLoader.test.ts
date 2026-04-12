@@ -124,6 +124,11 @@ describe('fetchAndLoadLevel', () => {
       premise: 'A deterministic test premise.',
       goal: 'Verify level loading behavior.',
     });
+    expect(state.questState).toEqual({
+      version: 1,
+      chains: [],
+      progressByChainId: {},
+    });
     expect(state.npcs[0]).toBeInstanceOf(Npc);
     expect(state.npcs[0].inventory?.[0]).toBeInstanceOf(Item);
     expect(state.interactiveObjects[0]).toBeInstanceOf(InertObject);

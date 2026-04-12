@@ -65,6 +65,7 @@ Legacy `WorldCommand` objects (`move`, `selectInventorySlot`, `useSelectedItem`,
 - `doors`
 - `interactiveObjects`
 - `environments`
+- `questState`
 - `actorConversationHistoryByActorId`
 - `lastItemUseAttemptEvent`
 - `levelOutcome`
@@ -134,6 +135,16 @@ Deterministic rules:
 - `src/runtime/runtimeController.ts` emits one event per `useSelectedItem` command using command index ordering within the tick.
 - The callback wiring in `src/runtime/createRuntimeApp.ts` commits each emitted event immutably, so the last one in a tick becomes the stored event.
 
+### Quest State
+
+`questState` is a serializable world field storing deterministic quest-chain definitions and progression state.
+
+Deterministic rules:
+- New runtime state initializes `questState` to an empty schema (`version: 1`, no chains, empty progress map).
+- Level deserialization initializes `questState` from optional `levelData.questChains` with safe defaults when omitted.
+- Quest progression is advanced only from validated item-use events emitted by the deterministic item-use resolver (`ItemUseAttemptResultEvent`) and never from LLM response text.
+- Quest transitions are pure world-layer reducer logic (`src/world/questState.ts`), so identical event sequences produce identical progression state.
+
 ### Door Unlock State
 
 `door.isUnlocked` is a serializable boolean flag that tracks whether a door has been unlocked via item-use interaction.
@@ -159,6 +170,7 @@ Deterministic rules:
 | `validateNpcs.ts` | npcs array: identity, position, npcType, patrol path bounds, triggers, inventory, riddleClue |
 | `validateObjects.ts` | interactiveObjects array: identity, position, objectType, interactionType, state, pickupItem, sprites, capabilities, itemUseRules |
 | `validateEnvironments.ts` | environments array: identity, position, isBlocking |
+| `validateQuestChains.ts` | optional questChains array: chain identity, stage identity, and deterministic item-use event criteria |
 | `shared.ts` | shared helper functions used across domain validators |
 
 `src/world/levelValidation/shared.ts` contains reusable cross-domain helpers:

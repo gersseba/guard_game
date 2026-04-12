@@ -16,6 +16,7 @@
  * - `object.ts` - InteractiveObject and ObjectCapabilities
  * - `environment.ts` - Environment entities
  * - `conversation.ts` - Conversation history contracts
+ * - `quest.ts` - Deterministic quest-chain state and event contracts
  * - `level.ts` - Level DTOs and LevelData format
  * - `world-state.ts` - WorldState, WorldGrid, LevelMetadata
  * - `command.ts` - WorldCommand, Intent, World interface
@@ -70,6 +71,21 @@ export type { Environment } from './types/environment.js';
 
 // Conversation types
 export type { ConversationMessage, ActorConversationHistoryByActorId } from './types/conversation.js';
+
+// Quest progression types
+export type {
+  QuestItemUseTargetKind,
+  QuestAffectedEntityType,
+  QuestItemUseResolvedCriteria,
+  QuestProgressCriteria,
+  QuestStageDefinition,
+  QuestChainDefinition,
+  QuestChainStatus,
+  QuestChainProgress,
+  QuestState,
+  QuestItemUseResolvedEvent,
+  QuestProgressEvent,
+} from './types/quest.js';
 
 // World state types
 export type { WorldState, WorldGrid, LevelMetadata } from './types/world-state.js';

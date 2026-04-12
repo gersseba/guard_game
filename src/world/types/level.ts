@@ -1,6 +1,7 @@
 import type { GridPosition, SpriteSet } from './grid.js';
 import type { InventoryItem, ItemUseRule } from './inventory.js';
 import type { NpcTriggers } from './npc.js';
+import type { QuestChainDefinition } from './quest.js';
 
 export interface LevelPlayerDto {
   x: number;
@@ -118,4 +119,6 @@ export interface LevelData {
   npcs?: LevelNpcDto[];
   interactiveObjects?: LevelInteractiveObjectDto[];
   environments?: LevelEnvironmentDto[];
+  /** Optional deterministic quest-chain definitions for event-driven progression. */
+  questChains?: QuestChainDefinition[];
 }

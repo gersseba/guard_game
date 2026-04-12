@@ -14,6 +14,7 @@ Source of truth:
   - `src/world/types/object.ts` - InteractiveObject, ObjectCapabilities
   - `src/world/types/environment.ts` - Environment
   - `src/world/types/conversation.ts` - ConversationMessage, ActorConversationHistoryByActorId
+  - `src/world/types/quest.ts` - QuestState, QuestChainDefinition, QuestProgressEvent
   - `src/world/types/world-state.ts` - WorldState, WorldGrid, LevelMetadata
   - `src/world/types/level.ts` - LevelData, Level*Dto types
   - `src/world/types/command.ts` - WorldCommand, Intent, World interface
@@ -394,9 +395,38 @@ Stores conversation history by actor id. The current conversational actors are g
 - `doors: Door[]`
 - `interactiveObjects: InteractiveObject[]`
 - `environments?: Environment[]`
+- `questState?: QuestState` - deterministic quest-chain definitions and progression snapshot
 - `actorConversationHistoryByActorId: ActorConversationHistoryByActorId`
 - `lastItemUseAttemptEvent?: ItemUseAttemptResultEvent | null` - latest resolved selected-item use attempt
 - `levelOutcome: 'win' | 'lose' | null`
+
+### QuestChainDefinition
+- `chainId: string`
+- `displayName: string`
+- `npcId?: string`
+- `stages: QuestStageDefinition[]`
+
+### QuestStageDefinition
+- `stageId: string`
+- `description?: string`
+- `completeWhen: QuestProgressCriteria`
+
+### QuestProgressCriteria
+Current deterministic event matcher shape:
+- `eventType: 'item_use_resolved'`
+- optional filters: `result`, `targetKind`, `targetId`, `selectedItemId`, `doorUnlockedId`, `affectedEntityType`, `affectedEntityId`
+
+### QuestState
+- `version: 1`
+- `chains: QuestChainDefinition[]`
+- `progressByChainId: Record<string, QuestChainProgress>`
+
+### QuestChainProgress
+- `chainId: string`
+- `status: 'not_started' | 'in_progress' | 'completed'`
+- `currentStageIndex: number`
+- `completedStageIds: string[]`
+- `lastAdvancedTick?: number`
 
 ## Actor and NPC Prompt Context Types
 

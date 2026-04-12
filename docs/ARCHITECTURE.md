@@ -68,18 +68,20 @@ Types and interfaces use clear, semantic names. This supports LLM prompt generat
 
 3. **Deterministic Use-Attempt Routing:** When `useSelectedItem` commands are present, `RuntimeController` calls the injected item-use resolver with the post-command `WorldState` and each original command index. `src/runtime/createRuntimeApp.ts` wires the `onItemUseAttemptResolved(...)` callback that commits the latest emitted `ItemUseAttemptResultEvent` back into serialized world state through `world.resetToState(...)`. When a door is unlocked (`event.doorUnlockedId` is present), that same callback sets the corresponding door's `isUnlocked` flag to true, allowing future movement through that door via spatial rules checks.
 
-4. **Interaction Routing:** If an `interact` command was issued and the runtime is not paused, `src/runtime/interactionResultBridge.ts` resolves one adjacent target.
+4. **Quest Progression Reducer:** The same deterministic item-use callback converts validated `ItemUseAttemptResultEvent` values into quest progress events and applies them through the pure quest reducer in `src/world/questState.ts`. No LLM text is used as a quest transition input.
+
+5. **Interaction Routing:** If an `interact` command was issued and the runtime is not paused, `src/runtime/interactionResultBridge.ts` resolves one adjacent target.
        - **Action Modal Routing:** If the target is action-modal-eligible (`guard` or `npc`), the bridge opens an action-modal session immediately through `src/runtime/modalCoordinator.ts`. If the player chooses Chat, the bridge resolves the conversational target by id and then calls `interactionDispatcher.dispatch(...)` to start the chat flow.
        - **Deterministic Routing:** If the target is non-modal (`door` or `interactiveObject`), the bridge dispatches immediately. Result handlers commit world-state mutations without opening modals.
 
-5. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into runtime bridge side effects.
+6. **Result Routing:** Returned `InteractionHandlerResult` (sync or async) is routed through `resultDispatcher.dispatch(...)` into runtime bridge side effects.
        - Conversational results (`guard`/`npc`) are routed through `interactionResultBridge` into `modalCoordinator`, which calls `runtimeController.openConversation(actorId)`, `viewportPauseOverlay.show()`, and `chatModal.open(...)`.
    - Deterministic results (door/object) stay local to world-state reset and level-outcome callbacks.
    - Door and object interactions do not open modals and do not pause gameplay.
 
-6. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port. Character sprite assets are loaded and resolved to sprite/marker mode inside the render layer only. Separate DOM render utilities manage the chat modal, inventory overlay, paused-viewport overlay, and level-outcome overlay.
+7. **Render Phase:** Every animation frame renders the latest world state through the PixiJS render port. Character sprite assets are loaded and resolved to sprite/marker mode inside the render layer only. Separate DOM render utilities manage the chat modal, inventory overlay, paused-viewport overlay, and level-outcome overlay.
 
-7. **Debug Phase:** Current JSON world state is serialized and printed to the debug panel.
+8. **Debug Phase:** Current JSON world state is serialized and printed to the debug panel.
 
 Runtime composition entry points:
 - `src/main.ts`: validates `#app` and starts the runtime app.

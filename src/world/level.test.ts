@@ -897,6 +897,73 @@ describe('levelOutcome field', () => {
   });
 });
 
+describe('questState field', () => {
+  it('initializes to an empty quest state when questChains is omitted', () => {
+    const state = deserializeLevelWithDefaultLayout(validateLevelData(minimalLevel));
+
+    expect(state.questState).toEqual({
+      version: 1,
+      chains: [],
+      progressByChainId: {},
+    });
+  });
+
+  it('deserializes deterministic quest chain progress defaults when questChains are provided', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      questChains: [
+        {
+          chainId: 'seal-1',
+          displayName: 'First Seal',
+          stages: [
+            {
+              stageId: 'bribe-guard',
+              completeWhen: {
+                eventType: 'item_use_resolved',
+                result: 'success',
+                targetKind: 'guard',
+                targetId: 'guard-1',
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const state = deserializeLevelWithDefaultLayout(validateLevelData(level));
+
+    expect(state.questState?.chains).toHaveLength(1);
+    expect(state.questState?.progressByChainId['seal-1']).toEqual({
+      chainId: 'seal-1',
+      status: 'not_started',
+      currentStageIndex: 0,
+      completedStageIds: [],
+    });
+  });
+
+  it('rejects quest chains with unsupported completeWhen event types', () => {
+    const badLevel = {
+      ...minimalLevel,
+      questChains: [
+        {
+          chainId: 'seal-1',
+          displayName: 'First Seal',
+          stages: [
+            {
+              stageId: 'stage-1',
+              completeWhen: {
+                eventType: 'dialogue_generated',
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(badLevel)).toThrowError('completeWhen.eventType must be "item_use_resolved"');
+  });
+});
+
 describe('npcs field', () => {
   it('accepts level data without npcs field (backward compatibility)', () => {
     const level: LevelData = {
