@@ -122,7 +122,10 @@ const isItemUseAttemptResultEvent = (value: unknown): value is ItemUseAttemptRes
     return false;
   }
 
-  if (typeof value.result !== 'string' || !ITEM_USE_ATTEMPT_RESULTS.has(value.result)) {
+  if (
+    typeof value.result !== 'string' ||
+    !ITEM_USE_ATTEMPT_RESULTS.has(value.result as ItemUseAttemptResultEvent['result'])
+  ) {
     return false;
   }
 
