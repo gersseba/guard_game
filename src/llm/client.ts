@@ -21,6 +21,7 @@ export interface LlmResponse {
     takeItem?: string;
     requireKnowledgeTokens?: string[];
     grantKnowledgeTokens?: string[];
+    questProgressEvent?: unknown;
   };
 }
 

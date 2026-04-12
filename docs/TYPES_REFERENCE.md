@@ -31,6 +31,7 @@ Source of truth:
 - `src/world/entities/environment/Environment.ts`
 - `src/world/entities/dtoRuntimeSeams.ts`
 - `src/interaction/npcPromptContext.ts`
+- `src/interaction/npcDialogueConsequenceHook.ts`
 - `src/interaction/objectInteraction.ts`
 - `src/interaction/adjacencyResolver.ts`
 - `src/runtime/runtimeController.ts`
@@ -54,6 +55,37 @@ Forward-looking type for action modal routing. Represents a session where the pl
 - **Chat:** Open conversational modal with LLM
 - **Inventory:** Display current inventory (view-only or select item)
 - **Back:** Close modal and resume gameplay
+
+### NpcDialogueOutcome
+- `giveItem?: string`
+- `takeItem?: string`
+- `requireKnowledgeTokens?: string[]`
+- `grantKnowledgeTokens?: string[]`
+- `questProgressEvent?: QuestProgressEvent`
+
+Serializable dialogue-consequence payload consumed by deterministic validators/executors.
+
+### NpcDialogueConsequenceRequest
+- `npcId: string`
+- `worldState: WorldState`
+- `outcome: unknown`
+
+Boundary request contract used by `applyNpcDialogueConsequences(...)`.
+
+### NpcDialogueConsequenceTrace
+- `outcomeStatus: 'none' | 'accepted' | 'rejected'`
+- `missingKnowledgeTokens: string[]`
+- `inventoryMutated: boolean`
+- `tradeRuleIdApplied: string | null`
+- `questStateMutated: boolean`
+
+Deterministic trace metadata for testing/debugging dialogue consequence evaluation.
+
+### NpcDialogueConsequenceResult
+- `updatedWorldState: WorldState`
+- `trace: NpcDialogueConsequenceTrace`
+
+Deterministic output contract from `applyNpcDialogueConsequences(...)`.
 
 ### ActionModalEligibleTarget
 

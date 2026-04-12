@@ -133,6 +133,23 @@ Conversational NPC turns may still use the LLM for dialogue text, but NPC item-r
 - `npc.tradeRules` data, current player inventory, and `npc.tradeState` decide whether a trade succeeds.
 - When an NPC has trade rules, trade inventory mutation is world-owned; free-form assistant wording does not grant or deny the reward.
 
+### NPC Dialogue Consequence Hook Boundary
+
+NPC dialogue outcomes are now routed through `src/interaction/npcDialogueConsequenceHook.ts` before any gameplay mutation is applied.
+
+Deterministic consequence pipeline:
+- validates the outcome shape (`isNpcDialogueOutcome`)
+- validates/applies knowledge token requirements and grants via `src/world/knowledgeState.ts`
+- resolves trade rules via `src/world/npcTrade.ts`
+- optionally applies legacy give/take inventory transfer only when no declarative trade rule exists
+- validates/applies quest progression via `src/world/questState.ts`
+
+Safety guarantees:
+- malformed or rejected dialogue outcomes are deterministic no-mutation results
+- assistant prose alone does not mutate world state
+- quest/token/trade mutations occur only through deterministic validators/executors
+- replay behavior remains deterministic through existing quest/token/trade idempotency controls
+
 ## Conversation Pause Lifecycle
 
 When the player chooses Chat from an action-modal session, `onConversationStarted` is routed from [src/runtime/interactionResultBridge.ts](../src/runtime/interactionResultBridge.ts) into [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts). The runtime bridge + modal coordinator then perform three side effects in order:
