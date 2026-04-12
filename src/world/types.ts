@@ -17,6 +17,7 @@
  * - `environment.ts` - Environment entities
  * - `conversation.ts` - Conversation history contracts
  * - `quest.ts` - Deterministic quest-chain state and event contracts
+ * - `knowledge.ts` - Deterministic knowledge-token state and validation contracts
  * - `level.ts` - Level DTOs and LevelData format
  * - `world-state.ts` - WorldState, WorldGrid, LevelMetadata
  * - `command.ts` - WorldCommand, Intent, World interface
@@ -86,6 +87,15 @@ export type {
   QuestItemUseResolvedEvent,
   QuestProgressEvent,
 } from './types/quest.js';
+
+// Knowledge-token progression types
+export type {
+  KnowledgeTokenGrantRecord,
+  KnowledgeState,
+  KnowledgeTokenOutcome,
+  KnowledgeTokenValidationResult,
+  KnowledgeTokenOutcomeResolution,
+} from './types/knowledge.js';
 
 // World state types
 export type { WorldState, WorldGrid, LevelMetadata } from './types/world-state.js';

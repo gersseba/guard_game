@@ -1,5 +1,6 @@
 import { isLlmRequestError, type LlmRequestError, type LlmClient } from '../llm/client';
 import { Item } from '../world/entities/items/Item';
+import { applyKnowledgeTokenOutcomeIfValid } from '../world/knowledgeState';
 import type { ConversationMessage, Npc, Player, WorldState } from '../world/types';
 import {
   createDefaultNpcFunctionRegistry,
@@ -15,6 +16,8 @@ import { buildNpcPromptContext } from './npcPromptContext';
 interface NpcInteractionOutcome {
   giveItem?: string;
   takeItem?: string;
+  requireKnowledgeTokens?: string[];
+  grantKnowledgeTokens?: string[];
 }
 
 const applyTalkTrigger = (npc: Npc): Npc => {
@@ -206,19 +209,33 @@ export const createNpcInteractionService = (
       actorConversationHistoryByActorId: updatedHistoryByActorId,
     };
 
+    const knowledgeOutcomeResolution = applyKnowledgeTokenOutcomeIfValid(
+      stateWithUpdatedHistory.knowledgeState,
+      llmResult.outcome,
+      {
+        tick: stateWithUpdatedHistory.tick,
+        grantedByActorId: request.npc.id,
+      },
+    );
+
+    const stateWithKnowledgeTokens: WorldState = {
+      ...stateWithUpdatedHistory,
+      knowledgeState: knowledgeOutcomeResolution.knowledgeState,
+    };
+
     const npcFromWorldState =
-      stateWithUpdatedHistory.npcs.find((candidate) => candidate.id === request.npc.id) ?? request.npc;
+      stateWithKnowledgeTokens.npcs.find((candidate) => candidate.id === request.npc.id) ?? request.npc;
     const npcAfterTalkTrigger = applyTalkTrigger(npcFromWorldState);
     const inventoryResult = applyInventoryOutcome(
       npcAfterTalkTrigger,
-      stateWithUpdatedHistory.player,
+      stateWithKnowledgeTokens.player,
       llmResult.outcome,
     );
 
     const updatedWorldState: WorldState = {
-      ...stateWithUpdatedHistory,
+      ...stateWithKnowledgeTokens,
       player: inventoryResult.player,
-      npcs: stateWithUpdatedHistory.npcs.map((npc) =>
+      npcs: stateWithKnowledgeTokens.npcs.map((npc) =>
         npc.id === request.npc.id ? inventoryResult.npc : npc,
       ),
     };

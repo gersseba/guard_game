@@ -15,6 +15,7 @@ Source of truth:
   - `src/world/types/environment.ts` - Environment
   - `src/world/types/conversation.ts` - ConversationMessage, ActorConversationHistoryByActorId
   - `src/world/types/quest.ts` - QuestState, QuestChainDefinition, QuestProgressEvent
+  - `src/world/types/knowledge.ts` - KnowledgeState, KnowledgeTokenOutcome, KnowledgeTokenValidationResult
   - `src/world/types/world-state.ts` - WorldState, WorldGrid, LevelMetadata
   - `src/world/types/level.ts` - LevelData, Level*Dto types
   - `src/world/types/command.ts` - WorldCommand, Intent, World interface
@@ -396,9 +397,27 @@ Stores conversation history by actor id. The current conversational actors are g
 - `interactiveObjects: InteractiveObject[]`
 - `environments?: Environment[]`
 - `questState?: QuestState` - deterministic quest-chain definitions and progression snapshot
+- `knowledgeState?: KnowledgeState` - deterministic persistent knowledge-token grant ledger
 - `actorConversationHistoryByActorId: ActorConversationHistoryByActorId`
 - `lastItemUseAttemptEvent?: ItemUseAttemptResultEvent | null` - latest resolved selected-item use attempt
 - `levelOutcome: 'win' | 'lose' | null`
+
+### KnowledgeState
+- `version: 1`
+- `tokensById: Record<string, KnowledgeTokenGrantRecord>`
+
+### KnowledgeTokenGrantRecord
+- `tokenId: string`
+- `grantedAtTick: number`
+- `grantedByActorId?: string`
+
+### KnowledgeTokenOutcome
+- `requireKnowledgeTokens?: string[]`
+- `grantKnowledgeTokens?: string[]`
+
+### KnowledgeTokenValidationResult
+- `isValid: boolean`
+- `missingKnowledgeTokens: string[]`
 
 ### QuestChainDefinition
 - `chainId: string`

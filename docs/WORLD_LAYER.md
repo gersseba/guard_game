@@ -66,6 +66,7 @@ Legacy `WorldCommand` objects (`move`, `selectInventorySlot`, `useSelectedItem`,
 - `interactiveObjects`
 - `environments`
 - `questState`
+- `knowledgeState`
 - `actorConversationHistoryByActorId`
 - `lastItemUseAttemptEvent`
 - `levelOutcome`
@@ -144,6 +145,17 @@ Deterministic rules:
 - Level deserialization initializes `questState` from optional `levelData.questChains` with safe defaults when omitted.
 - Quest progression is advanced only from validated item-use events emitted by the deterministic item-use resolver (`ItemUseAttemptResultEvent`) and never from LLM response text.
 - Quest transitions are pure world-layer reducer logic (`src/world/questState.ts`), so identical event sequences produce identical progression state.
+
+### Knowledge Token State
+
+`knowledgeState` is a serializable world field storing deterministic, persistent knowledge-token grants and validation readiness.
+
+Deterministic rules:
+- New runtime state initializes `knowledgeState` to an empty schema (`version: 1`, empty token map).
+- Level deserialization initializes `knowledgeState` with the same empty default, so levels without token content remain backward-compatible.
+- Token requirement checks are deterministic and non-consuming (persistent policy): validating required tokens never removes granted tokens.
+- Token grant and requirement evaluation are handled by pure world-layer reducers in `src/world/knowledgeState.ts`.
+- Token application is keyed only by structured outcome fields (`requireKnowledgeTokens`, `grantKnowledgeTokens`) and never by free-form LLM response text.
 
 ### Door Unlock State
 

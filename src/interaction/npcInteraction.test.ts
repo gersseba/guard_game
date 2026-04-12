@@ -576,4 +576,59 @@ describe('createNpcInteractionService', () => {
       },
     ]);
   });
+
+  it('grants knowledge tokens from structured outcome fields regardless of assistant wording', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({
+        text: 'Completely unrelated prose.',
+        outcome: {
+          grantKnowledgeTokens: ['seal-c', 'seal-a', 'seal-c'],
+        },
+      }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = worldState.npcs[0];
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: worldState.player,
+      worldState,
+      playerMessage: 'Share knowledge?',
+    });
+
+    expect(Object.keys(result.updatedWorldState.knowledgeState?.tokensById ?? {})).toEqual([
+      'seal-a',
+      'seal-c',
+    ]);
+    expect(result.updatedWorldState.knowledgeState?.tokensById['seal-a']).toEqual({
+      tokenId: 'seal-a',
+      grantedAtTick: 0,
+      grantedByActorId: npc.id,
+    });
+  });
+
+  it('does not grant new knowledge tokens when outcome requirements are not satisfied', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({
+        text: 'You are not ready for this yet.',
+        outcome: {
+          requireKnowledgeTokens: ['seal-a'],
+          grantKnowledgeTokens: ['seal-b'],
+        },
+      }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = worldState.npcs[0];
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: worldState.player,
+      worldState,
+      playerMessage: 'Share the second phrase?',
+    });
+
+    expect(result.updatedWorldState.knowledgeState?.tokensById['seal-b']).toBeUndefined();
+  });
 });
