@@ -1,7 +1,11 @@
 import type { ItemUseRule } from '../../types';
 import { Npc, type NpcInit } from './Npc';
 
-export interface GuardNpcInit extends Omit<NpcInit, 'npcType' | 'dialogueContextKey' | 'patrol' | 'triggers' | 'inventory' | 'riddleClue'> {
+export interface GuardNpcInit
+  extends Omit<
+    NpcInit,
+    'npcType' | 'dialogueContextKey' | 'patrol' | 'triggers' | 'inventory' | 'tradeRules' | 'tradeState' | 'riddleClue'
+  > {
   guardState: 'idle' | 'patrolling' | 'alert';
   itemUseRules?: Record<string, ItemUseRule>;
 }

@@ -32,12 +32,29 @@ export interface NpcTriggers {
   onTalk?: TriggerEffect;
 }
 
+export interface NpcTradeRewardItem {
+  itemId: string;
+  displayName: string;
+}
+
+export interface NpcTradeRule {
+  ruleId: string;
+  requiredItemIds: string[];
+  rewardItems: NpcTradeRewardItem[];
+}
+
+export interface NpcTradeState {
+  completedRuleIds: string[];
+}
+
 export interface Npc extends GameEntity {
   npcType: string;
   dialogueContextKey: string;
   patrol?: { path: Array<{ x: number; y: number }> };
   triggers?: NpcTriggers;
   inventory?: InventoryItem[];
+  tradeRules?: NpcTradeRule[];
+  tradeState?: NpcTradeState;
   /** Instance-specific knowledge this NPC has (overrides or extends type-level knowledge). */
   instanceKnowledge?: string;
   /** Instance-specific behavior traits for this NPC (overrides or extends type-level behavior). */

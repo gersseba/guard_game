@@ -126,6 +126,13 @@ LLM boundary note:
 - No LLM call is involved in item-use result determination.
 - Guard and object item-use rules are entirely code-determined; success/failure outcomes cannot be negotiated with the LLM.
 
+### NPC Trade Resolution Boundary
+
+Conversational NPC turns may still use the LLM for dialogue text, but NPC item-required reward trades are resolved separately from the response text:
+- `src/interaction/npcInteraction.ts` records the conversation turn and then calls deterministic world trade logic in `src/world/npcTrade.ts`.
+- `npc.tradeRules` data, current player inventory, and `npc.tradeState` decide whether a trade succeeds.
+- When an NPC has trade rules, trade inventory mutation is world-owned; free-form assistant wording does not grant or deny the reward.
+
 ## Conversation Pause Lifecycle
 
 When the player chooses Chat from an action-modal session, `onConversationStarted` is routed from [src/runtime/interactionResultBridge.ts](../src/runtime/interactionResultBridge.ts) into [src/runtime/modalCoordinator.ts](../src/runtime/modalCoordinator.ts). The runtime bridge + modal coordinator then perform three side effects in order:

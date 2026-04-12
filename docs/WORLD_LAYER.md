@@ -157,6 +157,17 @@ Deterministic rules:
 - Token grant and requirement evaluation are handled by pure world-layer reducers in `src/world/knowledgeState.ts`.
 - Token application is keyed only by structured outcome fields (`requireKnowledgeTokens`, `grantKnowledgeTokens`) and never by free-form LLM response text.
 
+### NPC Trade State
+
+`npc.tradeRules` and `npc.tradeState` are serializable world-owned fields that define deterministic item-required reward exchanges and one-time completion tracking.
+
+Deterministic rules:
+- Levels may omit `tradeRules` entirely; NPC loading remains backward-compatible.
+- Trade requirements are evaluated from player inventory by pure world logic in `src/world/npcTrade.ts`.
+- Successful trades consume the configured required items and grant configured reward items exactly once per `ruleId`.
+- Repeated interactions from an already-completed resulting world state cannot duplicate rewards because `tradeState.completedRuleIds` blocks replay.
+- NPC trade success or failure is never inferred from free-form LLM wording.
+
 ### Door Unlock State
 
 `door.isUnlocked` is a serializable boolean flag that tracks whether a door has been unlocked via item-use interaction.
@@ -179,7 +190,7 @@ Deterministic rules:
 | `validatePlayer.ts` | player `x`/`y`, optional `spriteAssetPath` and `spriteSet` |
 | `validateGuards.ts` | guards array: identity, position, guardState, traits, sprites, instance fields, itemUseRules |
 | `validateDoors.ts` | doors array: identity, position, doorState, outcome, requiredItemId, sprites |
-| `validateNpcs.ts` | npcs array: identity, position, npcType, patrol path bounds, triggers, inventory, riddleClue |
+| `validateNpcs.ts` | npcs array: identity, position, npcType, patrol path bounds, triggers, inventory, tradeRules, riddleClue |
 | `validateObjects.ts` | interactiveObjects array: identity, position, objectType, interactionType, state, pickupItem, sprites, capabilities, itemUseRules |
 | `validateEnvironments.ts` | environments array: identity, position, isBlocking |
 | `validateQuestChains.ts` | optional questChains array: chain identity, stage identity, and deterministic item-use event criteria |
@@ -193,6 +204,7 @@ Deterministic rules:
 - `validateTriggerEffect()` — enforces setFact + typed value
 - `validateNpcTriggers()` — enforces known trigger keys and delegates to validateTriggerEffect
 - `validateInventoryItems()` — enforces inventory item shape
+- `validateNpcTradeRules()` — enforces deterministic NPC trade rule schema
 
 Validation boundary rule:
 - validation remains DTO-only and does not instantiate runtime classes

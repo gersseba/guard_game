@@ -169,3 +169,77 @@ export const validateInventoryItems = (value: unknown, contextLabel: string): vo
     }
   }
 };
+
+export const validateNpcTradeRules = (value: unknown, contextLabel: string): void => {
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid level data: ${contextLabel} must be an array when provided`);
+  }
+
+  const seenRuleIds = new Set<string>();
+
+  for (let index = 0; index < value.length; index++) {
+    const rule = value[index] as Record<string, unknown>;
+    if (
+      typeof rule !== 'object' ||
+      rule === null ||
+      typeof rule['ruleId'] !== 'string' ||
+      rule['ruleId'].trim() === ''
+    ) {
+      throw new Error(
+        `Invalid level data: ${contextLabel}[${index}] must include a non-empty ruleId`,
+      );
+    }
+
+    if (seenRuleIds.has(rule['ruleId'])) {
+      throw new Error(
+        `Invalid level data: ${contextLabel}[${index}].ruleId must be unique`,
+      );
+    }
+    seenRuleIds.add(rule['ruleId']);
+
+    if (!Array.isArray(rule['requiredItemIds'])) {
+      throw new Error(
+        `Invalid level data: ${contextLabel}[${index}].requiredItemIds must be an array`,
+      );
+    }
+
+    const requiredItemIds = rule['requiredItemIds'] as unknown[];
+    if (
+      requiredItemIds.length === 0 ||
+      requiredItemIds.some((itemId) => typeof itemId !== 'string' || itemId.trim() === '')
+    ) {
+      throw new Error(
+        `Invalid level data: ${contextLabel}[${index}].requiredItemIds must contain non-empty strings`,
+      );
+    }
+
+    if (!Array.isArray(rule['rewardItems'])) {
+      throw new Error(
+        `Invalid level data: ${contextLabel}[${index}].rewardItems must be an array`,
+      );
+    }
+
+    const rewardItems = rule['rewardItems'] as unknown[];
+    if (rewardItems.length === 0) {
+      throw new Error(
+        `Invalid level data: ${contextLabel}[${index}].rewardItems must contain at least one reward item`,
+      );
+    }
+
+    for (let rewardIndex = 0; rewardIndex < rewardItems.length; rewardIndex++) {
+      const rewardItem = rewardItems[rewardIndex] as Record<string, unknown>;
+      if (
+        typeof rewardItem !== 'object' ||
+        rewardItem === null ||
+        typeof rewardItem['itemId'] !== 'string' ||
+        rewardItem['itemId'].trim() === '' ||
+        typeof rewardItem['displayName'] !== 'string' ||
+        rewardItem['displayName'].trim() === ''
+      ) {
+        throw new Error(
+          `Invalid level data: ${contextLabel}[${index}].rewardItems[${rewardIndex}] must include non-empty itemId and displayName`,
+        );
+      }
+    }
+  }
+};

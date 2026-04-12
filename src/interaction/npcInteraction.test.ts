@@ -700,4 +700,116 @@ describe('createNpcInteractionService', () => {
     ]);
     expect(result.updatedWorldState.knowledgeState?.tokensById['seal-a']).toBeUndefined();
   });
+
+  it('applies npc trade rules from world data instead of LLM inventory outcome fields', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({
+        text: 'I can make that exchange.',
+        outcome: {
+          giveItem: 'llm-only-item',
+          takeItem: 'llm-only-cost',
+        },
+      }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      tradeRules: [
+        {
+          ruleId: 'swap-pass-for-key',
+          requiredItemIds: ['gate-pass'],
+          rewardItems: [{ itemId: 'archive-key', displayName: 'Archive Key' }],
+        },
+      ],
+    };
+    const player = {
+      ...worldState.player,
+      inventory: {
+        ...worldState.player.inventory,
+        items: [
+          {
+            itemId: 'gate-pass',
+            displayName: 'Gate Pass',
+            sourceObjectId: 'object-2',
+            pickedUpAtTick: 1,
+          },
+        ],
+      },
+    };
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player,
+      worldState: {
+        ...worldState,
+        player,
+        npcs: [npc],
+      },
+      playerMessage: 'Trade?',
+    });
+
+    expect(result.updatedWorldState.player.inventory.items).toEqual([
+      {
+        itemId: 'archive-key',
+        displayName: 'Archive Key',
+        sourceObjectId: npc.id,
+        pickedUpAtTick: 0,
+      },
+    ]);
+    expect(result.updatedWorldState.npcs[0].tradeState).toEqual({
+      completedRuleIds: ['swap-pass-for-key'],
+    });
+  });
+
+  it('does not mutate inventory when npc trade requirements are missing even if the LLM returns item outcomes', async () => {
+    const llmClient: LlmClient = {
+      complete: async () => ({
+        text: 'You still need the pass.',
+        outcome: {
+          giveItem: 'llm-only-item',
+        },
+      }),
+    };
+    const service = createNpcInteractionService(llmClient);
+    const worldState = createInitialWorldState();
+    const npc = {
+      ...worldState.npcs[0],
+      tradeRules: [
+        {
+          ruleId: 'swap-pass-for-key',
+          requiredItemIds: ['gate-pass'],
+          rewardItems: [{ itemId: 'archive-key', displayName: 'Archive Key' }],
+        },
+      ],
+    };
+    const player = {
+      ...worldState.player,
+      inventory: {
+        ...worldState.player.inventory,
+        items: [
+          {
+            itemId: 'apple',
+            displayName: 'Apple',
+            sourceObjectId: 'object-2',
+            pickedUpAtTick: 1,
+          },
+        ],
+      },
+    };
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player,
+      worldState: {
+        ...worldState,
+        player,
+        npcs: [npc],
+      },
+      playerMessage: 'Trade?',
+    });
+
+    expect(result.updatedWorldState.player.inventory.items).toEqual(player.inventory.items);
+    expect(result.updatedWorldState.npcs[0].tradeState).toBeUndefined();
+  });
 });

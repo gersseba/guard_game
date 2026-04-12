@@ -1,6 +1,7 @@
 import { isLlmRequestError, type LlmRequestError, type LlmClient } from '../llm/client';
 import { Item } from '../world/entities/items/Item';
 import { applyKnowledgeTokenOutcomeIfValid } from '../world/knowledgeState';
+import { resolveNpcTrade } from '../world/npcTrade';
 import type { ConversationMessage, Npc, Player, WorldState } from '../world/types';
 import {
   createDefaultNpcFunctionRegistry,
@@ -226,10 +227,17 @@ export const createNpcInteractionService = (
     const npcFromWorldState =
       stateWithKnowledgeTokens.npcs.find((candidate) => candidate.id === request.npc.id) ?? request.npc;
     const npcAfterTalkTrigger = applyTalkTrigger(npcFromWorldState);
-    const inventoryResult = applyInventoryOutcome(
+    const tradeResult = resolveNpcTrade(
       npcAfterTalkTrigger,
       stateWithKnowledgeTokens.player,
-      knowledgeOutcomeResolution.isValid ? llmResult.outcome : undefined,
+      stateWithKnowledgeTokens.tick,
+    );
+    const inventoryResult = applyInventoryOutcome(
+      tradeResult.npc,
+      tradeResult.player,
+      knowledgeOutcomeResolution.isValid && !(tradeResult.npc.tradeRules?.length)
+        ? llmResult.outcome
+        : undefined,
     );
 
     const updatedWorldState: WorldState = {
