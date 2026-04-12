@@ -116,6 +116,32 @@ describe('applyNpcDialogueConsequences', () => {
     expect(result.updatedWorldState).toEqual(worldState);
   });
 
+  it('rejects malformed questProgressEvent payloads with deterministic no-mutation state', () => {
+    const npc = createTestNpc('npc-1');
+    const worldState = createTestWorldState({
+      npcs: [npc],
+    });
+
+    const result = applyNpcDialogueConsequences({
+      npcId: npc.id,
+      worldState,
+      outcome: {
+        grantKnowledgeTokens: ['seal-alpha'],
+        questProgressEvent: {
+          type: 'item_use_resolved',
+          tick: worldState.tick,
+        },
+      },
+    });
+
+    expect(result.trace.outcomeStatus).toBe('rejected');
+    expect(result.trace.missingKnowledgeTokens).toEqual([]);
+    expect(result.trace.tradeRuleIdApplied).toBeNull();
+    expect(result.trace.inventoryMutated).toBe(false);
+    expect(result.trace.questStateMutated).toBe(false);
+    expect(result.updatedWorldState).toEqual(worldState);
+  });
+
   it('remains deterministic and idempotent when replaying the same accepted outcome', () => {
     const npc = createTestNpc('npc-trader', {
       tradeRules: [

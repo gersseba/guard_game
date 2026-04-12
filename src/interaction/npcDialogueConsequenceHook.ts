@@ -2,7 +2,14 @@ import { Item } from '../world/entities/items/Item';
 import { applyKnowledgeTokenOutcome } from '../world/knowledgeState';
 import { ensureQuestState, applyQuestProgressEventIfValid } from '../world/questState';
 import { resolveNpcTrade } from '../world/npcTrade';
-import type { Npc, Player, QuestProgressEvent, WorldState } from '../world/types';
+import type {
+  ItemUseAttemptResultEvent,
+  Npc,
+  Player,
+  QuestProgressEvent,
+  SelectedInventoryItem,
+  WorldState,
+} from '../world/types';
 
 export interface NpcDialogueOutcome {
   giveItem?: string;
@@ -41,6 +48,134 @@ const isStringArray = (value: unknown): value is string[] => {
 
 const hasOnlyAllowedKeys = (record: Record<string, unknown>, allowedKeys: readonly string[]): boolean => {
   return Object.keys(record).every((key) => allowedKeys.includes(key));
+};
+
+const ITEM_USE_ATTEMPT_RESULTS = new Set<ItemUseAttemptResultEvent['result']>([
+  'no-selection',
+  'no-target',
+  'blocked',
+  'success',
+  'no-rule',
+]);
+
+const ITEM_USE_TARGET_KINDS = new Set<NonNullable<ItemUseAttemptResultEvent['target']>['kind']>([
+  'door',
+  'guard',
+  'npc',
+  'interactiveObject',
+]);
+
+const isSelectedInventoryItem = (value: unknown): value is SelectedInventoryItem => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return typeof value.slotIndex === 'number' && typeof value.itemId === 'string';
+};
+
+const isItemUseTarget = (value: unknown): value is ItemUseAttemptResultEvent['target'] => {
+  if (value === null) {
+    return true;
+  }
+
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.targetId === 'string' &&
+    typeof value.kind === 'string' &&
+    ITEM_USE_TARGET_KINDS.has(value.kind as NonNullable<ItemUseAttemptResultEvent['target']>['kind'])
+  );
+};
+
+const isItemUseAttemptResultEvent = (value: unknown): value is ItemUseAttemptResultEvent => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (
+    !hasOnlyAllowedKeys(value, [
+      'tick',
+      'commandIndex',
+      'selectedItem',
+      'result',
+      'target',
+      'doorUnlockedId',
+      'affectedEntityType',
+      'affectedEntityId',
+      'ruleResponseText',
+    ])
+  ) {
+    return false;
+  }
+
+  if (typeof value.tick !== 'number' || typeof value.commandIndex !== 'number') {
+    return false;
+  }
+
+  if (
+    value.selectedItem !== null &&
+    value.selectedItem !== undefined &&
+    !isSelectedInventoryItem(value.selectedItem)
+  ) {
+    return false;
+  }
+
+  if (typeof value.result !== 'string' || !ITEM_USE_ATTEMPT_RESULTS.has(value.result)) {
+    return false;
+  }
+
+  if (!isItemUseTarget(value.target)) {
+    return false;
+  }
+
+  if ('doorUnlockedId' in value && value.doorUnlockedId !== undefined && typeof value.doorUnlockedId !== 'string') {
+    return false;
+  }
+
+  if (
+    'affectedEntityType' in value &&
+    value.affectedEntityType !== undefined &&
+    value.affectedEntityType !== 'guard' &&
+    value.affectedEntityType !== 'object'
+  ) {
+    return false;
+  }
+
+  if (
+    'affectedEntityId' in value &&
+    value.affectedEntityId !== undefined &&
+    typeof value.affectedEntityId !== 'string'
+  ) {
+    return false;
+  }
+
+  if (
+    'ruleResponseText' in value &&
+    value.ruleResponseText !== undefined &&
+    typeof value.ruleResponseText !== 'string'
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
+const isQuestProgressEvent = (value: unknown): value is QuestProgressEvent => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (!hasOnlyAllowedKeys(value, ['type', 'tick', 'itemUseEvent'])) {
+    return false;
+  }
+
+  return (
+    value.type === 'item_use_resolved' &&
+    typeof value.tick === 'number' &&
+    isItemUseAttemptResultEvent(value.itemUseEvent)
+  );
 };
 
 export const isNpcDialogueOutcome = (value: unknown): value is NpcDialogueOutcome => {
@@ -91,7 +226,7 @@ export const isNpcDialogueOutcome = (value: unknown): value is NpcDialogueOutcom
   if (
     'questProgressEvent' in value &&
     value.questProgressEvent !== undefined &&
-    !isRecord(value.questProgressEvent)
+    !isQuestProgressEvent(value.questProgressEvent)
   ) {
     return false;
   }
