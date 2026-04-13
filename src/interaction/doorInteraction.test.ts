@@ -49,8 +49,8 @@ describe('handleDoorInteraction', () => {
     expect(first).toEqual(second);
   });
 
-  it('returns "win" outcome when door has isSafe=true', () => {
-    const door = makeDoor({ isOpen: true, isLocked: false }, { isSafe: true });
+  it('returns "win" outcome when door is unlocked and has isSafe=true', () => {
+    const door = makeDoor({ isOpen: false, isLocked: false }, { isSafe: true });
     const result = handleDoorInteraction({ door, player });
 
     expect(result.doorId).toBe('door-1');
@@ -71,5 +71,24 @@ describe('handleDoorInteraction', () => {
 
     expect(result.doorId).toBe('door-1');
     expect(result.levelOutcome).toBeUndefined();
+  });
+
+  it('does not include levelOutcome when door is locked even when isSafe is defined', () => {
+    const door = makeDoor({ isOpen: false, isLocked: true }, { isSafe: true });
+    const result = handleDoorInteraction({ door, player });
+
+    expect(result.doorId).toBe('door-1');
+    expect(result.responseText).toBe('The door is locked.');
+    expect(result.levelOutcome).toBeUndefined();
+  });
+
+  it('keeps locked-door interactions idempotent without outcome side effects', () => {
+    const door = makeDoor({ isOpen: false, isLocked: true }, { isSafe: false });
+
+    const first = handleDoorInteraction({ door, player });
+    const second = handleDoorInteraction({ door, player });
+
+    expect(first).toEqual(second);
+    expect(first.levelOutcome).toBeUndefined();
   });
 });

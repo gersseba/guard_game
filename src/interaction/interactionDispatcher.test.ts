@@ -370,6 +370,23 @@ describe('InteractionDispatcher', () => {
       expect(result.levelOutcome).toBe(null);
     });
 
+    it('locked door with configured outcome does not emit levelOutcome', async () => {
+      const dispatcher = createInteractionDispatcher({ llmClient });
+      const door: Door = {
+        ...createTestDoor('door-locked'),
+        isOpen: false,
+        isLocked: true,
+        isSafe: true,
+      };
+      const worldState = createTestWorldState({ doors: [door] });
+      const target = { kind: 'door' as const, target: door };
+
+      const result = await dispatcher.dispatch(target, worldState);
+
+      expect(result.responseText).toBe('The door is locked.');
+      expect(result.levelOutcome).toBe(null);
+    });
+
     it('interactive object first use sets levelOutcome', async () => {
       const dispatcher = createInteractionDispatcher({ llmClient });
       const obj: InteractiveObject = {
