@@ -95,7 +95,7 @@
       "tradeRules": [
         {
           "ruleId": "archivist-seal-trade",
-          "requiredItemIds": ["archive-token"],
+          "requiredItemIds": ["chapel-seal-note"],
           "rewardItems": [
             {
               "itemId": "brass-key",
@@ -118,6 +118,20 @@
       "x": 13,
       "y": 11,
       "npcType": "bell-ringer",
+      "spriteSet": {
+        "default": "/assets/medieval_npc_gossip_front.svg",
+        "front": "/assets/medieval_npc_gossip_front.svg",
+        "away": "/assets/medieval_npc_gossip_away.svg",
+        "left": "/assets/medieval_npc_gossip_left.svg",
+        "right": "/assets/medieval_npc_gossip_right.svg"
+      }
+    },
+    {
+      "id": "chapel-keeper",
+      "displayName": "Chapel Keeper",
+      "x": 4,
+      "y": 11,
+      "npcType": "chapel-keeper",
       "spriteSet": {
         "default": "/assets/medieval_npc_gossip_front.svg",
         "front": "/assets/medieval_npc_gossip_front.svg",
@@ -168,27 +182,6 @@
       },
       "idleMessage": "A satchel tagged for the quartermaster is tucked under stale blankets.",
       "usedMessage": "Only splinters and dust remain.",
-      "spriteSet": {
-        "default": "/assets/medieval_supply_crate_inspect.svg"
-      },
-      "capabilities": {
-        "containsItems": true
-      }
-    },
-    {
-      "id": "archive-strongbox",
-      "displayName": "Archive Strongbox",
-      "x": 6,
-      "y": 3,
-      "objectType": "strongbox",
-      "interactionType": "inspect",
-      "state": "idle",
-      "pickupItem": {
-        "itemId": "archive-token",
-        "displayName": "Archive Token"
-      },
-      "idleMessage": "A stamped archive token sits on velvet.",
-      "usedMessage": "The token has already been claimed.",
       "spriteSet": {
         "default": "/assets/medieval_supply_crate_inspect.svg"
       },
