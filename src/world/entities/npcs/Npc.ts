@@ -15,6 +15,7 @@ export interface NpcInit extends ActorInit {
   triggers?: NpcTriggers;
   inventory?: InventoryItem[];
   tradeRules?: NpcTradeRule[];
+  knowledgeTokensGrantedOnTalk?: string[];
   tradeState?: NpcTradeState;
   instanceKnowledge?: string;
   instanceBehavior?: string;
@@ -28,6 +29,7 @@ export class Npc extends Actor {
   public triggers?: NpcTriggers;
   public inventory?: InventoryItem[];
   public tradeRules?: NpcTradeRule[];
+  public knowledgeTokensGrantedOnTalk?: string[];
   public tradeState?: NpcTradeState;
   public instanceKnowledge?: string;
   public instanceBehavior?: string;
@@ -42,9 +44,15 @@ export class Npc extends Actor {
     this.inventory = init.inventory?.map((item) => Item.fromInventoryItem(item));
     this.tradeRules = init.tradeRules?.map((rule) => ({
       ruleId: rule.ruleId,
-      requiredItemIds: [...rule.requiredItemIds],
+      ...(rule.requiredItemIds ? { requiredItemIds: [...rule.requiredItemIds] } : {}),
+      ...(rule.requiredKnowledgeTokens
+        ? { requiredKnowledgeTokens: [...rule.requiredKnowledgeTokens] }
+        : {}),
       rewardItems: rule.rewardItems.map((item) => ({ ...item })),
     }));
+    this.knowledgeTokensGrantedOnTalk = init.knowledgeTokensGrantedOnTalk
+      ? [...init.knowledgeTokensGrantedOnTalk]
+      : undefined;
     this.tradeState = init.tradeState
       ? {
           completedRuleIds: [...init.tradeState.completedRuleIds],

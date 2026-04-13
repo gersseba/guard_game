@@ -387,8 +387,9 @@ export const applyNpcDialogueConsequences = (
     };
   }
 
+  const hasTradeRules = (npc.tradeRules?.length ?? 0) > 0;
   const normalizedOutcome = request.outcome;
-  if (normalizedOutcome === undefined) {
+  if (normalizedOutcome === undefined && !hasTradeRules) {
     return {
       updatedWorldState: request.worldState,
       trace: {
@@ -401,9 +402,11 @@ export const applyNpcDialogueConsequences = (
     };
   }
 
+  const outcomeForResolution: NpcDialogueOutcome = normalizedOutcome ?? {};
+
   const knowledgeResolution = applyKnowledgeTokenOutcome(
     request.worldState.knowledgeState,
-    normalizedOutcome,
+    outcomeForResolution,
     {
       tick: request.worldState.tick,
       grantedByActorId: request.npcId,
@@ -433,12 +436,26 @@ export const applyNpcDialogueConsequences = (
     npcAfterKnowledge,
     stateWithKnowledgeTokens.player,
     stateWithKnowledgeTokens.tick,
+    stateWithKnowledgeTokens.knowledgeState,
   );
+
+  if (tradeResult.missingKnowledgeTokens.length > 0) {
+    return {
+      updatedWorldState: stateWithKnowledgeTokens,
+      trace: {
+        outcomeStatus: 'rejected',
+        missingKnowledgeTokens: tradeResult.missingKnowledgeTokens,
+        inventoryMutated: false,
+        tradeRuleIdApplied: null,
+        questStateMutated: false,
+      },
+    };
+  }
 
   const inventoryResult = applyInventoryOutcome(
     tradeResult.npc,
     tradeResult.player,
-    tradeResult.npc.tradeRules?.length ? undefined : normalizedOutcome,
+    tradeResult.npc.tradeRules?.length ? undefined : outcomeForResolution,
   );
 
   const stateWithNpcPlayer = replaceNpc(
@@ -449,7 +466,7 @@ export const applyNpcDialogueConsequences = (
     inventoryResult.npc,
   );
 
-  const questResult = applyQuestProgressEvent(stateWithNpcPlayer, normalizedOutcome);
+  const questResult = applyQuestProgressEvent(stateWithNpcPlayer, outcomeForResolution);
 
   return {
     updatedWorldState: questResult.worldState,

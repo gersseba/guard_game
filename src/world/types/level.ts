@@ -63,6 +63,7 @@ export interface LevelNpcDto {
   triggers?: NpcTriggers;
   inventory?: InventoryItem[];
   tradeRules?: NpcTradeRule[];
+  knowledgeTokensGrantedOnTalk?: string[];
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
   /** Instance-specific knowledge this NPC has. */
