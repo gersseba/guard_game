@@ -71,6 +71,15 @@ Runtime composition order is fixed:
 3. Validate entity placement against layout bounds + blocking cells.
 4. Compose `WorldState`.
 
+## Level Catalog Registration
+
+After adding a new `<level-id>.layout.txt` + `<level-id>.json` package under `public/levels/`,
+register it in `public/levels/manifest.json`.
+
+- `id` must match the `<level-id>` filename stem.
+- `name` should be the player-facing title shown in the level selector.
+- Keep IDs stable once published so saved links and test fixtures remain deterministic.
+
 ## Placement Validation Rules
 
 For placeable entities (`player`, `guards`, `doors`, `npcs`, `interactiveObjects`):

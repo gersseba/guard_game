@@ -1,0 +1,263 @@
+{
+  "version": 2,
+  "layoutPath": "three-seals-gate.layout.txt",
+  "name": "The Three Seals Gate",
+  "premise": "Three old seals bar the eastern gate. Win over the keep's specialists to secure every key.",
+  "goal": "Complete all three social chains, claim the iron, brass, and steel keys, then pass the final gate.",
+  "player": {
+    "x": 10,
+    "y": 7,
+    "spriteSet": {
+      "default": "/assets/medieval_player_farmer_front.svg",
+      "front": "/assets/medieval_player_farmer_front.svg",
+      "away": "/assets/medieval_player_farmer_away.svg",
+      "left": "/assets/medieval_player_farmer_left.svg",
+      "right": "/assets/medieval_player_farmer_right.svg"
+    }
+  },
+  "guards": [],
+  "doors": [
+    {
+      "id": "three-seals-gate-door",
+      "displayName": "Three Seals Gate",
+      "x": 21,
+      "y": 13,
+      "isOpen": false,
+      "isLocked": true,
+      "isSafe": true,
+      "requiredItemIds": ["iron-key", "brass-key", "steel-key"],
+      "spriteSet": {
+        "default": "/assets/medieval_door_wooden_closed.svg"
+      }
+    }
+  ],
+  "npcs": [
+    {
+      "id": "guard-captain",
+      "displayName": "Guard Captain",
+      "x": 11,
+      "y": 1,
+      "npcType": "guard-captain",
+      "spriteSet": {
+        "default": "/assets/medieval_guard_spear_front.svg",
+        "front": "/assets/medieval_guard_spear_front.svg",
+        "away": "/assets/medieval_guard_spear_away.svg",
+        "left": "/assets/medieval_guard_spear_left.svg",
+        "right": "/assets/medieval_guard_spear_right.svg"
+      }
+    },
+    {
+      "id": "quartermaster",
+      "displayName": "Quartermaster",
+      "x": 11,
+      "y": 3,
+      "npcType": "quartermaster",
+      "tradeRules": [
+        {
+          "ruleId": "quartermaster-satchel-trade",
+          "requiredItemIds": ["sealed-supply-satchel"],
+          "rewardItems": [
+            {
+              "itemId": "iron-key",
+              "displayName": "Iron Key"
+            }
+          ]
+        }
+      ],
+      "spriteSet": {
+        "default": "/assets/medieval_npc_villager_front.svg",
+        "front": "/assets/medieval_npc_villager_front.svg",
+        "away": "/assets/medieval_npc_villager_away.svg",
+        "left": "/assets/medieval_npc_villager_left.svg",
+        "right": "/assets/medieval_npc_villager_right.svg"
+      }
+    },
+    {
+      "id": "stablehand",
+      "displayName": "Stablehand",
+      "x": 5,
+      "y": 7,
+      "npcType": "stablehand",
+      "spriteSet": {
+        "default": "/assets/medieval_npc_gossip_front.svg",
+        "front": "/assets/medieval_npc_gossip_front.svg",
+        "away": "/assets/medieval_npc_gossip_away.svg",
+        "left": "/assets/medieval_npc_gossip_left.svg",
+        "right": "/assets/medieval_npc_gossip_right.svg"
+      }
+    },
+    {
+      "id": "archivist",
+      "displayName": "Archivist",
+      "x": 16,
+      "y": 8,
+      "npcType": "archivist",
+      "tradeRules": [
+        {
+          "ruleId": "archivist-seal-trade",
+          "requiredItemIds": ["archive-token"],
+          "rewardItems": [
+            {
+              "itemId": "brass-key",
+              "displayName": "Brass Key"
+            }
+          ]
+        }
+      ],
+      "spriteSet": {
+        "default": "/assets/medieval_npc_archivist_front.svg",
+        "front": "/assets/medieval_npc_archivist_front.svg",
+        "away": "/assets/medieval_npc_archivist_away.svg",
+        "left": "/assets/medieval_npc_archivist_left.svg",
+        "right": "/assets/medieval_npc_archivist_right.svg"
+      }
+    },
+    {
+      "id": "bell-ringer",
+      "displayName": "Bell Ringer",
+      "x": 13,
+      "y": 11,
+      "npcType": "bell-ringer",
+      "spriteSet": {
+        "default": "/assets/medieval_npc_gossip_front.svg",
+        "front": "/assets/medieval_npc_gossip_front.svg",
+        "away": "/assets/medieval_npc_gossip_away.svg",
+        "left": "/assets/medieval_npc_gossip_left.svg",
+        "right": "/assets/medieval_npc_gossip_right.svg"
+      }
+    },
+    {
+      "id": "mechanic",
+      "displayName": "Mechanic",
+      "x": 5,
+      "y": 14,
+      "npcType": "mechanic",
+      "tradeRules": [
+        {
+          "ruleId": "mechanic-repair-trade",
+          "requiredItemIds": ["gear-cog"],
+          "rewardItems": [
+            {
+              "itemId": "steel-key",
+              "displayName": "Steel Key"
+            }
+          ]
+        }
+      ],
+      "spriteSet": {
+        "default": "/assets/medieval_npc_engineer_front.svg",
+        "front": "/assets/medieval_npc_engineer_front.svg",
+        "away": "/assets/medieval_npc_engineer_away.svg",
+        "left": "/assets/medieval_npc_engineer_left.svg",
+        "right": "/assets/medieval_npc_engineer_right.svg"
+      }
+    }
+  ],
+  "interactiveObjects": [
+    {
+      "id": "old-supply-crate",
+      "displayName": "Old Supply Crate",
+      "x": 16,
+      "y": 1,
+      "objectType": "supply-crate",
+      "interactionType": "inspect",
+      "state": "idle",
+      "pickupItem": {
+        "itemId": "sealed-supply-satchel",
+        "displayName": "Sealed Supply Satchel"
+      },
+      "idleMessage": "A satchel tagged for the quartermaster is tucked under stale blankets.",
+      "usedMessage": "Only splinters and dust remain.",
+      "spriteSet": {
+        "default": "/assets/medieval_supply_crate_inspect.svg"
+      },
+      "capabilities": {
+        "containsItems": true
+      }
+    },
+    {
+      "id": "archive-strongbox",
+      "displayName": "Archive Strongbox",
+      "x": 6,
+      "y": 3,
+      "objectType": "strongbox",
+      "interactionType": "inspect",
+      "state": "idle",
+      "pickupItem": {
+        "itemId": "archive-token",
+        "displayName": "Archive Token"
+      },
+      "idleMessage": "A stamped archive token sits on velvet.",
+      "usedMessage": "The token has already been claimed.",
+      "spriteSet": {
+        "default": "/assets/medieval_supply_crate_inspect.svg"
+      },
+      "capabilities": {
+        "containsItems": true
+      }
+    },
+    {
+      "id": "workshop-crate",
+      "displayName": "Workshop Crate",
+      "x": 15,
+      "y": 6,
+      "objectType": "tool-crate",
+      "interactionType": "inspect",
+      "state": "idle",
+      "pickupItem": {
+        "itemId": "gear-cog",
+        "displayName": "Gear Cog"
+      },
+      "idleMessage": "A fresh steel cog glints beneath grease rags.",
+      "usedMessage": "The crate is empty now.",
+      "spriteSet": {
+        "default": "/assets/medieval_supply_crate_inspect.svg"
+      },
+      "capabilities": {
+        "containsItems": true
+      }
+    },
+    {
+      "id": "chapel-cache",
+      "displayName": "Chapel Cache",
+      "x": 6,
+      "y": 11,
+      "objectType": "cache",
+      "interactionType": "inspect",
+      "state": "idle",
+      "pickupItem": {
+        "itemId": "chapel-seal-note",
+        "displayName": "Chapel Seal Note"
+      },
+      "idleMessage": "Wax-sealed parchment repeats a phrase fragment from the chapel hymnal.",
+      "usedMessage": "Only old hymn dust remains.",
+      "spriteSet": {
+        "default": "/assets/medieval_supply_crate_inspect.svg"
+      },
+      "capabilities": {
+        "containsItems": true
+      }
+    },
+    {
+      "id": "repair-ledger-box",
+      "displayName": "Repair Ledger Box",
+      "x": 11,
+      "y": 13,
+      "objectType": "ledger-box",
+      "interactionType": "inspect",
+      "state": "idle",
+      "pickupItem": {
+        "itemId": "repair-ledger",
+        "displayName": "Repair Ledger"
+      },
+      "idleMessage": "The maintenance ledger names every bell service this month.",
+      "usedMessage": "The ledger has been removed.",
+      "spriteSet": {
+        "default": "/assets/medieval_supply_crate_inspect.svg"
+      },
+      "capabilities": {
+        "containsItems": true
+      }
+    }
+  ]
+}
