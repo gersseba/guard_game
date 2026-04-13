@@ -46,6 +46,22 @@ Notes:
 - Example: `/levels/riddle.json` loads `/levels/riddle.layout.txt` first, and JSON must contain `"layoutPath": "riddle.layout.txt"`.
 - `width`/`height` are no longer part of runtime level authoring.
 
+## Door Unlock Requirements
+
+Doors support two deterministic key schemas:
+
+- Legacy single-key: `requiredItemId: string`
+- Multi-key: `requiredItemIds: string[]`
+
+Rules:
+
+- `requiredItemIds` must be a non-empty array of unique, non-empty strings.
+- A door must not define both `requiredItemId` and `requiredItemIds`.
+- For `requiredItemIds`, item-use unlock succeeds only when:
+  - selected inventory item is one of the listed required key IDs, and
+  - player inventory contains the full required key set.
+- Keys are not consumed by door unlock.
+
 ## Deterministic Load Order
 
 Runtime composition order is fixed:

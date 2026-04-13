@@ -10,4 +10,6 @@ export interface Door extends GameEntity {
   isSafe?: boolean;
   /** Item ID required to unlock this door (if set, door must be interacted with using this item) */
   requiredItemId?: string;
+  /** Item IDs required to unlock this door as a full key set. */
+  requiredItemIds?: string[];
 }

@@ -884,6 +884,149 @@ describe('isSafe field', () => {
   });
 });
 
+describe('door requiredItemIds field', () => {
+  it('accepts requiredItemIds when it is a non-empty unique string array', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'seal-door',
+          displayName: 'Seal Door',
+          x: 0,
+          y: 10,
+          isOpen: false,
+          isLocked: true,
+          requiredItemIds: ['seal-a', 'seal-b', 'seal-c'],
+        },
+      ],
+    };
+
+    const state = deserializeLevelWithDefaultLayout(validateLevelData(level));
+
+    expect(state.doors[0].requiredItemIds).toEqual(['seal-a', 'seal-b', 'seal-c']);
+  });
+
+  it('keeps requiredItemId backward-compatible when requiredItemIds is absent', () => {
+    const level: LevelData = {
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'legacy-door',
+          displayName: 'Legacy Door',
+          x: 0,
+          y: 10,
+          isOpen: false,
+          isLocked: true,
+          requiredItemId: 'golden-key',
+        },
+      ],
+    };
+
+    const state = deserializeLevelWithDefaultLayout(validateLevelData(level));
+
+    expect(state.doors[0].requiredItemId).toBe('golden-key');
+    expect(state.doors[0].requiredItemIds).toBeUndefined();
+  });
+
+  it('rejects door configs that include both requiredItemId and requiredItemIds', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'bad-door',
+          displayName: 'Bad Door',
+          x: 0,
+          y: 10,
+          isOpen: false,
+          isLocked: true,
+          requiredItemId: 'key-a',
+          requiredItemIds: ['key-a', 'key-b'],
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('cannot define both requiredItemId and requiredItemIds');
+  });
+
+  it('rejects non-array requiredItemIds', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'bad-door',
+          displayName: 'Bad Door',
+          x: 0,
+          y: 10,
+          isOpen: false,
+          isLocked: true,
+          requiredItemIds: 'key-a',
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid requiredItemIds (must be an array when provided)');
+  });
+
+  it('rejects empty requiredItemIds arrays', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'bad-door',
+          displayName: 'Bad Door',
+          x: 0,
+          y: 10,
+          isOpen: false,
+          isLocked: true,
+          requiredItemIds: [],
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid requiredItemIds (must be a non-empty array)');
+  });
+
+  it('rejects requiredItemIds entries that are not non-empty strings', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'bad-door',
+          displayName: 'Bad Door',
+          x: 0,
+          y: 10,
+          isOpen: false,
+          isLocked: true,
+          requiredItemIds: ['key-a', ''],
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError(
+      'invalid requiredItemIds (all entries must be non-empty strings)',
+    );
+  });
+
+  it('rejects duplicate requiredItemIds entries', () => {
+    const bad = {
+      ...minimalLevel,
+      doors: [
+        {
+          id: 'bad-door',
+          displayName: 'Bad Door',
+          x: 0,
+          y: 10,
+          isOpen: false,
+          isLocked: true,
+          requiredItemIds: ['key-a', 'key-a'],
+        },
+      ],
+    };
+
+    expect(() => validateLevelData(bad)).toThrowError('invalid requiredItemIds (duplicate entries are not allowed)');
+  });
+});
+
 describe('levelOutcome field', () => {
   it('initializes to null when level is deserialized', () => {
     const level: LevelData = {

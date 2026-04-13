@@ -25,5 +25,5 @@ export interface EntityCapabilities {
   inventory?: { items: InventoryItem[] };
   dialogue?: { threadId?: string };
   patrol?: { path: GridPosition[] };
-  lock?: { isLocked: boolean; requiredItemId?: string };
+  lock?: { isLocked: boolean; requiredItemId?: string; requiredItemIds?: string[] };
 }

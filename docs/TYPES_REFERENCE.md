@@ -256,7 +256,7 @@ Opt-in capability container for game entities. Omit a key if the entity lacks th
 - `inventory?: { items: InventoryItem[] }` - Entity can carry items
 - `dialogue?: { threadId?: string }` - Entity participates in conversation threads
 - `patrol?: { path: GridPosition[] }` - Entity follows a patrol path
-- `lock?: { isLocked: boolean; requiredItemId?: string }` - Entity has a lock mechanism
+- `lock?: { isLocked: boolean; requiredItemId?: string; requiredItemIds?: string[] }` - Entity has a lock mechanism
 
 ### TriggerEffect
 - `setFact: string` - Fact key to update on the NPC facts bag
@@ -363,6 +363,7 @@ Extends `GameEntity`:
 - `doorState: 'open' | 'closed' | 'locked'`
 - `outcome?: 'safe' | 'danger'`
 - `requiredItemId?: string` - Item id required to unlock this door via item-use. If set, door must be interacted with using this item before traversal is allowed.
+- `requiredItemIds?: string[]` - Item ids required to unlock this door as a full key set. Unlock requires the selected item to be in this set and inventory to contain the full set.
 - `isUnlocked?: boolean` - Whether this door has been unlocked via item-use. Once set to true, door allows traversal regardless of doorState. Persists through world state serialization (default: false).
 - `spriteAssetPath?: string`
 - `spriteSet?: SpriteSet`

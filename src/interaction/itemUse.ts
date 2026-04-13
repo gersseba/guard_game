@@ -87,6 +87,41 @@ export const createDefaultItemUseResolver = (): ItemUseResolver => {
           };
         }
 
+        const requiredItemIds = door.requiredItemIds;
+        if (requiredItemIds && requiredItemIds.length > 0) {
+          const selectedItemIsInRequiredSet = requiredItemIds.some((itemId) =>
+            selectedInventoryItem.matchesItemId(itemId),
+          );
+          const inventoryContainsFullRequiredSet = requiredItemIds.every((itemId) =>
+            worldState.player.inventory.items.some((inventoryItem) => inventoryItem.itemId === itemId),
+          );
+
+          if (selectedItemIsInRequiredSet && inventoryContainsFullRequiredSet) {
+            return {
+              tick: worldState.tick,
+              commandIndex,
+              selectedItem,
+              result: 'success',
+              target: {
+                kind: 'door',
+                targetId: door.id,
+              },
+              doorUnlockedId: door.id,
+            };
+          }
+
+          return {
+            tick: worldState.tick,
+            commandIndex,
+            selectedItem,
+            result: 'blocked',
+            target: {
+              kind: 'door',
+              targetId: door.id,
+            },
+          };
+        }
+
         // Door has no required item: item-use has no effect on this door
         if (!door.requiredItemId) {
           return {
