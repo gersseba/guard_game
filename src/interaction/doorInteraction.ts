@@ -29,7 +29,7 @@ export const handleDoorInteraction = (request: DoorInteractionRequest): DoorInte
     responseText: getDoorStateResponse(request.door),
   };
 
-  if (request.door.isSafe !== undefined) {
+  if (request.door.isSafe !== undefined && !request.door.isLocked) {
     baseResult.levelOutcome = request.door.isSafe ? 'win' : 'lose';
   }
 
