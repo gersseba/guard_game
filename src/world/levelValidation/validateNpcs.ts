@@ -86,6 +86,25 @@ export const validateNpcs = (
       validateNpcTradeRules(npc['tradeRules'], `npc at index ${i} tradeRules`);
     }
 
+    if (npc['knowledgeTokensGrantedOnTalk'] !== undefined) {
+      if (!Array.isArray(npc['knowledgeTokensGrantedOnTalk'])) {
+        throw new Error(
+          `Invalid level data: npc at index ${i} knowledgeTokensGrantedOnTalk must be an array when provided`,
+        );
+      }
+
+      const knowledgeTokensGrantedOnTalk = npc['knowledgeTokensGrantedOnTalk'] as unknown[];
+      if (
+        knowledgeTokensGrantedOnTalk.some(
+          (tokenId) => typeof tokenId !== 'string' || tokenId.trim() === '',
+        )
+      ) {
+        throw new Error(
+          `Invalid level data: npc at index ${i} knowledgeTokensGrantedOnTalk must contain non-empty strings`,
+        );
+      }
+    }
+
     if (npc['instanceKnowledge'] !== undefined && typeof npc['instanceKnowledge'] !== 'string') {
       throw new Error(
         `Invalid level data: npc at index ${i} has invalid instanceKnowledge (must be a string when provided)`,

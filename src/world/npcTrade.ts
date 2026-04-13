@@ -1,10 +1,13 @@
 import { Item } from './entities/items/Item';
+import { validateKnowledgeTokenRequirements } from './knowledgeState';
 import type { InventoryItem, Npc, Player } from './types';
+import type { KnowledgeState } from './types';
 
 export interface NpcTradeResolution {
   npc: Npc;
   player: Player;
   appliedRuleId: string | null;
+  missingKnowledgeTokens: string[];
 }
 
 const reindexSelectedSlotAfterRemoval = (
@@ -58,6 +61,7 @@ export const resolveNpcTrade = (
   npc: Npc,
   player: Player,
   currentTick: number,
+  knowledgeState?: KnowledgeState,
 ): NpcTradeResolution => {
   const tradeRules = npc.tradeRules ?? [];
   if (tradeRules.length === 0) {
@@ -65,19 +69,32 @@ export const resolveNpcTrade = (
       npc,
       player,
       appliedRuleId: null,
+      missingKnowledgeTokens: [],
     };
   }
 
   const completedRuleIds = new Set(npc.tradeState?.completedRuleIds ?? []);
+  let firstMissingKnowledgeTokens: string[] = [];
 
   for (const rule of tradeRules) {
     if (completedRuleIds.has(rule.ruleId)) {
       continue;
     }
 
+    const knowledgeValidation = validateKnowledgeTokenRequirements(
+      knowledgeState,
+      rule.requiredKnowledgeTokens ?? [],
+    );
+    if (!knowledgeValidation.isValid) {
+      if (firstMissingKnowledgeTokens.length === 0) {
+        firstMissingKnowledgeTokens = knowledgeValidation.missingKnowledgeTokens;
+      }
+      continue;
+    }
+
     const tradeConsumption = takeRequiredItems(
       player.inventory.items,
-      rule.requiredItemIds,
+      rule.requiredItemIds ?? [],
       player.inventory.selectedItem ?? null,
     );
     if (!tradeConsumption) {
@@ -109,6 +126,7 @@ export const resolveNpcTrade = (
         },
       },
       appliedRuleId: rule.ruleId,
+      missingKnowledgeTokens: [],
     };
   }
 
@@ -116,5 +134,6 @@ export const resolveNpcTrade = (
     npc,
     player,
     appliedRuleId: null,
+    missingKnowledgeTokens: firstMissingKnowledgeTokens,
   };
 };

@@ -64,27 +64,21 @@ const createThreeSealsScriptedLlmClient = (): LlmClient => {
   const responsesByNpcId: Readonly<Record<string, LlmResponse>> = {
     quartermaster: {
       text: 'Bring me the satchel from old storage and I can help.',
-      outcome: {},
     },
     stablehand: {
       text: 'First fragment: Seal under moonlit stone.',
-      outcome: { grantKnowledgeTokens: ['seal-fragment-a'] },
     },
     'chapel-keeper': {
       text: 'Second fragment: Spoken at dawn beneath the chapel bell.',
-      outcome: { grantKnowledgeTokens: ['seal-fragment-b'] },
     },
     archivist: {
       text: 'Speak the complete phrase and I can release the brass key.',
-      outcome: { requireKnowledgeTokens: ['seal-fragment-a', 'seal-fragment-b'] },
     },
     'bell-ringer': {
       text: 'Remember this phrase: bell before dawn.',
-      outcome: { grantKnowledgeTokens: ['bell-before-dawn'] },
     },
     mechanic: {
       text: 'Show me the cog and the bell phrase, then I can help.',
-      outcome: { requireKnowledgeTokens: ['bell-before-dawn'] },
     },
   };
 
@@ -150,7 +144,6 @@ const runFullThreeSealsSequence = async (): Promise<WorldState> => {
   worldState = (await runNpcTurn(worldState, 'quartermaster', 'I found your supply satchel.')).updatedWorldState;
   expect(hasItem(worldState, 'iron-key')).toBe(true);
 
-  worldState = collectObjectItem(worldState, 'chapel-cache');
   worldState = (await runNpcTurn(worldState, 'stablehand', 'Do you know part of the seal phrase?')).updatedWorldState;
   worldState =
     (await runNpcTurn(worldState, 'chapel-keeper', 'Can you share the chapel fragment?')).updatedWorldState;
@@ -188,8 +181,23 @@ describe('three-seals-gate level integration', () => {
 
     expect(chapelKeeper).toBeDefined();
     expect(objectItemIds).not.toContain('archive-token');
-    expect(archivist?.tradeRules?.[0]?.requiredItemIds).toEqual(['chapel-seal-note']);
+    expect(objectItemIds).not.toContain('chapel-seal-note');
+    expect(archivist?.tradeRules?.[0]?.requiredItemIds).toBeUndefined();
+    expect(archivist?.tradeRules?.[0]?.requiredKnowledgeTokens).toEqual([
+      'seal-fragment-a',
+      'seal-fragment-b',
+    ]);
     expect(mechanic?.tradeRules?.[0]?.requiredItemIds).toEqual(['gear-cog']);
+    expect(mechanic?.tradeRules?.[0]?.requiredKnowledgeTokens).toEqual(['bell-before-dawn']);
+    expect(worldState.npcs.find((npc) => npc.id === 'stablehand')?.knowledgeTokensGrantedOnTalk).toEqual([
+      'seal-fragment-a',
+    ]);
+    expect(worldState.npcs.find((npc) => npc.id === 'chapel-keeper')?.knowledgeTokensGrantedOnTalk).toEqual([
+      'seal-fragment-b',
+    ]);
+    expect(worldState.npcs.find((npc) => npc.id === 'bell-ringer')?.knowledgeTokensGrantedOnTalk).toEqual([
+      'bell-before-dawn',
+    ]);
   });
 
   it('can complete all social chains and finish the level through the multi-key gate', async () => {
@@ -210,7 +218,6 @@ describe('three-seals-gate level integration', () => {
   it('enforces knowledge-token gating from NPC interaction behavior before key grants', async () => {
     let worldState = createThreeSealsGateState();
 
-    worldState = collectObjectItem(worldState, 'chapel-cache');
     worldState = (await runNpcTurn(worldState, 'stablehand', 'Share your fragment.')).updatedWorldState;
 
     const missingSecondFragment = await runNpcTurn(
@@ -284,7 +291,6 @@ describe('three-seals-gate level integration', () => {
     expect(oneKeyState.doors.find((door) => door.id === 'three-seals-gate-door')?.isLocked).toBe(true);
 
     let twoKeyState = oneKeyState;
-    twoKeyState = collectObjectItem(twoKeyState, 'chapel-cache');
     twoKeyState =
       (await runNpcTurn(twoKeyState, 'stablehand', 'Share your seal fragment.')).updatedWorldState;
     twoKeyState =

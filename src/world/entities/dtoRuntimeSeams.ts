@@ -54,6 +54,7 @@ export const mapNpcDtoToRuntime = (dto: NpcDtoContract): Npc =>
     triggers: dto.triggers,
     inventory: dto.inventory?.map(mapInventoryItemDtoToRuntime),
     tradeRules: dto.tradeRules,
+    knowledgeTokensGrantedOnTalk: dto.knowledgeTokensGrantedOnTalk,
     instanceKnowledge: dto.instanceKnowledge,
     instanceBehavior: dto.instanceBehavior,
   });

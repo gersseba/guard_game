@@ -78,6 +78,7 @@
       "x": 5,
       "y": 7,
       "npcType": "stablehand",
+      "knowledgeTokensGrantedOnTalk": ["seal-fragment-a"],
       "spriteSet": {
         "default": "/assets/medieval_npc_gossip_front.svg",
         "front": "/assets/medieval_npc_gossip_front.svg",
@@ -95,7 +96,7 @@
       "tradeRules": [
         {
           "ruleId": "archivist-seal-trade",
-          "requiredItemIds": ["chapel-seal-note"],
+          "requiredKnowledgeTokens": ["seal-fragment-a", "seal-fragment-b"],
           "rewardItems": [
             {
               "itemId": "brass-key",
@@ -118,6 +119,7 @@
       "x": 13,
       "y": 11,
       "npcType": "bell-ringer",
+      "knowledgeTokensGrantedOnTalk": ["bell-before-dawn"],
       "spriteSet": {
         "default": "/assets/medieval_npc_gossip_front.svg",
         "front": "/assets/medieval_npc_gossip_front.svg",
@@ -132,6 +134,7 @@
       "x": 4,
       "y": 11,
       "npcType": "chapel-keeper",
+      "knowledgeTokensGrantedOnTalk": ["seal-fragment-b"],
       "spriteSet": {
         "default": "/assets/medieval_npc_gossip_front.svg",
         "front": "/assets/medieval_npc_gossip_front.svg",
@@ -150,6 +153,7 @@
         {
           "ruleId": "mechanic-repair-trade",
           "requiredItemIds": ["gear-cog"],
+          "requiredKnowledgeTokens": ["bell-before-dawn"],
           "rewardItems": [
             {
               "itemId": "steel-key",
@@ -203,27 +207,6 @@
       },
       "idleMessage": "A fresh steel cog glints beneath grease rags.",
       "usedMessage": "The crate is empty now.",
-      "spriteSet": {
-        "default": "/assets/medieval_supply_crate_inspect.svg"
-      },
-      "capabilities": {
-        "containsItems": true
-      }
-    },
-    {
-      "id": "chapel-cache",
-      "displayName": "Chapel Cache",
-      "x": 6,
-      "y": 11,
-      "objectType": "cache",
-      "interactionType": "inspect",
-      "state": "idle",
-      "pickupItem": {
-        "itemId": "chapel-seal-note",
-        "displayName": "Chapel Seal Note"
-      },
-      "idleMessage": "Wax-sealed parchment repeats a phrase fragment from the chapel hymnal.",
-      "usedMessage": "Only old hymn dust remains.",
       "spriteSet": {
         "default": "/assets/medieval_supply_crate_inspect.svg"
       },

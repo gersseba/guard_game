@@ -1,4 +1,5 @@
 import { isLlmRequestError, type LlmRequestError, type LlmClient } from '../llm/client';
+import { applyKnowledgeTokenOutcome } from '../world/knowledgeState';
 import type { ConversationMessage, Npc, Player, WorldState } from '../world/types';
 import {
   createDefaultNpcFunctionRegistry,
@@ -27,6 +28,40 @@ const applyTalkTrigger = (npc: Npc): Npc => {
       ...(npc.facts ?? {}),
       [talkTrigger.setFact]: talkTrigger.value,
     },
+  };
+};
+
+const applyDeterministicNpcTalkState = (worldState: WorldState, npcId: string): WorldState => {
+  const npc = worldState.npcs.find((candidate) => candidate.id === npcId);
+  if (!npc) {
+    return worldState;
+  }
+
+  const npcAfterTalkTrigger = applyTalkTrigger(npc);
+  const hasNpcMutation = npcAfterTalkTrigger !== npc;
+
+  const tokenGrantResolution = applyKnowledgeTokenOutcome(
+    worldState.knowledgeState,
+    {
+      grantKnowledgeTokens: npc.knowledgeTokensGrantedOnTalk ?? [],
+    },
+    {
+      tick: worldState.tick,
+      grantedByActorId: npcId,
+    },
+  );
+
+  const hasKnowledgeMutation = tokenGrantResolution.knowledgeState !== worldState.knowledgeState;
+  if (!hasNpcMutation && !hasKnowledgeMutation) {
+    return worldState;
+  }
+
+  return {
+    ...worldState,
+    knowledgeState: tokenGrantResolution.knowledgeState,
+    npcs: worldState.npcs.map((candidate) =>
+      candidate.id === npcId ? npcAfterTalkTrigger : candidate,
+    ),
   };
 };
 
@@ -122,19 +157,14 @@ export const createNpcInteractionService = (
       actorConversationHistoryByActorId: updatedHistoryByActorId,
     };
 
-    const npcFromWorldState =
-      stateWithUpdatedHistory.npcs.find((candidate) => candidate.id === request.npc.id) ?? request.npc;
-    const npcAfterTalkTrigger = applyTalkTrigger(npcFromWorldState);
-    const worldStateWithTalkTrigger: WorldState = {
-      ...stateWithUpdatedHistory,
-      npcs: stateWithUpdatedHistory.npcs.map((npc) =>
-        npc.id === request.npc.id ? npcAfterTalkTrigger : npc,
-      ),
-    };
+    const worldStateWithTalkState = applyDeterministicNpcTalkState(
+      stateWithUpdatedHistory,
+      request.npc.id,
+    );
 
     const consequenceResult = applyNpcDialogueConsequences({
       npcId: request.npc.id,
-      worldState: worldStateWithTalkTrigger,
+      worldState: worldStateWithTalkState,
       outcome: llmResult.outcome,
     });
 

@@ -197,19 +197,40 @@ export const validateNpcTradeRules = (value: unknown, contextLabel: string): voi
     }
     seenRuleIds.add(rule['ruleId']);
 
-    if (!Array.isArray(rule['requiredItemIds'])) {
+    const requiredItemIdsRaw = rule['requiredItemIds'];
+    const requiredKnowledgeTokensRaw = rule['requiredKnowledgeTokens'];
+
+    const requiredItemIds =
+      requiredItemIdsRaw === undefined ? [] : (requiredItemIdsRaw as unknown[]);
+    if (
+      requiredItemIdsRaw !== undefined &&
+      (!Array.isArray(requiredItemIds) ||
+        requiredItemIds.some((itemId) => typeof itemId !== 'string' || itemId.trim() === ''))
+    ) {
       throw new Error(
-        `Invalid level data: ${contextLabel}[${index}].requiredItemIds must be an array`,
+        `Invalid level data: ${contextLabel}[${index}].requiredItemIds must be an array of non-empty strings`,
       );
     }
 
-    const requiredItemIds = rule['requiredItemIds'] as unknown[];
+    const requiredKnowledgeTokens =
+      requiredKnowledgeTokensRaw === undefined
+        ? []
+        : (requiredKnowledgeTokensRaw as unknown[]);
     if (
-      requiredItemIds.length === 0 ||
-      requiredItemIds.some((itemId) => typeof itemId !== 'string' || itemId.trim() === '')
+      requiredKnowledgeTokensRaw !== undefined &&
+      (!Array.isArray(requiredKnowledgeTokens) ||
+        requiredKnowledgeTokens.some(
+          (tokenId) => typeof tokenId !== 'string' || tokenId.trim() === '',
+        ))
     ) {
       throw new Error(
-        `Invalid level data: ${contextLabel}[${index}].requiredItemIds must contain non-empty strings`,
+        `Invalid level data: ${contextLabel}[${index}].requiredKnowledgeTokens must be an array of non-empty strings`,
+      );
+    }
+
+    if (requiredItemIds.length === 0 && requiredKnowledgeTokens.length === 0) {
+      throw new Error(
+        `Invalid level data: ${contextLabel}[${index}] must declare at least one requiredItemIds or requiredKnowledgeTokens entry`,
       );
     }
 

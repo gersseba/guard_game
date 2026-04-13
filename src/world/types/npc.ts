@@ -39,7 +39,8 @@ export interface NpcTradeRewardItem {
 
 export interface NpcTradeRule {
   ruleId: string;
-  requiredItemIds: string[];
+  requiredItemIds?: string[];
+  requiredKnowledgeTokens?: string[];
   rewardItems: NpcTradeRewardItem[];
 }
 
@@ -54,6 +55,7 @@ export interface Npc extends GameEntity {
   triggers?: NpcTriggers;
   inventory?: InventoryItem[];
   tradeRules?: NpcTradeRule[];
+  knowledgeTokensGrantedOnTalk?: string[];
   tradeState?: NpcTradeState;
   /** Instance-specific knowledge this NPC has (overrides or extends type-level knowledge). */
   instanceKnowledge?: string;
