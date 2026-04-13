@@ -60,6 +60,85 @@ const createWorldState = (overrides: Partial<WorldState> = {}): WorldState => {
 };
 
 describe('npc function-calling integration', () => {
+  it('maps production structured outcome payloads into deterministic consequence application', async () => {
+    const { service } = createService(
+      createGeminiPayload([
+        {
+          text: JSON.stringify({
+            responseText: 'Take this seal phrase.',
+            outcome: {
+              grantKnowledgeTokens: ['seal-alpha'],
+            },
+          }),
+        },
+      ]),
+    );
+    const worldState = createWorldState();
+    const npc = worldState.npcs[0];
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: worldState.player,
+      worldState,
+      playerMessage: 'Any clue?',
+    });
+
+    expect(result.responseText).toBe('Archivist: Take this seal phrase.');
+    expect(result.consequenceTrace?.outcomeStatus).toBe('accepted');
+    expect(result.updatedWorldState.knowledgeState?.tokensById['seal-alpha']).toEqual({
+      tokenId: 'seal-alpha',
+      grantedAtTick: worldState.tick,
+      grantedByActorId: npc.id,
+    });
+  });
+
+  it('treats missing production outcome payloads as deterministic no-consequence without mutation', async () => {
+    const { service } = createService(
+      createGeminiPayload([{ text: 'I have no exchange for you yet.' }]),
+    );
+    const worldState = createWorldState();
+    const npc = worldState.npcs[0];
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: worldState.player,
+      worldState,
+      playerMessage: 'Can we trade?',
+    });
+
+    expect(result.consequenceTrace?.outcomeStatus).toBe('none');
+    expect(result.updatedWorldState.player.inventory.items).toEqual(worldState.player.inventory.items);
+    expect(result.updatedWorldState.npcs[0].inventory).toEqual(npc.inventory);
+    expect(result.updatedWorldState.knowledgeState).toEqual(worldState.knowledgeState);
+    expect(result.updatedWorldState.questState).toEqual(worldState.questState);
+  });
+
+  it('rejects malformed production outcome payloads without mutating deterministic consequence state', async () => {
+    const { service } = createService(
+      createGeminiPayload([
+        {
+          text: '{"responseText":"Trade complete","outcome":',
+        },
+      ]),
+    );
+    const worldState = createWorldState();
+    const npc = worldState.npcs[0];
+
+    const result = await service.handleNpcInteraction({
+      npc,
+      player: worldState.player,
+      worldState,
+      playerMessage: 'Can we trade now?',
+    });
+
+    expect(result.responseText).toBe('');
+    expect(result.consequenceTrace?.outcomeStatus).toBe('rejected');
+    expect(result.updatedWorldState.player.inventory.items).toEqual(worldState.player.inventory.items);
+    expect(result.updatedWorldState.npcs[0].inventory).toEqual(npc.inventory);
+    expect(result.updatedWorldState.knowledgeState).toEqual(worldState.knowledgeState);
+    expect(result.updatedWorldState.questState).toEqual(worldState.questState);
+  });
+
   it('supports text-only responses without creating an action trace', async () => {
     const { fetchImpl, service } = createService(
       createGeminiPayload([{ text: 'The eastern archive is sealed.' }]),
