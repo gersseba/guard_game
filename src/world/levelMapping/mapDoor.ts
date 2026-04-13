@@ -13,6 +13,7 @@ export const mapDoorDtoToRuntime = (dto: LevelDoorDto): Door => {
     isLocked: dto.isLocked,
     ...(dto.isSafe !== undefined ? { isSafe: dto.isSafe } : {}),
     ...(dto.requiredItemId !== undefined ? { requiredItemId: dto.requiredItemId } : {}),
+    ...(dto.requiredItemIds !== undefined ? { requiredItemIds: [...dto.requiredItemIds] } : {}),
     ...(dto.spriteAssetPath !== undefined ? { spriteAssetPath: dto.spriteAssetPath } : {}),
     ...(dto.spriteSet !== undefined ? { spriteSet: dto.spriteSet } : {}),
   };

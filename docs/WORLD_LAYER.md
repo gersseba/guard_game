@@ -175,7 +175,7 @@ Deterministic rules:
 Deterministic rules:
 - New runtime state initializes all doors with `isUnlocked: false` (default, omitted if false).
 - Level deserialization also initializes all doors with `isUnlocked: false` unless explicitly set in the level JSON.
-- Item-use resolver emits `doorUnlockedId` when player's selected item matches a door's `requiredItemId`.
+- Item-use resolver emits `doorUnlockedId` when deterministic key requirements are satisfied: legacy `requiredItemId` match, or multi-key `requiredItemIds` full-set possession with selected required key.
 - The item-use callback wiring in `src/runtime/createRuntimeApp.ts` commits unlock mutations: when `event.doorUnlockedId` is present, the corresponding door is mutated to set `isUnlocked: true`.
 - Once `isUnlocked` is true, the door allows traversal: `canMovePlayerTo()` in [src/world/spatialRules.ts](../src/world/spatialRules.ts#L38) skips blocked-door checks for unlocked doors.
 - Unlock state persists through JSON serialization and level state save/restore, enabling preserved progress across play sessions.
@@ -189,7 +189,7 @@ Deterministic rules:
 | `validateHeader.ts` | `version`, `layoutPath`, `name`, `premise`, `goal` |
 | `validatePlayer.ts` | player `x`/`y`, optional `spriteAssetPath` and `spriteSet` |
 | `validateGuards.ts` | guards array: identity, position, guardState, traits, sprites, instance fields, itemUseRules |
-| `validateDoors.ts` | doors array: identity, position, doorState, outcome, requiredItemId, sprites |
+| `validateDoors.ts` | doors array: identity, position, doorState, outcome, requiredItemId/requiredItemIds schema, sprites |
 | `validateNpcs.ts` | npcs array: identity, position, npcType, patrol path bounds, triggers, inventory, tradeRules, riddleClue |
 | `validateObjects.ts` | interactiveObjects array: identity, position, objectType, interactionType, state, pickupItem, sprites, capabilities, itemUseRules |
 | `validateEnvironments.ts` | environments array: identity, position, isBlocking |

@@ -38,10 +38,44 @@ export const validateDoors = (raw: Record<string, unknown>): void => {
       );
     }
 
+    if (door['requiredItemId'] !== undefined && door['requiredItemIds'] !== undefined) {
+      throw new Error(
+        `Invalid level data: door at index ${i} cannot define both requiredItemId and requiredItemIds`,
+      );
+    }
+
     if (door['requiredItemId'] !== undefined && typeof door['requiredItemId'] !== 'string') {
       throw new Error(
         `Invalid level data: door at index ${i} has invalid requiredItemId (must be a string when provided)`,
       );
+    }
+
+    if (door['requiredItemIds'] !== undefined) {
+      if (!Array.isArray(door['requiredItemIds'])) {
+        throw new Error(
+          `Invalid level data: door at index ${i} has invalid requiredItemIds (must be an array when provided)`,
+        );
+      }
+
+      const requiredItemIds = door['requiredItemIds'] as unknown[];
+      if (requiredItemIds.length === 0) {
+        throw new Error(
+          `Invalid level data: door at index ${i} has invalid requiredItemIds (must be a non-empty array)`,
+        );
+      }
+
+      if (requiredItemIds.some((itemId) => typeof itemId !== 'string' || itemId.trim() === '')) {
+        throw new Error(
+          `Invalid level data: door at index ${i} has invalid requiredItemIds (all entries must be non-empty strings)`,
+        );
+      }
+
+      const normalizedItemIds = requiredItemIds as string[];
+      if (new Set(normalizedItemIds).size !== normalizedItemIds.length) {
+        throw new Error(
+          `Invalid level data: door at index ${i} has invalid requiredItemIds (duplicate entries are not allowed)`,
+        );
+      }
     }
 
     if (door['spriteAssetPath'] !== undefined && typeof door['spriteAssetPath'] !== 'string') {

@@ -41,6 +41,8 @@ export interface LevelDoorDto {
   isSafe?: boolean;
   /** Item ID required to unlock this door */
   requiredItemId?: string;
+  /** Item IDs required to unlock this door as a full key set. */
+  requiredItemIds?: string[];
   spriteAssetPath?: string;
   spriteSet?: SpriteSet;
 }

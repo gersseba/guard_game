@@ -56,6 +56,18 @@ describe('mapDoorDtoToRuntime', () => {
     expect(result.requiredItemId).toBeUndefined();
   });
 
+  it('passes through requiredItemIds when provided', () => {
+    const result = mapDoorDtoToRuntime({ ...baseDoor, requiredItemIds: ['seal-a', 'seal-b'] });
+
+    expect(result.requiredItemIds).toEqual(['seal-a', 'seal-b']);
+  });
+
+  it('omits requiredItemIds when not provided', () => {
+    const result = mapDoorDtoToRuntime(baseDoor);
+
+    expect(result.requiredItemIds).toBeUndefined();
+  });
+
   it('passes through spriteAssetPath when provided', () => {
     const result = mapDoorDtoToRuntime({ ...baseDoor, spriteAssetPath: '/assets/door.svg' });
 
