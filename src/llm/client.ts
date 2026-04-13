@@ -62,6 +62,76 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 };
 
+const MALFORMED_OUTCOME_PAYLOAD: NonNullable<LlmResponse['outcome']> = {
+  questProgressEvent: '__malformed_outcome_payload__',
+};
+
+const stripMarkdownCodeFence = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('```') || !trimmed.endsWith('```')) {
+    return value;
+  }
+
+  const lines = trimmed.split('\n');
+  if (lines.length < 2) {
+    return value;
+  }
+
+  return lines.slice(1, -1).join('\n').trim();
+};
+
+interface ParsedStructuredDialoguePayload {
+  detected: boolean;
+  malformed: boolean;
+  responseText?: string;
+  outcome?: unknown;
+}
+
+const parseStructuredDialoguePayloadFromText = (
+  text: string,
+): ParsedStructuredDialoguePayload | null => {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const maybeStructuredJson = trimmed.startsWith('{') || trimmed.startsWith('```');
+  if (!maybeStructuredJson || !trimmed.includes('outcome')) {
+    return null;
+  }
+
+  const jsonCandidate = stripMarkdownCodeFence(trimmed);
+
+  try {
+    const parsed = JSON.parse(jsonCandidate) as unknown;
+    if (!isRecord(parsed) || !('outcome' in parsed)) {
+      return null;
+    }
+
+    const responseText =
+      typeof parsed.responseText === 'string'
+        ? parsed.responseText
+        : typeof parsed.text === 'string'
+          ? parsed.text
+          : typeof parsed.message === 'string'
+            ? parsed.message
+            : undefined;
+
+    return {
+      detected: true,
+      malformed: false,
+      responseText,
+      outcome: parsed.outcome,
+    };
+  } catch {
+    return {
+      detected: true,
+      malformed: true,
+      outcome: MALFORMED_OUTCOME_PAYLOAD,
+    };
+  }
+};
+
 const hasOnlyAllowedKeys = (record: Record<string, unknown>, allowedKeys: string[]): boolean => {
   return Object.keys(record).every((key) => allowedKeys.includes(key));
 };
@@ -242,6 +312,17 @@ const parseGeminiResponse = (payload: unknown): LlmResponse | LlmRequestError =>
 
   const textParts: string[] = [];
   const actions: NpcActionCall[] = [];
+  let outcome: LlmResponse['outcome'] = undefined;
+  let hasOutcomePayload = false;
+
+  const setOutcome = (value: unknown): void => {
+    if (hasOutcomePayload) {
+      return;
+    }
+
+    hasOutcomePayload = true;
+    outcome = value as LlmResponse['outcome'];
+  };
 
   for (const part of parts) {
     if (!isRecord(part)) {
@@ -249,7 +330,24 @@ const parseGeminiResponse = (payload: unknown): LlmResponse | LlmRequestError =>
     }
 
     if (typeof part.text === 'string') {
-      textParts.push(part.text);
+      const structuredPayload = parseStructuredDialoguePayloadFromText(part.text);
+      if (structuredPayload?.detected) {
+        if (structuredPayload.responseText) {
+          textParts.push(structuredPayload.responseText);
+        }
+
+        setOutcome(
+          structuredPayload.malformed
+            ? MALFORMED_OUTCOME_PAYLOAD
+            : structuredPayload.outcome,
+        );
+      } else {
+        textParts.push(part.text);
+      }
+    }
+
+    if ('outcome' in part) {
+      setOutcome(part.outcome);
     }
 
     if ('functionCall' in part && part.functionCall !== undefined) {
@@ -266,7 +364,7 @@ const parseGeminiResponse = (payload: unknown): LlmResponse | LlmRequestError =>
   }
 
   const text = textParts.join('').trim();
-  if (!text && actions.length === 0) {
+  if (!text && actions.length === 0 && !hasOutcomePayload) {
     return {
       kind: 'llm_request_error',
       message: 'Empty or unparseable response from LLM.',
@@ -276,6 +374,7 @@ const parseGeminiResponse = (payload: unknown): LlmResponse | LlmRequestError =>
   return {
     ...(text ? { text } : {}),
     ...(actions.length > 0 ? { actions } : {}),
+    ...(hasOutcomePayload ? { outcome } : {}),
   };
 };
 

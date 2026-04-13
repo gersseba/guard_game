@@ -165,6 +165,102 @@ describe('createGeminiLlmClient', () => {
     });
   });
 
+  it('maps production structured text payload outcome into LlmResponse.outcome', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    responseText: 'The exchange is done.',
+                    outcome: {
+                      takeItem: 'seal-token',
+                      giveItem: 'archive-pass',
+                    },
+                  }),
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    }));
+
+    const client = createGeminiLlmClient({
+      apiKey: 'test-key',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    const response = await client.complete(prompt);
+
+    expect(response).toEqual({
+      text: 'The exchange is done.',
+      outcome: {
+        takeItem: 'seal-token',
+        giveItem: 'archive-pass',
+      },
+    });
+  });
+
+  it('does not infer outcome when production payload is plain text only', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: 'No consequence attached.' }],
+            },
+          },
+        ],
+      }),
+    }));
+
+    const client = createGeminiLlmClient({
+      apiKey: 'test-key',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    const response = await client.complete(prompt);
+
+    expect(response).toEqual({ text: 'No consequence attached.' });
+  });
+
+  it('marks malformed structured payloads with deterministic invalid outcome marker', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: '{"responseText":"Offer accepted","outcome":',
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    }));
+
+    const client = createGeminiLlmClient({
+      apiKey: 'test-key',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    const response = await client.complete(prompt);
+
+    expect(response).toEqual({
+      outcome: {
+        questProgressEvent: '__malformed_outcome_payload__',
+      },
+    });
+  });
+
   it('returns deterministic structured error for malformed function payloads', async () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
